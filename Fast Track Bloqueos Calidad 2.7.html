@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">OYMR4 Bloqueos - Cargando...</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231a1a2e' rx='20'/><path d='M50 85 L50 20' stroke='%23e91e63' stroke-width='5' stroke-linecap='round'/><path d='M35 45 L50 25 L65 45' fill='none' stroke='%234caf50' stroke-width='4' stroke-linecap='round'/><path d='M40 58 L50 45 L60 58' fill='none' stroke='%232196f3' stroke-width='3.5' stroke-linecap='round'/><path d='M45 71 L50 63 L55 71' fill='none' stroke='%23ff9800' stroke-width='3' stroke-linecap='round'/><circle cx='50' cy='78' r='4' fill='%23e91e63'/><path d='M28 35 L50 12 L72 35' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' opacity='0.5'/></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        .header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .header h1 { font-size: 1.5rem; margin-bottom: 5px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .header h1 .oym { color: #e91e63; }
+        .header h1 .badge-60 { background: #e91e63; color: white; font-size: 0.8rem; padding: 4px 12px; border-radius: 30px; display: inline-flex; align-items: center; gap: 6px; }
+        .header p { font-size: 0.8rem; opacity: 0.9; margin-top: 8px; }
+        .update-info { background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; display: inline-block; font-size: 0.7rem; margin-top: 8px; }
+        
+        .report-date-box {
+            background: linear-gradient(135deg, #2d2d44, #1e1e36);
+            border-radius: 12px;
+            padding: 8px 16px;
+            margin-top: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            border-left: 4px solid #e91e63;
+        }
+        .report-date-label { opacity: 0.8; letter-spacing: 0.5px; }
+        .report-date-value { font-weight: bold; background: #e91e63; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; }
+        .report-date-status { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; }
+        .status-fresh { color: #4caf50; }
+        .status-delayed { color: #ff9800; }
+        .tooltip-icon { cursor: help; background: rgba(255,255,255,0.2); border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-left: 5px; }
+        
+        .connection-panel { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .status-box { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; padding: 10px; border-radius: 10px; }
+        .status-connected { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .status-disconnected { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .status-loading { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        .btn { background: #0052cc; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin: 5px; transition: all 0.2s; }
+        .btn:hover { background: #003d99; transform: translateY(-1px); }
+        .btn-war { background: #e91e63; }
+        .btn-war:hover { background: #c2185b; }
+        .btn-clear { background: #6c757d; }
+        .btn-clear:hover { background: #5a6268; }
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 25px; }
+        .kpi-card { background: white; border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s; }
+        .kpi-card:hover { transform: translateY(-2px); }
+        .kpi-card-2g { border-top: 3px solid #6c757d; }
+        .kpi-card-3g { border-top: 3px solid #ff9800; }
+        .kpi-card-4g { border-top: 3px solid #2196f3; }
+        .kpi-card-5g { border-top: 3px solid #4caf50; }
+        .kpi-value { font-size: 1.8rem; font-weight: bold; }
+        .kpi-value-2g { color: #6c757d; }
+        .kpi-value-3g { color: #ff9800; }
+        .kpi-value-4g { color: #2196f3; }
+        .kpi-value-5g { color: #4caf50; }
+        .kpi-label { color: #666; font-size: 0.7rem; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .tech-tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 25px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; transition: all 0.3s; background: #e0e0e0; color: #333; font-size: 0.9rem; }
+        .tab-btn.active { color: white; }
+        .tab-btn.tab-2g.active { background: #6c757d; }
+        .tab-btn.tab-3g.active { background: #ff9800; }
+        .tab-btn.tab-4g.active { background: #2196f3; }
+        .tab-btn.tab-5g.active { background: #4caf50; }
+        .tab-btn.tab-coincidencias.active { background: #9c27b0; }
+        .tab-btn.tab-warroom.active { background: #e91e63; }
+        
+        .tech-section { background: white; border-radius: 0 12px 12px 12px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .tech-header { padding: 15px 20px; color: white; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .tech-header-2g { background: linear-gradient(135deg, #6c757d, #495057); }
+        .tech-header-3g { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .tech-header-4g { background: linear-gradient(135deg, #2196f3, #1976d2); }
+        .tech-header-5g { background: linear-gradient(135deg, #4caf50, #388e3c); }
+        .tech-header-coincidencias { background: linear-gradient(135deg, #9c27b0, #7b1fa2); }
+        .tech-header-warroom { background: linear-gradient(135deg, #e91e63, #ad1457); }
+        .tech-content { padding: 20px; }
+        
+        .stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .stat-box { background: #f8f9fa; border-radius: 10px; padding: 12px; flex: 1; text-align: center; min-width: 100px; border: 1px solid #e0e0e0; }
+        .stat-number { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .stat-label { font-size: 0.7rem; color: #666; margin-top: 5px; }
+        
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .chart-box { background: #fafafa; border-radius: 10px; padding: 15px; border: 1px solid #eee; }
+        .chart-box canvas { max-height: 200px; width: 100%; cursor: pointer; }
+        .triple-chart { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        
+        .filter-bar { background: #e9ecef; border-radius: 8px; padding: 10px 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border-left: 4px solid #e91e63; }
+        .filter-badge { background: #e91e63; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 8px; }
+        .filter-badge .remove { cursor: pointer; font-weight: bold; margin-left: 5px; }
+        .filter-badge .remove:hover { color: #ff9800; }
+        
+        .top-list { margin-top: 20px; }
+        .top-list h4 { font-size: 0.9rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .table-wrapper { max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #333; position: sticky; top: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr:hover { background: #f5f5f5; }
+        .dias-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; color: white; }
+        .priority-critical { background: #dc3545; }
+        .priority-high { background: #fd7e14; }
+        .priority-medium { background: #ffc107; color: #333; }
+        .priority-low { background: #28a745; }
+        .sitio-nombre { font-weight: 600; color: #333; }
+        .total-sitios-badge { background: rgba(255,255,255,0.2); padding: 6px 15px; border-radius: 30px; font-size: 0.85rem; font-weight: bold; }
+        
+        @media (max-width: 1000px) { 
+            .kpi-grid { grid-template-columns: repeat(4, 1fr); } 
+        }
+        @media (max-width: 700px) { 
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); } 
+            .charts-row { grid-template-columns: 1fr; }
+            .triple-chart { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.2rem; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>
+            <span>📡 <span class="oym">OYMR4</span> - Bloqueos de Calidad</span>
+            <span class="badge-60" id="totalCriticosBadge">⚠️ Cargando...</span>
+        </h1>
+        <p>Conexión automática a AppSheet - Datos en tiempo real | Afectaciones 2G, 3G, 4G y 5G</p>
+        <div class="update-info">📅 Última carga local: <span id="lastUpdate">--/--/----</span></div>
+        <div class="report-date-box" id="reportDateBox">
+            <span class="report-date-label">📊 Fecha de Actualización del Reporte (servidor):</span>
+            <span class="report-date-value" id="reportDateValue">--/--/----</span>
+            <span class="report-date-status" id="reportDateStatus">
+                <span>🔄</span> <span id="reportDateStatusText">Calculando...</span>
+            </span>
+            <span class="tooltip-icon" title="La fecha se calcula a partir de registros con 1 día de afectación: se toma la fecha de inicio + 1 día. Se muestra la fecha más reciente entre 2G, 3G, 4G y 5G.">ⓘ</span>
+        </div>
+    </div>
+
+    <div class="connection-panel">
+        <div id="connectionStatus" class="status-box status-loading">
+            <span>🔌 Estado: </span>
+            <span id="statusText">Conectando...</span>
+            <button class="btn" id="refreshBtn">🔄 Refrescar datos</button>
+        </div>
+    </div>
+
+    <div id="dashboardContent" style="display: none;">
+        <div class="kpi-grid" id="kpiGrid"></div>
+        
+        <div class="tech-tabs">
+            <button class="tab-btn tab-2g" data-tech="2g">📻 2G</button>
+            <button class="tab-btn tab-3g" data-tech="3g">📱 3G</button>
+            <button class="tab-btn tab-4g" data-tech="4g">📶 4G</button>
+            <button class="tab-btn tab-5g" data-tech="5g">✨ 5G</button>
+            <button class="tab-btn tab-coincidencias" data-tech="coincidencias">🔄 Coincidencias</button>
+            <button class="tab-btn tab-warroom" data-tech="warroom">⚡ War Room 60</button>
+        </div>
+        
+        <div id="section-2g" class="tech-section"></div>
+        <div id="section-3g" class="tech-section"></div>
+        <div id="section-4g" class="tech-section"></div>
+        <div id="section-5g" class="tech-section"></div>
+        <div id="section-coincidencias" class="tech-section"></div>
+        <div id="section-warroom" class="tech-section"></div>
+    </div>
+</div>
+
+<script>
+    const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
+    const API_KEY = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
+    
+    let datosTech = { '2g': [], '3g': [], '4g': [], '5g': [] };
+    let coincidenciasCalculadas = [];
+    let filtrosActivos = { '2g': null, '3g': null, '4g': null, '5g': null, 'coincidencias': null };
+    let filtrosWarRoom = { jefe: null, tecnologia: null };
+    let charts = {};
+    
+    const coloresTech = { '2G': '#6c757d', '3G': '#ff9800', '4G': '#2196f3', '5G': '#4caf50' };
+    
+    const rangosDias = [
+        { label: '0-30 días', min: 0, max: 30, color: '#ffc107' },
+        { label: '31-90 días', min: 31, max: 90, color: '#17a2b8' },
+        { label: '91-180 días', min: 91, max: 180, color: '#28a745' },
+        { label: '181-365 días', min: 181, max: 365, color: '#fd7e14' },
+        { label: '365+ días', min: 366, max: 9999, color: '#dc3545' }
+    ];
+    
+    function extraerDias(v) {
+        if (!v && v !== 0) return 0;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') {
+            v = v.trim();
+            if (v.includes(':')) return parseInt(v.split(':')[0]) || 0;
+            let n = parseInt(v);
+            return isNaN(n) ? 0 : n;
+        }
+        return 0;
+    }
+    
+    function parsearFecha(fechaStr) {
+        if (!fechaStr || fechaStr === '') return null;
+        let fecha = new Date(fechaStr);
+        if (!isNaN(fecha.getTime())) return fecha;
+        let partes = fechaStr.split('/');
+        if (partes.length === 3) {
+            fecha = new Date(partes[2], partes[1]-1, partes[0]);
+            if (!isNaN(fecha.getTime())) return fecha;
+        }
+        partes = fechaStr.split('-');
+        if (partes.length === 3 && partes[0].length === 2) {
+            fecha = new Date(partes[2], partes[1]-1, partes[0]);
+            if (!isNaN(fecha.getTime())) return fecha;
+        }
+        return null;
+    }
+    
+    function calcularFechaActualizacionReporte() {
+        let fechasReporte = [];
+        function procesarTecnologia(techData) {
+            for (let registro of techData) {
+                if (registro.dias === 1 && registro.inicio && registro.inicio !== '') {
+                    let fechaInicio = parsearFecha(registro.inicio);
+                    if (fechaInicio && !isNaN(fechaInicio.getTime())) {
+                        let fechaReporte = new Date(fechaInicio);
+                        fechaReporte.setDate(fechaInicio.getDate() + 1);
+                        fechasReporte.push(fechaReporte);
+                    }
+                }
+            }
+        }
+        procesarTecnologia(datosTech['2g']);
+        procesarTecnologia(datosTech['3g']);
+        procesarTecnologia(datosTech['4g']);
+        procesarTecnologia(datosTech['5g']);
+        
+        if (fechasReporte.length === 0) return null;
+        return new Date(Math.max(...fechasReporte.map(f => f.getTime())));
+    }
+    
+    function actualizarFechaReporteUI() {
+        const fechaReporte = calcularFechaActualizacionReporte();
+        const reportDateSpan = document.getElementById('reportDateValue');
+        const statusSpan = document.getElementById('reportDateStatusText');
+        const statusContainer = document.getElementById('reportDateStatus');
+        if (!reportDateSpan) return;
+        if (fechaReporte) {
+            const dia = fechaReporte.getDate().toString().padStart(2, '0');
+            const mes = (fechaReporte.getMonth() + 1).toString().padStart(2, '0');
+            const anio = fechaReporte.getFullYear();
+            reportDateSpan.innerHTML = `${dia}/${mes}/${anio}`;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const diffDias = Math.floor((hoy - fechaReporte) / (1000 * 60 * 60 * 24));
+            if (diffDias <= 2) {
+                statusSpan.innerHTML = '✅ DATOS FRESCOS';
+                statusContainer.style.background = 'rgba(76, 175, 80, 0.2)';
+                statusContainer.style.borderLeft = '3px solid #4caf50';
+            } else if (diffDias <= 7) {
+                statusSpan.innerHTML = '⚠️ DATOS CON RETARDO (' + diffDias + ' días)';
+                statusContainer.style.background = 'rgba(255, 152, 0, 0.2)';
+                statusContainer.style.borderLeft = '3px solid #ff9800';
+            } else {
+                statusSpan.innerHTML = '🔴 DATOS DESACTUALIZADOS (' + diffDias + ' días)';
+                statusContainer.style.background = 'rgba(244, 67, 54, 0.2)';
+                statusContainer.style.borderLeft = '3px solid #f44336';
+            }
+        } else {
+            reportDateSpan.innerHTML = 'No disponible';
+            statusSpan.innerHTML = '❓ Sin datos con 1 día de afectación';
+            statusContainer.style.background = 'rgba(158, 158, 158, 0.2)';
+        }
+    }
+    
+    function obtenerRango(dias) {
+        for (let r of rangosDias) if (dias >= r.min && dias <= r.max) return r.label;
+        return '365+ días';
+    }
+    
+    function calcularPrioridad(dias) {
+        if (dias >= 60) return 'Crítica';
+        if (dias >= 30) return 'Alta';
+        if (dias >= 15) return 'Media';
+        return 'Baja';
+    }
+    
+    function actualizarBadgeYTitle() {
+        let total = 0;
+        for (let tech of ['2g', '3g', '4g', '5g']) {
+            total += datosTech[tech].filter(s => s.dias >= 60).length;
+        }
+        const badge = document.getElementById('totalCriticosBadge');
+        if (badge) {
+            badge.innerHTML = `⚠️ ${total} sitios ≥60 días`;
+            badge.style.background = total > 0 ? '#dc3545' : '#28a745';
+        }
+        const titleElement = document.getElementById('pageTitle');
+        if (titleElement) {
+            titleElement.innerText = total > 0 ? `⚠️ ${total} | OYMR4 Bloqueos` : `✅ OYMR4 Bloqueos - Sin críticos`;
+        }
+    }
+    
+    async function conectar() {
+        let statusDiv = document.getElementById('connectionStatus');
+        let statusText = document.getElementById('statusText');
+        statusText.innerText = 'Conectando...';
+        statusDiv.className = 'status-box status-loading';
+        document.getElementById('dashboardContent').style.display = 'none';
+        
+        try {
+            let [d2, d3, d4, d5] = await Promise.all([
+                fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/Afectados%202G/Action`, {
+                    method: 'POST',
+                    headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" }, "Rows": [] })
+                }).then(r => r.json()),
+                fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/Afectados%203G/Action`, {
+                    method: 'POST',
+                    headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" }, "Rows": [] })
+                }).then(r => r.json()),
+                fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/Afectados%204G/Action`, {
+                    method: 'POST',
+                    headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" }, "Rows": [] })
+                }).then(r => r.json()),
+                fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/Afectados%205G/Action`, {
+                    method: 'POST',
+                    headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" }, "Rows": [] })
+                }).then(r => r.json())
+            ]);
+            
+            const mapRow = (row) => ({
+                sitio: row['eNodeB'] || row['NodeB'] || 'Desconocido',
+                jefe: row['Jefe de Zona'] || 'No especificado',
+                dias: extraerDias(row['Días con Afectación'] || row['Días'] || 0),
+                inicio: row['Inicio de afectación'] || '',
+                sectores: row['Sectores Afectados'] || '',
+                vector: row['Vector'] || ''
+            });
+            
+            datosTech['2g'] = (Array.isArray(d2) ? d2 : (d2.Rows || [])).map(mapRow).filter(r => r.dias > 0).sort((a,b) => b.dias - a.dias);
+            datosTech['3g'] = (Array.isArray(d3) ? d3 : (d3.Rows || [])).map(mapRow).filter(r => r.dias > 0).sort((a,b) => b.dias - a.dias);
+            datosTech['4g'] = (Array.isArray(d4) ? d4 : (d4.Rows || [])).map(mapRow).filter(r => r.dias > 0).sort((a,b) => b.dias - a.dias);
+            datosTech['5g'] = (Array.isArray(d5) ? d5 : (d5.Rows || [])).map(mapRow).filter(r => r.dias > 0).sort((a,b) => b.dias - a.dias);
+            
+            calcularCoincidencias();
+            actualizarBadgeYTitle();
+            actualizarFechaReporteUI();
+            
+            statusText.innerHTML = `✅ Conectado - 2G:${datosTech['2g'].length} | 3G:${datosTech['3g'].length} | 4G:${datosTech['4g'].length} | 5G:${datosTech['5g'].length}`;
+            statusDiv.className = 'status-box status-connected';
+            document.getElementById('dashboardContent').style.display = 'block';
+            document.getElementById('lastUpdate').innerText = new Date().toLocaleString();
+            
+            renderizarTodo();
+        } catch(e) {
+            statusText.innerText = '❌ Error de conexión';
+            statusDiv.className = 'status-box status-disconnected';
+            console.error(e);
+            document.getElementById('pageTitle').innerText = '❌ Error | OYMR4 Bloqueos';
+        }
+    }
+    
+    function calcularCoincidencias() {
+        const mapa = new Map();
+        for (let tech of ['2g', '3g', '4g', '5g']) {
+            let nombreTech = tech.toUpperCase();
+            for (let s of datosTech[tech]) {
+                let key = s.sitio.toUpperCase().trim();
+                if (!mapa.has(key)) mapa.set(key, { sitio: s.sitio, tecnologias: [], detalles: {}, maxDias: 0 });
+                let entry = mapa.get(key);
+                if (!entry.tecnologias.includes(nombreTech)) {
+                    entry.tecnologias.push(nombreTech);
+                    entry.detalles[nombreTech] = { dias: s.dias, jefe: s.jefe };
+                    entry.maxDias = Math.max(entry.maxDias, s.dias);
+                }
+            }
+        }
+        coincidenciasCalculadas = Array.from(mapa.values())
+            .filter(c => c.tecnologias.length > 1)
+            .sort((a, b) => {
+                if (a.tecnologias.length !== b.tecnologias.length) return b.tecnologias.length - a.tecnologias.length;
+                return b.maxDias - a.maxDias;
+            });
+        for (let c of coincidenciasCalculadas) {
+            let maxDias = 0, jefePpal = '';
+            for (let t of c.tecnologias) if (c.detalles[t].dias > maxDias) { maxDias = c.detalles[t].dias; jefePpal = c.detalles[t].jefe; }
+            c.jefePrincipal = jefePpal;
+        }
+    }
+    
+    function obtenerDatosWarRoom() {
+        let todos = [];
+        for (let tech of ['2g', '3g', '4g', '5g']) {
+            for (let sitio of datosTech[tech]) {
+                todos.push({ ...sitio, tecnologia: tech.toUpperCase(), prioridad: calcularPrioridad(sitio.dias) });
+            }
+        }
+        return todos;
+    }
+    
+    function limpiarFiltrosWarRoom() { filtrosWarRoom = { jefe: null, tecnologia: null }; renderizarWarRoom(); }
+    function aplicarFiltroWarRoom(tipo, valor) {
+        if (filtrosWarRoom[tipo] === valor) filtrosWarRoom[tipo] = null;
+        else filtrosWarRoom[tipo] = valor;
+        renderizarWarRoom();
+    }
+    
+    function renderizarWarRoom() {
+        let datos = obtenerDatosWarRoom();
+        let totalCriticosBase = datos.filter(s => s.dias >= 60).length;
+        let datosFiltrados = datos.filter(s => s.dias >= 60);
+        if (filtrosWarRoom.jefe) datosFiltrados = datosFiltrados.filter(s => s.jefe === filtrosWarRoom.jefe);
+        if (filtrosWarRoom.tecnologia) datosFiltrados = datosFiltrados.filter(s => s.tecnologia === filtrosWarRoom.tecnologia);
+        let sitiosCriticos = datosFiltrados.length;
+        
+        let prioridadStats = { 'Crítica':0, 'Alta':0, 'Media':0, 'Baja':0 };
+        datosFiltrados.forEach(s => prioridadStats[calcularPrioridad(s.dias)]++);
+        let tecnologiaCriticos = { '2G':0, '3G':0, '4G':0, '5G':0 };
+        datosFiltrados.forEach(s => tecnologiaCriticos[s.tecnologia]++);
+        
+        let jefeCriticosBase = {};
+        datos.filter(s => s.dias >= 60).forEach(s => jefeCriticosBase[s.jefe] = (jefeCriticosBase[s.jefe]||0)+1);
+        let topJefes = Object.entries(jefeCriticosBase).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        
+        let tablaHtml = '<div class="table-wrapper"><table><thead><tr><th>#</th><th>eNodeB</th><th>Jefe de Zona</th><th>Tecnología</th><th>Días</th><th>Prioridad</th><th>Inicio</th><th>Vector</th></tr></thead><tbody>';
+        datosFiltrados.slice(0,200).forEach((r, idx) => {
+            let prioridad = calcularPrioridad(r.dias);
+            let prioridadClass = prioridad === 'Crítica' ? 'priority-critical' : (prioridad === 'Alta' ? 'priority-high' : 'priority-medium');
+            tablaHtml += `<tr>
+                <td style="text-align:center">${idx+1}</td>
+                <td class="sitio-nombre">${r.sitio}</td>
+                <td>${r.jefe.length>35?r.jefe.substring(0,32)+'…':r.jefe}</td>
+                <td><span style="background:${coloresTech[r.tecnologia]};color:white;padding:2px 8px;border-radius:12px;">${r.tecnologia}</span></td>
+                <td><span class="dias-badge ${prioridadClass}">${r.dias}</span></td>
+                <td><span class="dias-badge ${prioridadClass}">${prioridad}</span></td>
+                <td>${r.inicio?r.inicio.split(' ')[0]:'-'}</td>
+                <td>${r.vector||'-'}</td>
+            </tr>`;
+        });
+        if(datosFiltrados.length===0) tablaHtml += '<tr><td colspan="8" style="text-align:center">No hay sitios con los filtros seleccionados</td></tr>';
+        tablaHtml += '</tbody></table></div>';
+        
+        let filtrosHtml = '';
+        if(filtrosWarRoom.jefe || filtrosWarRoom.tecnologia) {
+            filtrosHtml = '<div class="filter-bar"><span>🔍 Filtros activos:</span>';
+            if(filtrosWarRoom.jefe) filtrosHtml += `<span class="filter-badge">Jefe: ${filtrosWarRoom.jefe} <span class="remove" onclick="aplicarFiltroWarRoom('jefe', '${filtrosWarRoom.jefe.replace(/'/g, "\\'")}')">✖</span></span>`;
+            if(filtrosWarRoom.tecnologia) filtrosHtml += `<span class="filter-badge">Tecnología: ${filtrosWarRoom.tecnologia} <span class="remove" onclick="aplicarFiltroWarRoom('tecnologia', '${filtrosWarRoom.tecnologia}')">✖</span></span>`;
+            filtrosHtml += `<button class="btn btn-clear" onclick="limpiarFiltrosWarRoom()" style="margin-left:auto;">🗑️ Limpiar todo</button></div>`;
+        }
+        
+        let contenido = `
+            <div class="tech-header tech-header-warroom">
+                <span>⚡ War Room 60 - Sitios Críticos (≥60 días de afectación)</span>
+                <span class="total-sitios-badge">📊 Total: ${totalCriticosBase} sitios</span>
+            </div>
+            <div class="tech-content">
+                <div class="stats-row">
+                    <div class="stat-box"><div class="stat-number">${sitiosCriticos}</div><div class="stat-label">Sitios Críticos (≥60d)</div></div>
+                    <div class="stat-box"><div class="stat-number">${totalCriticosBase}</div><div class="stat-label">Total Críticos</div></div>
+                    <div class="stat-box"><div class="stat-number">${prioridadStats['Crítica']}</div><div class="stat-label">Prioridad Crítica</div></div>
+                    <div class="stat-box"><div class="stat-number">${prioridadStats['Alta']}</div><div class="stat-label">Prioridad Alta</div></div>
+                </div>
+                <div class="triple-chart">
+                    <div class="chart-box"><canvas id="warJefeChart"></canvas><div style="font-size:0.7rem;text-align:center">🔽 Haz clic para filtrar por Jefe</div></div>
+                    <div class="chart-box"><canvas id="warTecnologiaChart"></canvas><div style="font-size:0.7rem;text-align:center">🔽 Haz clic para filtrar por Tecnología</div></div>
+                    <div class="chart-box"><canvas id="warPrioridadChart"></canvas><div style="font-size:0.7rem;text-align:center">Distribución de prioridad</div></div>
+                </div>
+                ${filtrosHtml}
+                <div class="top-list">
+                    <h4>📋 Sitios con afectación crítica (≥60 días) - ${sitiosCriticos} registros
+                        <button class="btn" onclick="exportarWarRoom()">📥 Exportar CSV</button>
+                    </h4>
+                    ${tablaHtml}
+                </div>
+            </div>
+        `;
+        document.getElementById('section-warroom').innerHTML = contenido;
+        
+        setTimeout(() => {
+            let ctxJefe = document.getElementById('warJefeChart');
+            if(ctxJefe && topJefes.length) {
+                if(charts['warJefe']) charts['warJefe'].destroy();
+                charts['warJefe'] = new Chart(ctxJefe, {
+                    type: 'bar', data: { labels: topJefes.map(j=>j[0].length>18?j[0].substring(0,15)+'…':j[0]), datasets: [{ data: topJefes.map(j=>j[1]), backgroundColor: topJefes.map(j=>j[0]===filtrosWarRoom.jefe?'#ad1457':'#e91e63'), borderRadius:6 }] },
+                    options: { responsive: true, plugins: { legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>`${topJefes[ctx.dataIndex][0]}: ${ctx.raw} sitios`}} }, onClick: (e,active) => { if(active.length) aplicarFiltroWarRoom('jefe', topJefes[active[0].index][0]); } }
+                });
+            }
+            let ctxTec = document.getElementById('warTecnologiaChart');
+            if(ctxTec) {
+                if(charts['warTec']) charts['warTec'].destroy();
+                let tecs = ['2G','3G','4G','5G'];
+                charts['warTec'] = new Chart(ctxTec, {
+                    type: 'doughnut', data: { labels: tecs, datasets: [{ data: [tecnologiaCriticos['2G'], tecnologiaCriticos['3G'], tecnologiaCriticos['4G'], tecnologiaCriticos['5G']], backgroundColor: ['#6c757d','#ff9800','#2196f3','#4caf50'], borderWidth: filtrosWarRoom.tecnologia?4:0, borderColor:'#e91e63' }] },
+                    options: { responsive: true, plugins:{legend:{position:'bottom'}}, onClick: (e,active) => { if(active.length) aplicarFiltroWarRoom('tecnologia', tecs[active[0].index]); } }
+                });
+            }
+            let ctxPri = document.getElementById('warPrioridadChart');
+            if(ctxPri) {
+                if(charts['warPri']) charts['warPri'].destroy();
+                charts['warPri'] = new Chart(ctxPri, { type:'pie', data:{ labels:['Crítica (60+)','Alta (30-59)','Media (15-29)','Baja (1-14)'], datasets:[{ data:[prioridadStats['Crítica'], prioridadStats['Alta'], prioridadStats['Media'], prioridadStats['Baja']], backgroundColor:['#dc3545','#fd7e14','#ffc107','#28a745'] }] }, options:{ responsive:true } });
+            }
+        }, 100);
+    }
+    
+    function renderizarTodo() {
+        let t2 = datosTech['2g'].length, t3 = datosTech['3g'].length, t4 = datosTech['4g'].length, t5 = datosTech['5g'].length;
+        let d2 = datosTech['2g'].reduce((s,r)=>s+r.dias,0), d3 = datosTech['3g'].reduce((s,r)=>s+r.dias,0), d4 = datosTech['4g'].reduce((s,r)=>s+r.dias,0), d5 = datosTech['5g'].reduce((s,r)=>s+r.dias,0);
+        let totalSitios = t2+t3+t4+t5;
+        let totalDias = d2+d3+d4+d5;
+        document.getElementById('kpiGrid').innerHTML = `
+            <div class="kpi-card kpi-card-2g"><div class="kpi-value kpi-value-2g">${t2}</div><div class="kpi-label">Afectaciones 2G</div></div>
+            <div class="kpi-card kpi-card-3g"><div class="kpi-value kpi-value-3g">${t3}</div><div class="kpi-label">Afectaciones 3G</div></div>
+            <div class="kpi-card kpi-card-4g"><div class="kpi-value kpi-value-4g">${t4}</div><div class="kpi-label">Afectaciones 4G</div></div>
+            <div class="kpi-card kpi-card-5g"><div class="kpi-value kpi-value-5g">${t5}</div><div class="kpi-label">Afectaciones 5G</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#6c757d">${totalSitios}</div><div class="kpi-label">Total General</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#6c757d">${totalDias}</div><div class="kpi-label">Días Totales</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#6c757d">${Math.round(totalDias/totalSitios||0)}</div><div class="kpi-label">Promedio Días</div></div>
+        `;
+        
+        renderizarSeccion('2g', '2G', '#6c757d', '📻');
+        renderizarSeccion('3g', '3G', '#ff9800', '📱');
+        renderizarSeccion('4g', '4G', '#2196f3', '📶');
+        renderizarSeccion('5g', '5G', '#4caf50', '✨');
+        renderizarCoincidencias();
+        renderizarWarRoom();
+        
+        cambiarPestania('2g');
+    }
+    
+    function renderizarSeccion(tech, nombre, color, emoji) {
+        let rows = datosTech[tech];
+        if (filtrosActivos[tech]) rows = rows.filter(r => r.jefe === filtrosActivos[tech]);
+        let jefeCount = {};
+        datosTech[tech].forEach(r => jefeCount[r.jefe] = (jefeCount[r.jefe]||0)+1);
+        let todosJefes = Object.entries(jefeCount).sort((a,b)=>b[1]-a[1]);
+        let rangosCount = { '0-30 días':0, '31-90 días':0, '91-180 días':0, '181-365 días':0, '365+ días':0 };
+        datosTech[tech].forEach(r => rangosCount[obtenerRango(r.dias)]++);
+        
+        let tablaHtml = '<div class="table-wrapper"><table><thead><tr><th>#</th><th>eNodeB</th><th>Jefe de Zona</th><th>Días</th><th>Inicio</th><th>Sectores</th><th>Vector</th></tr></thead><tbody>';
+        rows.slice(0,200).forEach((r, idx) => {
+            let colorDias = r.dias>180?'#dc3545':(r.dias>90?'#fd7e14':'#28a745');
+            tablaHtml += `<tr><td style="text-align:center;color:#999;">${idx+1}</td><td class="sitio-nombre">${r.sitio}</td><td>${r.jefe.length>35?r.jefe.substring(0,32)+'…':r.jefe}</td><td><span class="dias-badge" style="background:${colorDias}">${r.dias}</span></td><td>${r.inicio?r.inicio.split(' ')[0]:'-'}</td><td>${r.sectores?(r.sectores.length>25?r.sectores.substring(0,22)+'…':r.sectores):'-'}</td><td>${r.vector||'-'}</td></tr>`;
+        });
+        if(rows.length>200) tablaHtml += `<tr><td colspan="7" style="text-align:center;color:#999;">... y ${rows.length-200} registros más</td></tr>`;
+        tablaHtml += '</tbody></table></div>';
+        let filtroHtml = filtrosActivos[tech] ? `<div class="filter-bar"><span>🔍 Filtro activo:</span><span class="filter-badge">${filtrosActivos[tech]} <span class="remove" onclick="limpiarFiltro('${tech}')">✖</span></span></div>` : '';
+        let contenido = `
+            <div class="tech-header tech-header-${tech}"><span>${emoji} Tecnología ${nombre}</span><span class="total-sitios-badge">📡 ${rows.length} sitios</span></div>
+            <div class="tech-content">
+                <div class="stats-row">
+                    <div class="stat-box"><div class="stat-number">${rows.length}</div><div class="stat-label">Total Sitios</div></div>
+                    <div class="stat-box"><div class="stat-number">${rows.reduce((s,r)=>s+r.dias,0)}</div><div class="stat-label">Días Totales</div></div>
+                    <div class="stat-box"><div class="stat-number">${Math.round(rows.reduce((s,r)=>s+r.dias,0)/rows.length||0)}</div><div class="stat-label">Promedio Días</div></div>
+                    <div class="stat-box"><div class="stat-number">${rows.length?Math.max(...rows.map(r=>r.dias)):0}</div><div class="stat-label">Máximo Días</div></div>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-box"><canvas id="jefeChart-${tech}"></canvas><div style="font-size:0.7rem;text-align:center;">🔽 Haz clic en una barra para filtrar por Jefe</div></div>
+                    <div class="chart-box"><canvas id="diasChart-${tech}"></canvas><div style="font-size:0.7rem;text-align:center;">Distribución por rango de días</div></div>
+                </div>
+                ${filtroHtml}
+                <div class="top-list"><h4>📋 Lista de sitios afectados (${rows.length} registros) <button class="btn" onclick="exportarCSV('${tech}', '${nombre}')">📥 Exportar CSV</button></h4>${tablaHtml}</div>
+            </div>
+        `;
+        document.getElementById(`section-${tech}`).innerHTML = contenido;
+        
+        setTimeout(() => {
+            let ctxJefe = document.getElementById(`jefeChart-${tech}`);
+            if(ctxJefe && todosJefes.length) {
+                if(charts[`jefe-${tech}`]) charts[`jefe-${tech}`].destroy();
+                charts[`jefe-${tech}`] = new Chart(ctxJefe, {
+                    type: 'bar', data: { labels: todosJefes.map(j=>j[0].length>18?j[0].substring(0,15)+'…':j[0]), datasets: [{ data: todosJefes.map(j=>j[1]), backgroundColor: color, borderRadius:6 }] },
+                    options: { responsive: true, plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>`${todosJefes[ctx.dataIndex][0]}: ${ctx.raw} sitios`}}}, onClick: (e,active) => { if(active.length) aplicarFiltro(tech, todosJefes[active[0].index][0]); } }
+                });
+            }
+            let ctxDias = document.getElementById(`diasChart-${tech}`);
+            if(ctxDias) {
+                if(charts[`dias-${tech}`]) charts[`dias-${tech}`].destroy();
+                charts[`dias-${tech}`] = new Chart(ctxDias, { type:'pie', data:{ labels:Object.keys(rangosCount), datasets:[{ data:Object.values(rangosCount), backgroundColor:['#ffc107','#17a2b8','#28a745','#fd7e14','#dc3545'] }] }, options:{ responsive:true } });
+            }
+        }, 100);
+    }
+    
+    function renderizarCoincidencias() {
+        let filtradas = coincidenciasCalculadas;
+        if (filtrosActivos['coincidencias']) filtradas = filtradas.filter(c => c.jefePrincipal === filtrosActivos['coincidencias']);
+        let tablaHtml = '<div class="table-wrapper"><table><thead><tr><th>#</th><th>Sitio</th><th>Jefe de Zona</th><th>Tecnologías</th><th>#</th><th>Detalle</th></tr></thead><tbody>';
+        filtradas.forEach((item, idx) => {
+            let badgeColor = item.tecnologias.length === 4 ? '#9c27b0' : '#ff9800';
+            let techsHtml = item.tecnologias.map(t => `<span style="background:${coloresTech[t]};color:white;padding:2px 8px;border-radius:12px;margin:2px;display:inline-block;font-size:0.65rem;">${t}</span>`).join('');
+            let detallesHtml = item.tecnologias.map(t => `<span style="background:${coloresTech[t]};color:white;padding:2px 6px;border-radius:8px;margin:2px;display:inline-block;font-size:0.6rem;">${t}: ${item.detalles[t].dias}d</span>`).join('');
+            tablaHtml += `<tr><td style="text-align:center">${idx+1}</td><td class="sitio-nombre">${item.sitio}</td><td>${item.jefePrincipal||'-'}</td><td>${techsHtml}</td><td><span class="dias-badge" style="background:${badgeColor}">${item.tecnologias.length}</span></td><td>${detallesHtml}</td></tr>`;
+        });
+        if(filtradas.length===0) tablaHtml += '<tr><td colspan="6" style="text-align:center">No hay coincidencias</td></tr>';
+        tablaHtml += '</tbody></table></div>';
+        let filtroHtml = filtrosActivos['coincidencias'] ? `<div class="filter-bar"><span>🔍 Filtro activo:</span><span class="filter-badge">${filtrosActivos['coincidencias']} <span class="remove" onclick="limpiarFiltro('coincidencias')">✖</span></span></div>` : '';
+        let cuatro = coincidenciasCalculadas.filter(c=>c.tecnologias.length===4).length;
+        let tres = coincidenciasCalculadas.filter(c=>c.tecnologias.length===3).length;
+        let dos = coincidenciasCalculadas.filter(c=>c.tecnologias.length===2).length;
+        let contenido = `
+            <div class="tech-header tech-header-coincidencias"><span>🔄 Sitios con Afectación Múltiple</span><span class="total-sitios-badge">🔗 ${coincidenciasCalculadas.length} coincidencias</span></div>
+            <div class="tech-content">
+                <div class="stats-row">
+                    <div class="stat-box"><div class="stat-number">${coincidenciasCalculadas.length}</div><div class="stat-label">Total Coincidencias</div></div>
+                    <div class="stat-box"><div class="stat-number">${cuatro}</div><div class="stat-label">4 Tecnologías</div></div>
+                    <div class="stat-box"><div class="stat-number">${tres}</div><div class="stat-label">3 Tecnologías</div></div>
+                    <div class="stat-box"><div class="stat-number">${dos}</div><div class="stat-label">2 Tecnologías</div></div>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-box"><canvas id="coincidenciasChart"></canvas><div style="font-size:0.7rem;text-align:center">Distribución</div></div>
+                    <div class="chart-box"><canvas id="jefeCoincidenciasChart"></canvas><div style="font-size:0.7rem;text-align:center">🔽 Haz clic en una barra para filtrar</div></div>
+                </div>
+                ${filtroHtml}
+                <div class="top-list"><h4>📋 Coincidencias (${coincidenciasCalculadas.length} registros) <button class="btn" onclick="exportarCoincidencias()">📥 Exportar CSV</button></h4>${tablaHtml}</div>
+            </div>
+        `;
+        document.getElementById('section-coincidencias').innerHTML = contenido;
+        setTimeout(() => {
+            let ctx = document.getElementById('coincidenciasChart');
+            if(ctx) {
+                if(charts['coincidencias']) charts['coincidencias'].destroy();
+                charts['coincidencias'] = new Chart(ctx, { type:'doughnut', data:{ labels:['4 Tecnologías','3 Tecnologías','2 Tecnologías'], datasets:[{ data:[cuatro,tres,dos], backgroundColor:['#9c27b0','#e91e63','#ff9800'] }] } });
+            }
+            let jefeCount = {};
+            coincidenciasCalculadas.forEach(c => { if(c.jefePrincipal) jefeCount[c.jefePrincipal] = (jefeCount[c.jefePrincipal]||0)+1; });
+            let topJefes = Object.entries(jefeCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+            let ctxJefe = document.getElementById('jefeCoincidenciasChart');
+            if(ctxJefe && topJefes.length) {
+                if(charts['jefeCoinc']) charts['jefeCoinc'].destroy();
+                charts['jefeCoinc'] = new Chart(ctxJefe, { type:'bar', data:{ labels: topJefes.map(j=>j[0].length>18?j[0].substring(0,15)+'…':j[0]), datasets:[{ data:topJefes.map(j=>j[1]), backgroundColor:'#9c27b0', borderRadius:6 }] }, options:{ onClick: (e,active) => { if(active.length) aplicarFiltro('coincidencias', topJefes[active[0].index][0]); } } });
+            }
+        }, 100);
+    }
+    
+    function aplicarFiltro(tech, valor) {
+        if (filtrosActivos[tech] === valor) filtrosActivos[tech] = null;
+        else filtrosActivos[tech] = valor;
+        if (tech === 'coincidencias') renderizarCoincidencias();
+        else {
+            let nombre = tech==='2g'?'2G':(tech==='3g'?'3G':(tech==='4g'?'4G':'5G'));
+            let color = tech==='2g'?'#6c757d':(tech==='3g'?'#ff9800':(tech==='4g'?'#2196f3':'#4caf50'));
+            let emoji = tech==='2g'?'📻':(tech==='3g'?'📱':(tech==='4g'?'📶':'✨'));
+            renderizarSeccion(tech, nombre, color, emoji);
+        }
+    }
+    
+    window.limpiarFiltro = function(tech) {
+        filtrosActivos[tech] = null;
+        if(tech==='coincidencias') renderizarCoincidencias();
+        else {
+            let nombre = tech==='2g'?'2G':(tech==='3g'?'3G':(tech==='4g'?'4G':'5G'));
+            let color = tech==='2g'?'#6c757d':(tech==='3g'?'#ff9800':(tech==='4g'?'#2196f3':'#4caf50'));
+            let emoji = tech==='2g'?'📻':(tech==='3g'?'📱':(tech==='4g'?'📶':'✨'));
+            renderizarSeccion(tech, nombre, color, emoji);
+        }
+    };
+    
+    window.exportarCSV = function(tech, nombre) {
+        let rows = datosTech[tech];
+        if(filtrosActivos[tech]) rows = rows.filter(r => r.jefe === filtrosActivos[tech]);
+        if(!rows.length) return;
+        let csv = "Nro,eNodeB,Jefe de Zona,Días,Inicio,Sectores,Vector\n";
+        rows.forEach((r,i)=>csv+=`${i+1},"${r.sitio}","${r.jefe}",${r.dias},"${r.inicio}","${r.sectores}","${r.vector}"\n`);
+        let blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8'});
+        let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${nombre}_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    
+    window.exportarCoincidencias = function() {
+        let filtradas = coincidenciasCalculadas;
+        if(filtrosActivos['coincidencias']) filtradas = filtradas.filter(c=>c.jefePrincipal===filtrosActivos['coincidencias']);
+        if(!filtradas.length) return;
+        let csv = "Nro,Sitio,Jefe de Zona,Tecnologías,Total,Detalle\n";
+        filtradas.forEach((c,i)=>{
+            let detalle = c.tecnologias.map(t=>`${t}:${c.detalles[t].dias}días`).join(' | ');
+            csv+=`${i+1},"${c.sitio}","${c.jefePrincipal||''}","${c.tecnologias.join(',')}",${c.tecnologias.length},"${detalle}"\n`;
+        });
+        let blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8'});
+        let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Coincidencias_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    
+    window.exportarWarRoom = function() {
+        let datos = obtenerDatosWarRoom();
+        let criticos = datos.filter(s=>s.dias>=60);
+        if(filtrosWarRoom.jefe) criticos = criticos.filter(s=>s.jefe===filtrosWarRoom.jefe);
+        if(filtrosWarRoom.tecnologia) criticos = criticos.filter(s=>s.tecnologia===filtrosWarRoom.tecnologia);
+        if(!criticos.length) return;
+        let csv = "Nro,eNodeB,Jefe de Zona,Tecnología,Días,Prioridad,Inicio,Vector\n";
+        criticos.forEach((r,i)=>{ csv+=`${i+1},"${r.sitio}","${r.jefe}","${r.tecnologia}",${r.dias},"${calcularPrioridad(r.dias)}","${r.inicio}","${r.vector}"\n`; });
+        let blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8'});
+        let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `WarRoom_60_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    
+    window.aplicarFiltroWarRoom = aplicarFiltroWarRoom;
+    window.limpiarFiltrosWarRoom = limpiarFiltrosWarRoom;
+    
+    function cambiarPestania(tech) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.dataset.tech === tech) btn.classList.add('active');
+        });
+        const secciones = ['2g','3g','4g','5g','coincidencias','warroom'];
+        secciones.forEach(sec => {
+            let el = document.getElementById(`section-${sec}`);
+            if(el) el.style.display = sec === tech ? 'block' : 'none';
+        });
+    }
+    
+    document.getElementById('refreshBtn').onclick = () => conectar();
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarPestania(btn.dataset.tech)));
+    
+    conectar();
+</script>
+</body>
+</html>

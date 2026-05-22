@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OYMR4 - Portal de Control y Monitoreo de Red</title>
+    
+    <!-- Google Fonts for premium, distinctive typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for technical icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Embedded high-end styles -->
+    <style>
+        :root {
+            --bg-dark: #070a13;
+            --bg-panel: #0d1222;
+            --card-bg: rgba(13, 18, 34, 0.65);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --card-hover-border: rgba(255, 255, 255, 0.15);
+            --text-title: #ffffff;
+            --text-body: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Core accents for each dashboard */
+            --accent-r4: #f43f5e;      /* Casos Críticos (Rose) */
+            --accent-ft: #4f46e5;      /* Fast Track (Indigo) */
+            --accent-bq: #d946ef;      /* Bloqueos Calidad (Fuchsia) */
+            --accent-sd: #f59e0b;      /* Sitios Disabled (Amber) */
+            
+            --success: #10b981;
+            --info: #06b6d4;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-display: 'Syne', sans-serif;
+            
+            --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Base & Scrollbar Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-dark);
+            color: var(--text-body);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(244, 63, 94, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.02) 1px, transparent 0);
+            background-size: 100% 100%, 100% 100%, 24px 24px;
+        }
+
+        /* Asymmetric Layout Frame */
+        .workspace-container {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Left Column: Control Sidebar */
+        .control-sidebar {
+            background: var(--bg-panel);
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 10;
+        }
+
+        .brand-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-r4), var(--accent-ft));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 8px 24px rgba(244, 63, 94, 0.25);
+        }
+
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 2px dashed rgba(244, 63, 94, 0.4);
+            border-radius: 16px;
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .brand-title {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-title);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .brand-title span {
+            background: linear-gradient(135deg, var(--accent-r4), var(--accent-bq));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .brand-tagline {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* System Info Widget */
+        .system-widget {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .widget-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 14px var(--success); }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        .system-meta-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.8rem;
+        }
+
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+            padding-bottom: 8px;
+        }
+
+        .meta-item:last-child {
+            border: none;
+            padding-bottom: 0;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            color: var(--text-title);
+            font-weight: 500;
+        }
+
+        /* Filter & Search Console */
+        .console-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px 16px 12px 42px;
+            color: var(--text-title);
+            font-size: 0.85rem;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-ft);
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.15);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            pointer-events: none;
+            transition: var(--transition-smooth);
+        }
+
+        .search-input:focus + i {
+            color: var(--accent-ft);
+        }
+
+        .filter-group-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-body);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-title);
+        }
+
+        .filter-btn.active {
+            background: rgba(79, 70, 229, 0.1);
+            border-color: rgba(79, 70, 229, 0.25);
+            color: #a5b4fc;
+            font-weight: 600;
+        }
+
+        .filter-btn .count {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: var(--text-muted);
+        }
+
+        .filter-btn.active .count {
+            background: rgba(79, 70, 229, 0.2);
+            color: #c7d2fe;
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 30px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .calendar-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.01);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .calendar-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(244, 63, 94, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-r4);
+            font-size: 0.95rem;
+        }
+
+        .calendar-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-date {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-title);
+        }
+
+        .calendar-day {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .copyright {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Right Column: Portal Cards Display */
+        .portals-showcase {
+            padding: 50px;
+            overflow-y: auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .showcase-header {
+            margin-bottom: 10px;
+            max-width: 900px;
+        }
+
+        .showcase-title {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-title);
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .showcase-desc {
+            font-size: 0.95rem;
+            color: var(--text-body);
+            line-height: 1.6;
+        }
+
+        /* Cards Grid - Design Variance (Asymmetric layout) */
+        .portals-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            max-width: 1200px;
+        }
+
+        /* Dashboard Card Component */
+        .portal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(12px);
+            min-height: 340px;
+        }
+
+        /* Asymmetry mapping for standard cards */
+        /* Card 1 (Casos Críticos): Prominent Hero, span 12 */
+        .portal-card.card-r4 {
+            grid-column: span 12;
+            background: linear-gradient(135deg, rgba(13, 18, 34, 0.8) 0%, rgba(20, 10, 24, 0.8) 100%);
+            border-left: 5px solid var(--accent-r4);
+        }
+
+        /* Card 2 (Fast Track): Span 6 */
+        .portal-card.card-ft {
+            grid-column: span 6;
+            border-left: 5px solid var(--accent-ft);
+        }
+
+        /* Card 3 (Bloqueos Calidad): Span 6 */
+        .portal-card.card-bq {
+            grid-column: span 6;
+            border-left: 5px solid var(--accent-bq);
+        }
+
+        /* Card 4 (Sitios Disabled): Span 12 or 7 (let's make it span 12) */
+        .portal-card.card-sd {
+            grid-column: span 12;
+            border-left: 5px solid var(--accent-sd);
+        }
+
+        /* Interactive Card Glows & Hovers */
+        .portal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 100% 0%, var(--glow-color, rgba(255,255,255,0.02)), transparent 50%);
+            pointer-events: none;
+            opacity: 0.5;
+            transition: var(--transition-smooth);
+        }
+
+        .portal-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--card-hover-border);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.3),
+                0 0 30px var(--shadow-glow, rgba(255,255,255,0.02));
+        }
+
+        .portal-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Card Interiors */
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .card-badge {
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-r4 .card-badge { background: rgba(244, 63, 94, 0.12); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.2); }
+        .card-ft .card-badge { background: rgba(79, 70, 229, 0.12); color: #818cf8; border: 1px solid rgba(79, 70, 229, 0.2); }
+        .card-bq .card-badge { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.2); }
+        .card-sd .card-badge { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        .card-icon-container {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--card-accent);
+            transition: var(--transition-smooth);
+        }
+
+        .portal-card:hover .card-icon-container {
+            background: var(--card-accent);
+            color: white;
+            box-shadow: 0 5px 15px var(--shadow-glow);
+            transform: scale(1.05);
+        }
+
+        /* Card Content */
+        .card-middle {
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--text-title);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .card-desc {
+            font-size: 0.85rem;
+            color: var(--text-body);
+            line-height: 1.5;
+            max-width: 550px;
+        }
+
+        /* Visual mockup to simulate data activity inside each card */
+        .card-visual {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            font-family: monospace;
+            font-size: 0.72rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .visual-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .visual-bar-bg {
+            flex-grow: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin: 0 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visual-bar-fill {
+            height: 100%;
+            background: var(--card-accent);
+            border-radius: 20px;
+            width: 0;
+            transition: width 1.5s ease-out;
+        }
+
+        /* Card Bottom */
+        .card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 20px;
+            margin-top: auto;
+        }
+
+        .card-metrics {
+            display: flex;
+            gap: 20px;
+        }
+
+        .metric-unit {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-val {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-title);
+        }
+
+        .metric-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* High-fidelity button */
+        .enter-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 10px 18px;
+            border-radius: 12px;
+            color: var(--text-title);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .portal-card:hover .enter-btn {
+            background: var(--card-accent);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 8px 20px var(--shadow-glow);
+        }
+
+        .enter-btn i {
+            font-size: 0.75rem;
+            transition: var(--transition-smooth);
+        }
+
+        .portal-card:hover .enter-btn i {
+            transform: translateX(4px);
+        }
+
+        /* Staggered load animation */
+        .stagger-1 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .stagger-2 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+        .stagger-3 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+        .stagger-4 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+
+        @keyframes slideUpFade {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .workspace-container {
+                grid-template-columns: 1fr;
+            }
+
+            .control-sidebar {
+                height: auto;
+                position: relative;
+                padding: 30px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            }
+
+            .portals-showcase {
+                height: auto;
+                padding: 30px;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .portal-card.card-ft,
+            .portal-card.card-bq {
+                grid-column: span 12;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .portals-showcase {
+                padding: 20px;
+            }
+
+            .showcase-title {
+                font-size: 1.8rem;
+            }
+
+            .portal-card {
+                padding: 20px;
+                min-height: auto;
+            }
+
+            .card-bottom {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .enter-btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="workspace-container">
+        
+        <!-- Left Sidebar: Operations Console -->
+        <aside class="control-sidebar">
+            <div class="sidebar-top">
+                
+                <!-- Branding -->
+                <div class="brand-section">
+                    <div class="brand-logo">
+                        <div class="logo-icon">
+                            <i class="fa-solid fa-satellite-dish"></i>
+                        </div>
+                        <div>
+                            <div class="brand-title">OYMR4 <span>HUB</span></div>
+                            <div class="brand-tagline">OPERATIONS SUITE</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Live Widget -->
+                <div class="system-widget">
+                    <div class="widget-title">
+                        <i class="fa-solid fa-cube"></i> ESTADO DE PLATAFORMA
+                    </div>
+                    <div class="status-pill">
+                        <div class="pulse-dot"></div>
+                        CONEXIÓN ACTIVA (LIVE)
+                    </div>
+                    <div class="system-meta-list">
+                        <div class="meta-item">
+                            <span class="meta-label">Módulos:</span>
+                            <span class="meta-value">4 Activos</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Entorno:</span>
+                            <span class="meta-value" style="color: #6366f1;">Production</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Región:</span>
+                            <span class="meta-value">Global</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Seguridad:</span>
+                            <span class="meta-value" style="color: var(--success);"><i class="fa-solid fa-shield-halved"></i> SSL-TLS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Filters & Dynamic Search -->
+                <div class="console-controls">
+                    <div class="search-wrapper">
+                        <input type="text" id="moduleSearch" class="search-input" placeholder="Buscar dashboard...">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+
+                    <div class="filter-group-container">
+                        <div class="filter-label">Filtrar por Categoría</div>
+                        <div class="filter-options">
+                            <button class="filter-btn active" data-filter="all">
+                                <span><i class="fa-solid fa-border-all" style="margin-right: 8px; opacity: 0.7;"></i> Todos</span>
+                                <span class="count">4</span>
+                            </button>
+                            <button class="filter-btn" data-filter="monitoreo">
+                                <span><i class="fa-solid fa-chart-line" style="margin-right: 8px; opacity: 0.7;"></i> Monitoreo</span>
+                                <span class="count">2</span>
+                            </button>
+                            <button class="filter-btn" data-filter="calidad">
+                                <span><i class="fa-solid fa-shield-virus" style="margin-right: 8px; opacity: 0.7;"></i> Calidad</span>
+                                <span class="count">1</span>
+                            </button>
+                            <button class="filter-btn" data-filter="criticos">
+                                <span><i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px; opacity: 0.7;"></i> Críticos</span>
+                                <span class="count">1</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="calendar-card">
+                    <div class="calendar-icon">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                    <div class="calendar-details">
+                        <span class="calendar-date" id="currentDate">JUE, 21 MAY 2026</span>
+                        <span class="calendar-day" id="currentTime">12:00:00 PM</span>
+                    </div>
+                </div>
+                <div class="copyright">
+                    &copy; 2026 OYMR4 Network Operations
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Content: Module Grid -->
+        <main class="portals-showcase">
+            <header class="showcase-header">
+                <h1 class="showcase-title">Panel de Control Operativo</h1>
+                <p class="showcase-desc">
+                    Bienvenido a la consola integrada de OYMR4. Seleccione un módulo a continuación para acceder a las herramientas avanzadas de monitoreo de red, análisis de fallas en vivo y dashboards ejecutivos de geolocalización.
+                </p>
+            </header>
+
+            <div class="portals-grid" id="portalsGrid">
+                
+                <!-- MODULE 1: R4 Casos Críticos (Flagship Card) -->
+                <article class="portal-card card-r4 stagger-1" 
+                         style="--card-accent: var(--accent-r4); --shadow-glow: rgba(244, 63, 94, 0.12); --glow-color: rgba(244, 63, 94, 0.05);"
+                         data-tags="all criticos">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-circle-dot" style="animation: pulse 1s infinite;"></i> FLAGSHIP MODULE
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">R4 | Casos Críticos de Red</h2>
+                        <p class="card-desc">
+                            Dashboard profesional con geolocalización avanzada en tiempo real, mapas de calor interactivos, y filtrado dinámico multinivel para resolución y seguimiento de incidentes de alta prioridad.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Severidad Crítica</span>
+                                <span style="color: var(--accent-r4); font-weight: bold;">ACTIVO</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Resolución de Casos</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 82%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">82%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v3.0</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val" style="color: var(--accent-r4);">MAPS</span>
+                                <span class="metric-lbl">Visualizer</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">100%</span>
+                                <span class="metric-lbl">Disponibilidad</span>
+                            </div>
+                        </div>
+                        <a href="r4%20casos%20criticos%203.0.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- MODULE 2: Fast Track v2.75 -->
+                <article class="portal-card card-ft stagger-2" 
+                         style="--card-accent: var(--accent-ft); --shadow-glow: rgba(79, 70, 229, 0.12); --glow-color: rgba(79, 70, 229, 0.05);"
+                         data-tags="all monitoreo">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-bolt"></i> FAST TRACK
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-tower-cell"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">OYMR4 Fast Track</h2>
+                        <p class="card-desc">
+                            Herramienta de análisis rápido e intervalo personalizado para el monitoreo de redes móviles y visualización interactiva de mapas de cobertura de antena.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Intervalo de Refresco</span>
+                                <span style="color: var(--accent-ft);">60s</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Carga de Datos</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 95%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">95%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v2.75</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">LIVE</span>
+                                <span class="metric-lbl">Estado</span>
+                            </div>
+                        </div>
+                        <a href="fast%20track%202.75.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- MODULE 3: Bloqueos de Calidad v2.7 -->
+                <article class="portal-card card-bq stagger-3" 
+                         style="--card-accent: var(--accent-bq); --shadow-glow: rgba(217, 70, 239, 0.12); --glow-color: rgba(217, 70, 239, 0.05);"
+                         data-tags="all calidad">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-shield-virus"></i> CALIDAD DE RED
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">Bloqueos de Calidad</h2>
+                        <p class="card-desc">
+                            Módulo estructurado de control y contención de alarmas. Contempla reportes de bloqueos clasificados por tecnologías (2G, 3G, 4G, 5G) e integración con War Room.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Tecnologías</span>
+                                <span style="color: var(--accent-bq);">2G / 3G / 4G / 5G</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Mitigación</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 71%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">71%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v2.7</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">ANALYTICS</span>
+                                <span class="metric-lbl">Tipo</span>
+                            </div>
+                        </div>
+                        <a href="fast%20track%20bloqueos%20calidad%202.7.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- MODULE 4: Sitios Disabled v2.3 -->
+                <article class="portal-card card-sd stagger-4" 
+                         style="--card-accent: var(--accent-sd); --shadow-glow: rgba(245, 158, 11, 0.12); --glow-color: rgba(245, 158, 11, 0.05);"
+                         data-tags="all monitoreo">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-circle-xmark"></i> OUT OF SERVICE
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">Sitios Disabled</h2>
+                        <p class="card-desc">
+                            Monitoreo inmediato de antenas y radiobases fuera de servicio. Contiene visualización geográfica con Leaflet Map, tabla dinámica de afectación y control de intervalos.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Estado Geográfico</span>
+                                <span style="color: var(--accent-sd);">CRÍTICO</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Estabilidad de Feed</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 90%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">90%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v2.3</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">LEAFLET</span>
+                                <span class="metric-lbl">Engine</span>
+                            </div>
+                        </div>
+                        <a href="fast%20track%20sitios%20disabled%202.3.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Live clock and interface interaction scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Trigger visual progress bar animations with a staggered delay
+            setTimeout(() => {
+                const progressFills = document.querySelectorAll('.visual-bar-fill');
+                progressFills.forEach(fill => {
+                    const width = fill.style.width;
+                    fill.style.width = '0%';
+                    setTimeout(() => {
+                        fill.style.width = width;
+                    }, 150);
+                });
+            }, 600);
+
+            // Dynamic Live Clock
+            function updateClock() {
+                const now = new Date();
+                
+                // Formatear fecha: JUE, 21 MAY 2026 o según idioma local
+                const optionsDate = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+                let dateStr = now.toLocaleDateString('es-ES', optionsDate).toUpperCase();
+                // Eliminar puntos si se presentan (por ejemplo, de "jue.")
+                dateStr = dateStr.replace(/\./g, '');
+                
+                const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                
+                document.getElementById('currentDate').textContent = dateStr;
+                document.getElementById('currentTime').textContent = timeStr;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Search and Category Filter Logic
+            const searchInput = document.getElementById('moduleSearch');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const cards = document.querySelectorAll('.portal-card');
+
+            function filterModules() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const activeFilterButton = document.querySelector('.filter-btn.active');
+                const selectedTag = activeFilterButton ? activeFilterButton.getAttribute('data-filter') : 'all';
+
+                cards.forEach(card => {
+                    const title = card.querySelector('.card-title').textContent.toLowerCase();
+                    const desc = card.querySelector('.card-desc').textContent.toLowerCase();
+                    const cardTags = card.getAttribute('data-tags').split(' ');
+
+                    const matchesSearch = title.includes(searchTerm) || desc.includes(searchTerm);
+                    const matchesTag = selectedTag === 'all' || cardTags.includes(selectedTag);
+
+                    if (matchesSearch && matchesTag) {
+                        card.style.display = 'flex';
+                        card.style.animation = 'none'; // reset animation to re-trigger
+                        void card.offsetWidth; // trigger reflow
+                        card.style.animation = 'slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // Search listener
+            searchInput.addEventListener('input', filterModules);
+
+            // Filter button listeners
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filterModules();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

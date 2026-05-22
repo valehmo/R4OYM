@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>📡 OYMR4 - FAST TRACK</title>
+    <link rel="icon" type="image/png" id="dynamicFavicon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:12px;min-height:100vh;}
+        .container{max-width:1400px;margin:0 auto;}
+        
+        .main-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .main-header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .main-header h1 span {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+        }
+        .main-header p {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+        
+        .time-control {
+            background: white;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .time-control label {
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .time-control input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .time-control button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .time-control button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+        .interval-info {
+            font-size: 12px;
+            color: #28a745;
+            background: #e8f5e9;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        .alert-control {
+            background: white;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .alert-control label {
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert-control .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .alert-control .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .alert-control .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .alert-control .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .alert-control input:checked + .slider {
+            background-color: #28a745;
+        }
+        .alert-control input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .alert-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .alert-status.activo {
+            background: #d4edda;
+            color: #28a745;
+        }
+        .alert-status.inactivo {
+            background: #f8d7da;
+            color: #dc3545;
+        }
+        .test-sound-btn {
+            background: #ffc107;
+            color: #333;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .test-sound-btn:hover {
+            background: #e0a800;
+        }
+        
+        .title-indicator {
+            background: white;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .title-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .title-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .title-text {
+            font-size: 14px;
+            color: #666;
+        }
+        .zona-activa {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .selector-grafica-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .selector-grafica {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f0f2f5;
+            padding: 5px 12px;
+            border-radius: 30px;
+        }
+        .selector-grafica label {
+            font-size: 12px;
+            color: #555;
+            margin: 0;
+        }
+        .selector-grafica select {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .selector-multizona {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .selector-multizona label {
+            font-size: 12px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .selector-multizona input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .mapa-container {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .mapa-container h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .map-header-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .btn-expand-map {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+        .btn-expand-map:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+        }
+        
+        /* Filtros del mapa */
+        .map-filters {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .map-filters select {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            flex: 1;
+            min-width: 150px;
+        }
+        .map-filters button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        .map-filters button:hover {
+            background: #5a6268;
+        }
+        .map-filters .limpiar-btn {
+            background: #28a745;
+        }
+        .map-filters .limpiar-btn:hover {
+            background: #218838;
+        }
+        
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 12px;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 20000;
+            cursor: pointer;
+        }
+        .map-modal.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-modal .map-container-expanded {
+            width: 95%;
+            height: 90%;
+            background: #1a1a2e;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .map-modal .map-container-expanded #map-expanded {
+            width: 100%;
+            height: 100%;
+        }
+        .map-modal .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 20001;
+        }
+        .map-modal .close-modal:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+        .map-modal .modal-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 20001;
+        }
+        
+        .barras-zona-container {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .barras-zona-container h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .barras-zona-container canvas {
+            max-height: 300px;
+            width: 100%;
+        }
+        
+        .barras-tipo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .barras-tipo-container h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .barras-tipo-container canvas {
+            max-height: 300px;
+            width: 100%;
+        }
+        
+        .popup-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border-radius: 30px;
+            padding: 25px 35px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1000px rgba(0,0,0,0.5);
+            z-index: 10000;
+            text-align: center;
+            color: white;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid white;
+        }
+        .popup-alert.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .popup-alert i {
+            font-size: 50px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .popup-alert h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .popup-alert .popup-number {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 5px 15px;
+            display: inline-block;
+        }
+        .popup-alert .popup-zona {
+            font-size: 14px;
+            margin: 10px 0;
+            opacity: 0.9;
+        }
+        .popup-alert button {
+            background: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            color: #ee5a24;
+            transition: transform 0.2s;
+        }
+        .popup-alert button:hover {
+            transform: scale(1.05);
+        }
+        
+        .grafica-container{background:white;border-radius:20px;padding:18px;margin-bottom:20px;box-shadow:0 5px 20px rgba(0,0,0,0.15);}
+        .grafica-container h3{font-size:16px;margin-bottom:12px;color:#333;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .recording-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#28a745;animation:pulse 1.5s infinite;margin-left:8px;}
+        @keyframes pulse{0%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.8);}100%{opacity:1;transform:scale(1);}}
+        .grafica-tiempo{font-size:11px;color:#666;margin-top:10px;text-align:center;padding:8px;background:#f8f9fa;border-radius:10px;}
+        canvas{max-height:280px;width:100%;}
+        
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;}
+        .stat-card{background:white;border-radius:16px;padding:18px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,0.1);transition:all 0.2s ease;}
+        .stat-card .number{font-size:32px;font-weight:bold;color:#667eea;transition:all 0.2s ease;}
+        .stat-card .label{font-size:12px;color:#666;margin-top:5px;text-transform:uppercase;letter-spacing:1px;}
+        
+        .filters{background:white;border-radius:16px;padding:18px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+        .filter-row{display:flex;gap:15px;flex-wrap:wrap;}
+        .filter-group{flex:1;min-width:180px;}
+        .filter-group label{font-size:12px;color:#666;display:block;margin-bottom:6px;font-weight:600;}
+        .filter-group input,.filter-group select{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:12px;font-size:14px;transition:all 0.3s;background:white;}
+        .filter-group input:focus,.filter-group select:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+        
+        .btn-group{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+        .btn{padding:12px 20px;border:none;border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.3s;display:inline-flex;align-items:center;gap:8px;}
+        .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:white;}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(102,126,234,0.4);}
+        .btn-secondary{background:#6c757d;color:white;}
+        .btn-secondary:hover{background:#5a6268;}
+        .btn-warning{background:#ffc107;color:#333;}
+        .btn-warning:hover{background:#e0a800;}
+        
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            overflow-x: auto;
+            overflow-y: visible;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            min-height: 300px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 600px;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eef2f6;
+            color: #444;
+            white-space: normal;
+            word-break: break-word;
+        }
+        tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .badge-falla{display:inline-block;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;}
+        .badge-falla-software{background:#e3f2fd;color:#1565c0;}
+        .badge-falla-hardware{background:#ffebee;color:#c62828;}
+        .badge-falla-fibra{background:#e8f5e9;color:#2e7d32;}
+        .badge-falla-energia{background:#fff3e0;color:#ef6c00;}
+        .badge-falla-vandalismo{background:#fce4ec;color:#c2185b;}
+        .badge-falla-infraestructura{background:#e8eaf6;color:#283593;}
+        .badge-falla-analisis{background:#e0f2f1;color:#00695c;}
+        .badge-falla-default{background:#f3e5f5;color:#7b1fa2;}
+        .badge-zona{display:inline-block;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;background:#667eea20;color:#667eea;}
+        
+        .badge-dias {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-dias-critico { background: #ffebee; color: #c62828; }
+        .badge-dias-alto { background: #fff3e0; color: #ef6c00; }
+        .badge-dias-medio { background: #fff8e1; color: #f9a825; }
+        .badge-dias-bajo { background: #e8f5e9; color: #2e7d32; }
+        
+        @keyframes fadeUpdate{0%{opacity:0.85;background-color:#f0f4ff;}100%{opacity:1;background-color:transparent;}}
+        .actualizado{animation:fadeUpdate 0.3s ease;}
+        @keyframes rowUpdate{0%{background-color:#667eea20;}100%{background-color:transparent;}}
+        .row-updated{animation:rowUpdate 0.3s ease;}
+        
+        .loading{text-align:center;padding:60px;color:#666;}
+        .spinner{border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;width:45px;height:45px;animation:spin 0.8s linear infinite;margin:0 auto 20px;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        
+        .mensaje{padding:14px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:10px;position:fixed;bottom:20px;right:20px;z-index:1000;max-width:350px;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn 0.3s ease;}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+        .error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626;}
+        .exito{background:#ecfdf5;color:#059669;border-left:4px solid #059669;}
+        .info{background:#eff6ff;color:#2563eb;border-left:4px solid #2563eb;}
+        
+        .footer{text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-size:11px;}
+        
+        ::-webkit-scrollbar{width:6px;height:6px;}
+        ::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;}
+        ::-webkit-scrollbar-thumb{background:#667eea;border-radius:10px;}
+        
+        @media (max-width: 768px){
+            .stats{grid-template-columns:repeat(2,1fr);gap:10px;}
+            th,td{font-size:11px;padding:10px 8px;}
+            .btn{padding:10px 14px;font-size:12px;}
+            .filter-group{min-width:100%;}
+            .mensaje{max-width:280px;font-size:11px;padding:10px 14px;bottom:10px;right:10px;}
+            .selector-grafica-container{flex-direction:column;align-items:flex-start;}
+            .title-info{width:100%;justify-content:center;}
+            .popup-alert{padding:20px;width:90%;}
+            .popup-alert h2{font-size:22px;}
+            .popup-alert .popup-number{font-size:36px;}
+            .time-control{flex-direction:column;align-items:stretch;}
+            .time-control .interval-info{text-align:center;}
+            .alert-control{flex-direction:column;align-items:stretch;}
+            table { min-width: 500px; }
+            th, td { white-space: normal; }
+            #map { height: 300px; }
+            .barras-zona-container canvas { max-height: 250px; }
+            .barras-tipo-container canvas { max-height: 250px; }
+            .btn-expand-map { padding: 4px 10px; font-size: 10px; }
+            .map-filters { flex-direction: column; }
+            .map-filters select { width: 100%; }
+        }
+        
+        #tableContent{transition:opacity 0.15s ease;}
+        canvas {
+            transition: none !important;
+        }
+        
+        .sort-indicator {
+            font-size: 10px;
+            margin-left: 5px;
+            opacity: 0.7;
+        }
+        
+        .custom-marker-div, .custom-marker-div-expanded {
+            background: transparent !important;
+            border: none !important;
+        }
+        .custom-marker-div div, .custom-marker-div-expanded div {
+            width: 28px !important;
+            height: 28px !important;
+            transition: all 0.2s ease;
+        }
+        .custom-marker-div i, .custom-marker-div-expanded i {
+            font-size: 14px !important;
+        }
+        .custom-marker-div div:hover, .custom-marker-div-expanded div:hover {
+            transform: scale(1.1);
+            width: 32px !important;
+            height: 32px !important;
+        }
+        .custom-marker-div div:hover i, .custom-marker-div-expanded div:hover i {
+            font-size: 16px !important;
+        }
+    </style>
+</head>
+<body>
+<div class="popup-alert" id="popupAlert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h2>⚠️ ALERTA ⚠️</h2>
+    <p>El total de registros ha superado el límite</p>
+    <div class="popup-number" id="popupNumber">0</div>
+    <div class="popup-zona" id="popupZona"></div>
+    <button onclick="cerrarPopup()"><i class="fas fa-check"></i> ACEPTAR</button>
+</div>
+
+<div class="map-modal" id="mapModal">
+    <div class="close-modal" onclick="cerrarMapaExpandido()">&times;</div>
+    <div class="map-container-expanded">
+        <div id="map-expanded"></div>
+    </div>
+    <div class="modal-info">
+        <i class="fas fa-info-circle"></i> Colores: 🔴 >6 días | 🟠 >3 días | 🟡 >2 días | 🟢 ≤2 días | Iconos según tipo de falla
+    </div>
+</div>
+
+<div class="container">
+    <div class="main-header">
+        <h1>
+            <i class="fas fa-database"></i> OYMR4 
+            <span>FAST TRACK</span>
+        </h1>
+        <p><i class="fas fa-chart-line"></i> Monitoreo en tiempo real | <i class="fas fa-sync-alt"></i> Actualización configurable</p>
+    </div>
+    
+    <div class="time-control">
+        <label><i class="fas fa-clock"></i> Intervalo:</label>
+        <input type="number" id="intervaloSegundos" min="1" max="300" value="10" step="1">
+        <span>segundos</span>
+        <button id="aplicarIntervaloBtn"><i class="fas fa-play-circle"></i> Aplicar</button>
+        <div class="interval-info">
+            <i class="fas fa-info-circle"></i> Actual: <span id="intervaloActual">10</span> segundos
+        </div>
+    </div>
+    
+    <div class="alert-control">
+        <label><i class="fas fa-bell"></i> Alerta POP-UP:</label>
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <label class="toggle-switch">
+                <input type="checkbox" id="alertToggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span id="alertStatusText" class="alert-status activo">Activado</span>
+            <button id="testSoundBtn" class="test-sound-btn"><i class="fas fa-volume-up"></i> Probar sonido</button>
+        </div>
+    </div>
+    
+    <div class="title-indicator">
+        <div class="title-info">
+            <div class="title-badge" id="titleBadge">
+                <i class="fas fa-tab"></i> 📊 -
+            </div>
+            <div class="title-text">
+                <i class="fas fa-info-circle"></i> Total acumulado de zonas seleccionadas
+            </div>
+        </div>
+        <div class="zona-activa" id="modoGraficaTexto">
+            <i class="fas fa-chart-line"></i> Modo: <span id="modoGraficaSpan">Todas las zonas</span>
+        </div>
+    </div>
+    
+    <div id="mensajes"></div>
+    
+    <div class="mapa-container">
+        <h3>
+            <i class="fas fa-map-marker-alt"></i> Ubicación de Sitios
+            <span style="font-size:11px; font-weight:normal; color:#666;" id="mapaInfo"></span>
+            <div class="map-header-buttons">
+                <button class="btn-expand-map" id="expandMapBtn">
+                    <i class="fas fa-expand"></i> Expandir
+                </button>
+            </div>
+        </h3>
+        <!-- FILTROS DEL MAPA -->
+        <div class="map-filters">
+            <select id="mapTipoFallaFilter">
+                <option value="">🔧 Todos los tipos de falla</option>
+            </select>
+            <button id="aplicarMapaFiltroBtn"><i class="fas fa-filter"></i> Aplicar filtro</button>
+            <button id="limpiarMapaFiltroBtn" class="limpiar-btn"><i class="fas fa-eraser"></i> Limpiar filtro</button>
+        </div>
+        <div id="map"></div>
+        <div class="grafica-tiempo" style="margin-top: 8px;">
+            <i class="fas fa-palette"></i> Colores: 🔴 >6 días | 🟠 >3 días | 🟡 >2 días | 🟢 ≤2 días | Iconos según tipo de falla
+        </div>
+    </div>
+    
+    <div class="grafica-container">
+        <h3>
+            <i class="fas fa-chart-line"></i> Evolución de registros
+            <span class="recording-indicator" id="recIndicator"></span>
+            <span style="font-size:11px; font-weight:normal;" id="timerInfo"></span>
+        </h3>
+        <div class="selector-grafica-container">
+            <div class="selector-grafica">
+                <label><i class="fas fa-chart-simple"></i> Modo:</label>
+                <select id="graficaModoSelect">
+                    <option value="todas">📊 Todas las zonas (única línea)</option>
+                    <option value="multizona">📈 Comparar todas las zonas</option>
+                </select>
+            </div>
+            <div class="selector-multizona" id="selectorZonasMulti" style="display:none;">
+                <span style="font-size:12px; color:#555;">Mostrar:</span>
+                <div id="listaZonasCheckbox"></div>
+            </div>
+        </div>
+        <canvas id="graficaTiempoReal"></canvas>
+        <div class="grafica-tiempo">
+            <i class="fas fa-chart-simple"></i> Cada zona mantiene su color | Últimos 50 puntos
+        </div>
+    </div>
+    
+    <div class="stats" id="statsContainer">
+        <div class="stat-card"><div class="number">-</div><div class="label">Total</div></div>
+        <div class="stat-card"><div class="number">-</div><div class="label">Zonas</div></div>
+        <div class="stat-card"><div class="number">-</div><div class="label">Tipos</div></div>
+        <div class="stat-card"><div class="number">-</div><div class="label">Mostrando</div></div>
+    </div>
+    
+    <div class="barras-zona-container">
+        <h3>
+            <i class="fas fa-chart-bar"></i> Fallas por Zona
+            <span style="font-size:11px; font-weight:normal; color:#666;" id="barrasZonaInfo"></span>
+        </h3>
+        <canvas id="graficaBarrasZona"></canvas>
+        <div class="grafica-tiempo">
+            <i class="fas fa-chart-simple"></i> Total de fallas registradas por zona
+        </div>
+    </div>
+    
+    <div class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label><i class="fas fa-search"></i> Buscar</label>
+                <input type="text" id="searchInput" placeholder="Buscar...">
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-map-pin"></i> Zona</label>
+                <select id="zonaFilter"><option value="">🌍 Todas</option></select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-bug"></i> Tipo Falla</label>
+                <select id="tipoFilter"><option value="">🔧 Todos</option></select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="barras-tipo-container">
+        <h3>
+            <i class="fas fa-chart-bar"></i> Fallas por Tipo
+            <span style="font-size:11px; font-weight:normal; color:#666;" id="barrasTipoInfo"></span>
+        </h3>
+        <canvas id="graficaBarrasTipo"></canvas>
+        <div class="grafica-tiempo">
+            <i class="fas fa-chart-simple"></i> Distribución de fallas según filtros de zona y tipo
+        </div>
+    </div>
+    
+    <div class="btn-group">
+        <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Actualizar</button>
+        <button class="btn btn-warning" id="resetGraficaBtn"><i class="fas fa-chart-line"></i> Reiniciar Gráfica</button>
+        <button class="btn btn-primary" id="exportBtn"><i class="fas fa-download"></i> Exportar CSV</button>
+        <button class="btn btn-primary" id="exportGraficaBtn"><i class="fas fa-chart-simple"></i> Exportar Gráfica</button>
+    </div>
+    
+    <div class="table-container">
+        <div id="tableContent">
+            <div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>
+        </div>
+    </div>
+    <div class="footer">Base: OYMR4 | Tabla: FAST TRACK | Ordenado por ⬇ Días Afectado</div>
+</div>
+
+<script>
+// ============================================
+// MAPA CON FILTRO POR TIPO DE FALLA
+// ============================================
+const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
+const API_KEY = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
+const TABLE_NAME = "FAST TRACK";
+
+const UMBRAL_ALERTA = 10;
+const COLORES = [
+    '#667eea', '#28a745', '#dc3545', '#ffc107', '#17a2b8',
+    '#fd7e14', '#6f42c1', '#e83e8c', '#20c997', '#6610f2',
+    '#d63384', '#0d6efd', '#198754', '#ff69b4', '#00ced1'
+];
+
+let datosOriginales = [];
+let zonasUnicas = [];
+let tiposUnicos = [];
+let historialPorZona = {};
+let zonasSeleccionadasMulti = new Set();
+let zonaColorMap = new Map();
+
+let chart;
+let chartBarrasZona;
+let chartBarrasTipo;
+let map;
+let mapExpanded = null;
+let markersLayer = null;
+let maxPuntos = 50;
+let timeoutMensaje = null;
+let ultimoPopupMostrado = 0;
+let ultimoTotalNotificado = 0;
+let intervaloActualizacion = null;
+
+let alertaActiva = true;
+let audioContext = null;
+
+let mapViewState = {
+    center: [23.6345, -102.5528],
+    zoom: 5,
+    initialized: false
+};
+
+let filtroMapaTipoFalla = ""; // Filtro actual del mapa
+
+const COLUMNAS_A_OCULTAR = [
+    'Row ID', 'ROW ID', 'row id', 'Row_Id', 'ROW_ID', 'row_id',
+    '_RowNumber', 'RowNumber', 'ROW_NUMBER', 'rownumber',
+    '_row', 'Row', 'ROW', 'row',
+    'ID', 'Id', 'id',
+    'IDENTIDAD.CCR', 'IDENTIDAD CCR', 'identidad.ccr',
+    'LAT', 'Lat', 'lat',
+    'LON', 'Lon', 'lon'
+];
+
+function esColumnaOculta(nombre) {
+    return COLUMNAS_A_OCULTAR.some(oc => nombre.toUpperCase() === oc.toUpperCase());
+}
+
+function obtenerValor(fila, campo) {
+    if (!fila) return '-';
+    if (fila[campo] !== undefined) return fila[campo];
+    if (fila[campo.toUpperCase()] !== undefined) return fila[campo.toUpperCase()];
+    if (fila[campo.toLowerCase()] !== undefined) return fila[campo.toLowerCase()];
+    for (let key in fila) {
+        if (key.toUpperCase().includes(campo.toUpperCase())) return fila[key];
+    }
+    return '-';
+}
+
+function obtenerZona(fila) { return obtenerValor(fila, 'ZONA'); }
+function obtenerTipoFalla(fila) { return obtenerValor(fila, 'TIPO DE FALLA'); }
+function obtenerIniAfectacion(fila) { return obtenerValor(fila, 'INI AFECTACION'); }
+function obtenerLat(fila) { return parseFloat(obtenerValor(fila, 'LAT')); }
+function obtenerLon(fila) { return parseFloat(obtenerValor(fila, 'LON')); }
+function obtenerSitio(fila) { return obtenerValor(fila, 'SITIO'); }
+
+function calcularDiasAfectado(fechaStr) {
+    if (!fechaStr || fechaStr === '-') return -1;
+    try {
+        let fecha;
+        if (fechaStr.includes('/')) {
+            const [mes, dia, año] = fechaStr.split(' ')[0].split('/');
+            fecha = new Date(parseInt(año), parseInt(mes)-1, parseInt(dia));
+        } else {
+            fecha = new Date(fechaStr);
+        }
+        if (isNaN(fecha.getTime())) return -1;
+        const diff = Math.floor((new Date() - fecha) / (1000*60*60*24));
+        return diff >= 0 ? diff : 0;
+    } catch(e) { return -1; }
+}
+
+function getColorDias(dias) {
+    if (dias === -1) return 'badge-dias-bajo';
+    if (dias > 6) return 'badge-dias-critico';
+    if (dias > 3) return 'badge-dias-alto';
+    if (dias > 2) return 'badge-dias-medio';
+    return 'badge-dias-bajo';
+}
+
+function getColorTipoFalla(tipo) {
+    const t = (tipo || '').toLowerCase();
+    if (t.includes('software') || t.includes('datos de configuracion') || t.includes('datos configuración')) return 'badge-falla-software';
+    if (t.includes('hardware')) return 'badge-falla-hardware';
+    if (t.includes('fibra')) return 'badge-falla-fibra';
+    if (t.includes('energia')) return 'badge-falla-energia';
+    if (t.includes('vandalismo')) return 'badge-falla-vandalismo';
+    if (t.includes('infraestructura')) return 'badge-falla-infraestructura';
+    if (t.includes('analisis') || t.includes('análisis')) return 'badge-falla-analisis';
+    return 'badge-falla-default';
+}
+
+function getIconoTipoFalla(tipo) {
+    const t = (tipo || '').toLowerCase();
+    if (t.includes('software') || t.includes('datos de configuracion') || t.includes('datos configuración')) return 'fa-code';
+    if (t.includes('hardware')) return 'fa-microchip';
+    if (t.includes('fibra')) return 'fa-wifi';
+    if (t.includes('energia')) return 'fa-bolt';
+    if (t.includes('vandalismo')) return 'fa-mask';
+    if (t.includes('infraestructura')) return 'fa-building';
+    if (t.includes('analisis') || t.includes('análisis')) return 'fa-chart-line';
+    return 'fa-broadcast-tower';
+}
+
+function actualizarSelectorMapaTipoFalla() {
+    const tipos = [...new Set(datosOriginales.map(f => obtenerTipoFalla(f)).filter(t => t !== '-'))].sort();
+    const select = document.getElementById('mapTipoFallaFilter');
+    select.innerHTML = '<option value="">🔧 Todos los tipos de falla</option>';
+    tipos.forEach(tipo => {
+        select.innerHTML += `<option value="${tipo}">⚠️ ${tipo}</option>`;
+    });
+    if (filtroMapaTipoFalla) {
+        select.value = filtroMapaTipoFalla;
+    }
+}
+
+// ============ FUNCIONES DEL MAPA CON FILTRO ============
+function inicializarMapa() {
+    map = L.map('map').setView(mapViewState.center, mapViewState.zoom);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 19,
+        minZoom: 3
+    }).addTo(map);
+    
+    map.on('moveend', function() {
+        mapViewState.center = map.getCenter();
+        mapViewState.zoom = map.getZoom();
+        mapViewState.initialized = true;
+    });
+    
+    map.on('zoomend', function() {
+        mapViewState.zoom = map.getZoom();
+        mapViewState.initialized = true;
+    });
+    
+    markersLayer = L.layerGroup().addTo(map);
+}
+
+function inicializarMapaExpandido() {
+    if (mapExpanded) {
+        mapExpanded.remove();
+        mapExpanded = null;
+    }
+    mapExpanded = L.map('map-expanded').setView(mapViewState.center, mapViewState.zoom);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 19,
+        minZoom: 3
+    }).addTo(mapExpanded);
+    
+    return mapExpanded;
+}
+
+function actualizarMapa() {
+    if (!map || !markersLayer) return;
+    
+    markersLayer.clearLayers();
+    
+    let sitiosFiltrados = datosOriginales;
+    if (filtroMapaTipoFalla) {
+        sitiosFiltrados = datosOriginales.filter(f => obtenerTipoFalla(f) === filtroMapaTipoFalla);
+    }
+    
+    const sitiosConCoordenadas = sitiosFiltrados.filter(f => {
+        const lat = obtenerLat(f);
+        const lon = obtenerLon(f);
+        return !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0;
+    });
+    
+    document.getElementById('mapaInfo').innerHTML = `(${sitiosConCoordenadas.length} sitios ubicados${filtroMapaTipoFalla ? ` - Tipo: ${filtroMapaTipoFalla}` : ''})`;
+    
+    if (sitiosConCoordenadas.length === 0) {
+        if (mapViewState.initialized) {
+            map.setView(mapViewState.center, mapViewState.zoom);
+        }
+        return;
+    }
+    
+    sitiosConCoordenadas.forEach(f => {
+        const lat = obtenerLat(f);
+        const lon = obtenerLon(f);
+        const sitio = obtenerSitio(f);
+        const zona = obtenerZona(f);
+        const tipoFalla = obtenerTipoFalla(f);
+        const iniAfectacion = obtenerIniAfectacion(f);
+        const dias = calcularDiasAfectado(iniAfectacion);
+        
+        const zonaColor = obtenerColorZona(zona);
+        const icono = getIconoTipoFalla(tipoFalla);
+        
+        let borderColor = '#ffffff';
+        if (dias > 6) borderColor = '#dc3545';
+        else if (dias > 3) borderColor = '#fd7e14';
+        else if (dias > 2) borderColor = '#ffc107';
+        else if (dias >= 0) borderColor = '#28a745';
+        
+        const iconHtml = `
+            <div style="background: ${zonaColor}; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid ${borderColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                <i class="fas ${icono}" style="color: white; font-size: 14px;"></i>
+            </div>
+        `;
+        
+        const customIcon = L.divIcon({
+            html: iconHtml,
+            iconSize: [28, 28],
+            className: 'custom-marker-div'
+        });
+        
+        const popupContent = `
+            <div style="min-width: 220px;">
+                <h4 style="margin: 0 0 5px 0; color: ${zonaColor};">📡 ${sitio}</h4>
+                <p style="margin: 5px 0;"><i class="fas fa-map-pin"></i> <strong>Zona:</strong> <span style="color: ${zonaColor}; font-weight: bold;">${zona}</span></p>
+                <p style="margin: 5px 0;"><i class="fas ${icono}"></i> <strong>Tipo Falla:</strong> ${tipoFalla}</p>
+                <p style="margin: 5px 0;"><i class="fas fa-calendar-alt"></i> <strong>Inicio Afectación:</strong> ${iniAfectacion}</p>
+                <p style="margin: 5px 0;"><i class="fas fa-hourglass-half"></i> <strong>Días afectado:</strong> ${dias === -1 ? '-' : dias}</p>
+                <p style="margin: 5px 0;"><i class="fas fa-map-marker-alt"></i> <strong>Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+            </div>
+        `;
+        
+        L.marker([lat, lon], { icon: customIcon })
+            .bindPopup(popupContent)
+            .addTo(markersLayer);
+    });
+    
+    // Mantener la posición actual del mapa, no reajustar
+    if (mapViewState.initialized) {
+        map.setView(mapViewState.center, mapViewState.zoom);
+    }
+}
+
+function actualizarMapaExpandido() {
+    if (!mapExpanded) {
+        mapExpanded = inicializarMapaExpandido();
+    }
+    
+    mapExpanded.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+            mapExpanded.removeLayer(layer);
+        }
+    });
+    
+    let sitiosFiltrados = datosOriginales;
+    if (filtroMapaTipoFalla) {
+        sitiosFiltrados = datosOriginales.filter(f => obtenerTipoFalla(f) === filtroMapaTipoFalla);
+    }
+    
+    const sitiosConCoordenadas = sitiosFiltrados.filter(f => {
+        const lat = obtenerLat(f);
+        const lon = obtenerLon(f);
+        return !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0;
+    });
+    
+    if (sitiosConCoordenadas.length === 0) {
+        mapExpanded.setView(mapViewState.center, mapViewState.zoom);
+        return;
+    }
+    
+    sitiosConCoordenadas.forEach(f => {
+        const lat = obtenerLat(f);
+        const lon = obtenerLon(f);
+        const sitio = obtenerSitio(f);
+        const zona = obtenerZona(f);
+        const tipoFalla = obtenerTipoFalla(f);
+        const iniAfectacion = obtenerIniAfectacion(f);
+        const dias = calcularDiasAfectado(iniAfectacion);
+        
+        const zonaColor = obtenerColorZona(zona);
+        const icono = getIconoTipoFalla(tipoFalla);
+        
+        let borderColor = '#ffffff';
+        if (dias > 6) borderColor = '#dc3545';
+        else if (dias > 3) borderColor = '#fd7e14';
+        else if (dias > 2) borderColor = '#ffc107';
+        else if (dias >= 0) borderColor = '#28a745';
+        
+        const iconHtml = `
+            <div style="background: ${zonaColor}; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid ${borderColor}; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                <i class="fas ${icono}" style="color: white; font-size: 14px;"></i>
+            </div>
+        `;
+        
+        const customIcon = L.divIcon({
+            html: iconHtml,
+            iconSize: [28, 28],
+            className: 'custom-marker-div-expanded'
+        });
+        
+        const popupContent = `
+            <div style="min-width: 220px;">
+                <h4 style="margin: 0 0 5px 0; color: ${zonaColor};">📡 ${sitio}</h4>
+                <p style="margin: 5px 0;"><i class="fas fa-map-pin"></i> <strong>Zona:</strong> <span style="color: ${zonaColor}; font-weight: bold;">${zona}</span></p>
+                <p style="margin: 5px 0;"><i class="fas ${icono}"></i> <strong>Tipo Falla:</strong> ${tipoFalla}</p>
+                <p style="margin: 5px 0;"><i class="fas fa-calendar-alt"></i> <strong>Inicio Afectación:</strong> ${iniAfectacion}</p>
+                <p style="margin: 5px 0;"><i class="fas fa-hourglass-half"></i> <strong>Días afectado:</strong> ${dias === -1 ? '-' : dias}</p>
+                <p style="margin: 5px 0;"><i class="fas fa-map-marker-alt"></i> <strong>Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+            </div>
+        `;
+        
+        L.marker([lat, lon], { icon: customIcon })
+            .bindPopup(popupContent)
+            .addTo(mapExpanded);
+    });
+    
+    if (mapViewState.initialized) {
+        mapExpanded.setView(mapViewState.center, mapViewState.zoom);
+    }
+}
+
+function expandirMapa() {
+    const modal = document.getElementById('mapModal');
+    modal.classList.add('active');
+    setTimeout(() => {
+        if (!mapExpanded) {
+            inicializarMapaExpandido();
+        }
+        actualizarMapaExpandido();
+        if (mapExpanded) {
+            mapExpanded.invalidateSize();
+        }
+    }, 100);
+}
+
+function cerrarMapaExpandido() {
+    const modal = document.getElementById('mapModal');
+    modal.classList.remove('active');
+}
+
+function aplicarFiltroMapa() {
+    const select = document.getElementById('mapTipoFallaFilter');
+    filtroMapaTipoFalla = select.value;
+    actualizarMapa();
+    if (mapExpanded) actualizarMapaExpandido();
+    mostrarMensaje(filtroMapaTipoFalla ? `🔍 Mostrando solo fallas de tipo: ${filtroMapaTipoFalla}` : `🌍 Mostrando todas las fallas`, 'exito');
+}
+
+function limpiarFiltroMapa() {
+    filtroMapaTipoFalla = "";
+    document.getElementById('mapTipoFallaFilter').value = "";
+    actualizarMapa();
+    if (mapExpanded) actualizarMapaExpandido();
+    mostrarMensaje('🧹 Filtro del mapa limpiado - Mostrando todas las fallas', 'exito');
+}
+
+// ============ GRÁFICA DE BARRAS POR ZONA ============
+function inicializarGraficaBarrasZona() {
+    const ctx = document.getElementById('graficaBarrasZona').getContext('2d');
+    chartBarrasZona = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Cantidad de Fallas', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 8 }] },
+        options: {
+            responsive: true, maintainAspectRatio: true, animation: false,
+            plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} fallas` } } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Cantidad de Fallas' }, ticks: { stepSize: 1, precision: 0 } }, x: { title: { display: true, text: 'Zona' }, ticks: { autoSkip: true, maxRotation: 45, minRotation: 45 } } }
+        }
+    });
+}
+
+function actualizarGraficaBarrasZona() {
+    const conteoZonas = {};
+    datosOriginales.forEach(f => {
+        const zona = obtenerZona(f);
+        if (zona !== '-') {
+            conteoZonas[zona] = (conteoZonas[zona] || 0) + 1;
+        }
+    });
+    
+    const zonasOrdenadas = Object.keys(conteoZonas).sort((a, b) => conteoZonas[b] - conteoZonas[a]);
+    const cantidades = zonasOrdenadas.map(z => conteoZonas[z]);
+    const colores = zonasOrdenadas.map((zona, idx) => obtenerColorZona(zona) || COLORES[idx % COLORES.length]);
+    const coloresBorde = zonasOrdenadas.map((zona, idx) => obtenerColorZona(zona) || COLORES[idx % COLORES.length]);
+    
+    chartBarrasZona.data.labels = zonasOrdenadas;
+    chartBarrasZona.data.datasets[0].data = cantidades;
+    chartBarrasZona.data.datasets[0].backgroundColor = colores;
+    chartBarrasZona.data.datasets[0].borderColor = coloresBorde;
+    chartBarrasZona.update('none');
+    
+    const totalFallas = datosOriginales.length;
+    document.getElementById('barrasZonaInfo').innerHTML = `(Total: ${totalFallas} fallas)`;
+}
+
+// ============ GRÁFICA DE BARRAS POR TIPO DE FALLA ============
+function inicializarGraficaBarrasTipo() {
+    const ctx = document.getElementById('graficaBarrasTipo').getContext('2d');
+    chartBarrasTipo = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Cantidad de Fallas', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 8 }] },
+        options: {
+            responsive: true, maintainAspectRatio: true, animation: false,
+            plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} fallas` } } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Cantidad de Fallas' }, ticks: { stepSize: 1, precision: 0 } }, x: { title: { display: true, text: 'Tipo de Falla' }, ticks: { autoSkip: true, maxRotation: 45, minRotation: 45 } } }
+        }
+    });
+}
+
+function actualizarGraficaBarrasTipo() {
+    const zonaSeleccionada = document.getElementById('zonaFilter').value;
+    const tipoSeleccionado = document.getElementById('tipoFilter').value;
+    
+    let datosFiltrados = datosOriginales;
+    
+    if (zonaSeleccionada) {
+        datosFiltrados = datosOriginales.filter(f => obtenerZona(f) === zonaSeleccionada);
+    }
+    
+    if (tipoSeleccionado) {
+        datosFiltrados = datosFiltrados.filter(f => obtenerTipoFalla(f) === tipoSeleccionado);
+    }
+    
+    const conteoFallas = {};
+    datosFiltrados.forEach(f => {
+        const tipo = obtenerTipoFalla(f);
+        if (tipo !== '-') {
+            conteoFallas[tipo] = (conteoFallas[tipo] || 0) + 1;
+        }
+    });
+    
+    const tiposOrdenados = Object.keys(conteoFallas).sort((a, b) => conteoFallas[b] - conteoFallas[a]);
+    const cantidades = tiposOrdenados.map(t => conteoFallas[t]);
+    
+    const colores = tiposOrdenados.map(tipo => {
+        const t = tipo.toLowerCase();
+        if (t.includes('software') || t.includes('datos de configuracion') || t.includes('datos configuración')) return '#1565c0';
+        if (t.includes('hardware')) return '#c62828';
+        if (t.includes('fibra')) return '#2e7d32';
+        if (t.includes('energia')) return '#ef6c00';
+        if (t.includes('vandalismo')) return '#c2185b';
+        if (t.includes('infraestructura')) return '#283593';
+        if (t.includes('analisis') || t.includes('análisis')) return '#00695c';
+        return '#7b1fa2';
+    });
+    
+    const coloresBorde = tiposOrdenados.map(tipo => {
+        const t = tipo.toLowerCase();
+        if (t.includes('software') || t.includes('datos de configuracion') || t.includes('datos configuración')) return '#0d47a1';
+        if (t.includes('hardware')) return '#b71c1c';
+        if (t.includes('fibra')) return '#1b5e20';
+        if (t.includes('energia')) return '#e65100';
+        if (t.includes('vandalismo')) return '#880e4f';
+        if (t.includes('infraestructura')) return '#1a237e';
+        if (t.includes('analisis') || t.includes('análisis')) return '#004d40';
+        return '#4a148c';
+    });
+    
+    chartBarrasTipo.data.labels = tiposOrdenados;
+    chartBarrasTipo.data.datasets[0].data = cantidades;
+    chartBarrasTipo.data.datasets[0].backgroundColor = colores;
+    chartBarrasTipo.data.datasets[0].borderColor = coloresBorde;
+    chartBarrasTipo.update('none');
+    
+    let infoTexto = "";
+    if (zonaSeleccionada && tipoSeleccionado) {
+        infoTexto = `(Zona: ${zonaSeleccionada} | Tipo: ${tipoSeleccionado} | ${datosFiltrados.length} fallas)`;
+    } else if (zonaSeleccionada) {
+        infoTexto = `(Zona: ${zonaSeleccionada} | ${datosFiltrados.length} fallas)`;
+    } else if (tipoSeleccionado) {
+        infoTexto = `(Tipo: ${tipoSeleccionado} | ${datosFiltrados.length} fallas)`;
+    } else {
+        infoTexto = `(Todas las zonas | ${datosFiltrados.length} fallas)`;
+    }
+    document.getElementById('barrasTipoInfo').innerHTML = infoTexto;
+}
+
+// ============ FUNCIONES DE SONIDO ============
+function generarSonidoAlerta() {
+    try {
+        if (!audioContext || audioContext.state === 'closed') audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const duration = 0.3, frequency = 880, volume = 0.45, now = audioContext.currentTime;
+        const gainNode = audioContext.createGain(); gainNode.gain.value = volume; gainNode.connect(audioContext.destination);
+        const oscillator = audioContext.createOscillator(); oscillator.frequency.value = frequency; oscillator.type = 'sine'; oscillator.connect(gainNode);
+        oscillator.start(); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration); oscillator.stop(now + duration);
+        const now2 = now + 0.2;
+        const oscillator2 = audioContext.createOscillator(); oscillator2.frequency.value = 1046.5; oscillator2.type = 'sine';
+        const gainNode2 = audioContext.createGain(); gainNode2.gain.value = volume; gainNode2.connect(audioContext.destination);
+        oscillator2.connect(gainNode2); oscillator2.start(); gainNode2.gain.exponentialRampToValueAtTime(0.00001, now2 + duration); oscillator2.stop(now2 + duration);
+    } catch(e) { console.log('Error:', e); }
+}
+
+function generarSonidoPrueba() {
+    try {
+        if (!audioContext || audioContext.state === 'closed') audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const duration = 0.3, frequency = 880, volume = 0.45, now = audioContext.currentTime;
+        const gainNode = audioContext.createGain(); gainNode.gain.value = volume; gainNode.connect(audioContext.destination);
+        const oscillator = audioContext.createOscillator(); oscillator.frequency.value = frequency; oscillator.type = 'sine'; oscillator.connect(gainNode);
+        oscillator.start(); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration); oscillator.stop(now + duration);
+        const now2 = now + 0.2;
+        const oscillator2 = audioContext.createOscillator(); oscillator2.frequency.value = 1046.5; oscillator2.type = 'sine';
+        const gainNode2 = audioContext.createGain(); gainNode2.gain.value = volume; gainNode2.connect(audioContext.destination);
+        oscillator2.connect(gainNode2); oscillator2.start(); gainNode2.gain.exponentialRampToValueAtTime(0.00001, now2 + duration); oscillator2.stop(now2 + duration);
+        return true;
+    } catch(e) { return false; }
+}
+
+function probarSonido() {
+    if (!audioContext || audioContext.state === 'closed') audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => { if (generarSonidoPrueba()) mostrarMensaje('🔊 Sonido de prueba', 'exito'); else mostrarMensaje('⚠️ No se pudo reproducir', 'error'); }).catch(() => mostrarMensaje('⚠️ No se pudo reproducir', 'error'));
+    } else {
+        if (generarSonidoPrueba()) mostrarMensaje('🔊 Sonido de prueba', 'exito'); else mostrarMensaje('⚠️ No se pudo reproducir', 'error');
+    }
+}
+
+function mostrarPopupConSonido(total, zonaNombre) {
+    if (!alertaActiva) return;
+    const ahora = Date.now();
+    if (ahora - ultimoPopupMostrado < 10000) return;
+    ultimoPopupMostrado = ahora;
+    generarSonidoAlerta();
+    const popup = document.getElementById('popupAlert');
+    document.getElementById('popupNumber').innerText = total;
+    document.getElementById('popupZona').innerHTML = zonaNombre === "Todas" ? `<i class="fas fa-globe"></i> Zona: Todas las zonas` : `<i class="fas fa-map-pin"></i> Zona: ${zonaNombre}`;
+    popup.classList.add('show');
+    if (window.navigator?.vibrate) window.navigator.vibrate([500, 200, 500]);
+}
+
+function cerrarPopup() { document.getElementById('popupAlert').classList.remove('show'); }
+function verificarAlerta(total, zonaNombre) {
+    if (total >= UMBRAL_ALERTA && total !== ultimoTotalNotificado && alertaActiva) {
+        mostrarPopupConSonido(total, zonaNombre);
+        ultimoTotalNotificado = total;
+    } else if (total < UMBRAL_ALERTA) { ultimoTotalNotificado = 0; }
+}
+
+function obtenerTotalSeleccionado() {
+    if (zonasSeleccionadasMulti.size === 0) return datosOriginales.length;
+    let total = 0;
+    zonasSeleccionadasMulti.forEach(zona => { total += datosOriginales.filter(f => obtenerZona(f) === zona).length; });
+    return total;
+}
+
+function actualizarTituloPestana() {
+    const modo = document.getElementById('graficaModoSelect').value;
+    let total = datosOriginales.length;
+    let sufijo = "";
+    if (modo === 'multizona') {
+        if (zonasSeleccionadasMulti.size === 1) {
+            const zonaUnica = Array.from(zonasSeleccionadasMulti)[0];
+            total = datosOriginales.filter(f => obtenerZona(f) === zonaUnica).length;
+            sufijo = ` [${zonaUnica}]`;
+        } else if (zonasSeleccionadasMulti.size > 1) {
+            total = obtenerTotalSeleccionado();
+            sufijo = ` [${zonasSeleccionadasMulti.size} zonas: ${total}]`;
+        } else { sufijo = ` [sin zonas]`; }
+    }
+    const icono = total > 0 ? "📊" : "📡";
+    document.title = `${icono} ${total}${sufijo} | FAST TRACK`;
+    document.getElementById('titleBadge').innerHTML = `<i class="fas fa-tab"></i> 📊 ${total} registros${sufijo}`;
+    crearFaviconDinamico(total);
+    verificarAlerta(total, sufijo.replace(/[\[\]]/g, '') || "Todas");
+}
+
+function crearFaviconDinamico(numero) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#667eea';
+    ctx.beginPath(); ctx.arc(32, 32, 30, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(32, 32, 28, 0, 2 * Math.PI); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 28px "Segoe UI"';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let texto = numero > 99 ? '99+' : (numero === 0 ? '-' : numero.toString());
+    ctx.fillText(texto, 32, 32);
+    let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    link.rel = 'shortcut icon';
+    link.href = canvas.toDataURL('image/png');
+    document.head.appendChild(link);
+}
+
+function inicializarGraficaLineas() {
+    const ctx = document.getElementById('graficaTiempoReal').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true, maintainAspectRatio: true, animation: false,
+            plugins: { legend: { position: 'top', labels: { font: { size: 10 } } }, tooltip: { enabled: true, mode: 'index', intersect: false } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Registros' }, ticks: { stepSize: 1 } }, x: { title: { display: true, text: 'Hora' }, ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 8 } } }
+        }
+    });
+}
+
+function actualizarMapaColoresZonas() {
+    const todasZonas = [...new Set(datosOriginales.map(f => obtenerZona(f)).filter(z => z !== '-'))].sort();
+    todasZonas.forEach((zona, idx) => { if (!zonaColorMap.has(zona)) zonaColorMap.set(zona, COLORES[idx % COLORES.length]); });
+    for (let [zona] of zonaColorMap) { if (!todasZonas.includes(zona)) zonaColorMap.delete(zona); }
+}
+
+function obtenerColorZona(zona) { return zonaColorMap.get(zona) || '#667eea'; }
+
+function actualizarSelectorZonasMulti() {
+    const zonas = [...new Set(datosOriginales.map(f => obtenerZona(f)).filter(z => z !== '-'))].sort();
+    actualizarMapaColoresZonas();
+    if (zonasSeleccionadasMulti.size === 0 && zonas.length > 0) zonas.forEach(z => zonasSeleccionadasMulti.add(z));
+    let html = '';
+    zonas.forEach(zona => {
+        const checked = zonasSeleccionadasMulti.has(zona) ? 'checked' : '';
+        const color = obtenerColorZona(zona);
+        html += `<label style="margin-right:12px; display:inline-flex; align-items:center; gap:5px;"><input type="checkbox" value="${zona}" ${checked} class="zonaCheckbox" style="accent-color:${color}"> <span style="color:${color}; font-size:12px; font-weight:bold;">📍 ${zona}</span></label>`;
+    });
+    document.getElementById('listaZonasCheckbox').innerHTML = html;
+    document.querySelectorAll('.zonaCheckbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            if (e.target.checked) zonasSeleccionadasMulti.add(e.target.value);
+            else zonasSeleccionadasMulti.delete(e.target.value);
+            actualizarGraficaPorModo();
+            actualizarTituloPestana();
+        });
+    });
+}
+
+function agregarPuntoGrafica(cantidadTotal, registros) {
+    const ahora = new Date();
+    const horaLabel = ahora.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    const zonasPresentes = new Set();
+    registros.forEach(f => { const z = obtenerZona(f); if (z !== '-') zonasPresentes.add(z); });
+    zonasPresentes.forEach(zona => {
+        if (!historialPorZona[zona]) historialPorZona[zona] = [];
+        const cantZona = registros.filter(f => obtenerZona(f) === zona).length;
+        historialPorZona[zona].push({ label: horaLabel, cantidad: cantZona });
+        if (historialPorZona[zona].length > maxPuntos) historialPorZona[zona].shift();
+    });
+    if (!historialPorZona["todas"]) historialPorZona["todas"] = [];
+    historialPorZona["todas"].push({ label: horaLabel, cantidad: cantidadTotal });
+    if (historialPorZona["todas"].length > maxPuntos) historialPorZona["todas"].shift();
+    actualizarGraficaPorModo();
+    actualizarTituloPestana();
+}
+
+function actualizarGraficaSimple() {
+    const datos = historialPorZona["todas"];
+    if (!datos || datos.length === 0) { chart.data.labels = []; chart.data.datasets = []; chart.update('none'); document.getElementById('timerInfo').innerHTML = `(sin datos)`; return; }
+    chart.data.labels = datos.map(p => p.label);
+    chart.data.datasets = [{ label: '📊 Todas las zonas', data: datos.map(p => p.cantidad), borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', borderWidth: 3, pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: '#667eea', pointBorderColor: 'white', pointBorderWidth: 2, fill: true, tension: 0.2, spanGaps: true }];
+    chart.update('none');
+    const ultimo = datos[datos.length-1];
+    document.getElementById('timerInfo').innerHTML = `(último: ${ultimo.label} | ${datos.length}/${maxPuntos} pts | ${ultimo.cantidad} regs)`;
+}
+
+function actualizarGraficaMultiZona() {
+    const zonasAMostrar = Array.from(zonasSeleccionadasMulti).filter(z => historialPorZona[z] && historialPorZona[z].length > 0);
+    if (zonasAMostrar.length === 0) { chart.data.labels = []; chart.data.datasets = []; chart.update('none'); document.getElementById('timerInfo').innerHTML = `(sin datos para zonas seleccionadas)`; return; }
+    const labels = historialPorZona[zonasAMostrar[0]]?.map(p => p.label) || [];
+    const datasets = zonasAMostrar.map(zona => {
+        const datos = historialPorZona[zona] || [];
+        const color = obtenerColorZona(zona);
+        return { label: `📍 ${zona}`, data: datos.map(p => p.cantidad), borderColor: color, backgroundColor: `${color}20`, borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, pointBackgroundColor: color, pointBorderColor: 'white', pointBorderWidth: 1, fill: false, tension: 0.2, spanGaps: true };
+    });
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+    chart.update('none');
+    document.getElementById('timerInfo').innerHTML = `(último: ${labels[labels.length-1]} | ${zonasAMostrar.length} zonas)`;
+}
+
+function actualizarGraficaPorModo() {
+    const modo = document.getElementById('graficaModoSelect').value;
+    if (modo === 'multizona') actualizarGraficaMultiZona();
+    else actualizarGraficaSimple();
+}
+
+function actualizarFiltrosSelectores() {
+    const zonaSelect = document.getElementById('zonaFilter');
+    const tipoSelect = document.getElementById('tipoFilter');
+    const zonaActual = zonaSelect.value;
+    const tipoActual = tipoSelect.value;
+    zonasUnicas = [...new Set(datosOriginales.map(f => obtenerZona(f)).filter(z => z !== '-'))].sort();
+    tiposUnicos = [...new Set(datosOriginales.map(f => obtenerTipoFalla(f)).filter(t => t !== '-'))].sort();
+    zonaSelect.innerHTML = '<option value="">🌍 Todas</option>' + zonasUnicas.map(z => `<option value="${z}">📍 ${z}</option>`).join('');
+    tipoSelect.innerHTML = '<option value="">🔧 Todos</option>' + tiposUnicos.map(t => `<option value="${t}">⚠️ ${t}</option>`).join('');
+    if (zonasUnicas.includes(zonaActual)) zonaSelect.value = zonaActual;
+    if (tiposUnicos.includes(tipoActual)) tipoSelect.value = tipoActual;
+    actualizarMapaColoresZonas();
+    actualizarGraficaBarrasTipo();
+    actualizarSelectorMapaTipoFalla();
+}
+
+function actualizarEstadisticasYTabla() {
+    const busqueda = document.getElementById('searchInput').value.toLowerCase();
+    const zonaSel = document.getElementById('zonaFilter').value;
+    const tipoSel = document.getElementById('tipoFilter').value;
+    let filtrados = datosOriginales.filter(f => {
+        let texto = JSON.stringify(Object.values(f)).toLowerCase();
+        return (!busqueda || texto.includes(busqueda)) && (!zonaSel || obtenerZona(f) === zonaSel) && (!tipoSel || obtenerTipoFalla(f) === tipoSel);
+    });
+    filtrados.sort((a, b) => {
+        const diasA = calcularDiasAfectado(obtenerIniAfectacion(a));
+        const diasB = calcularDiasAfectado(obtenerIniAfectacion(b));
+        return diasB - diasA;
+    });
+    const total = datosOriginales.length;
+    const zonas = new Set(datosOriginales.map(f => obtenerZona(f)).filter(z => z !== '-'));
+    const tipos = new Set(datosOriginales.map(f => obtenerTipoFalla(f)).filter(t => t !== '-'));
+    const mostrando = filtrados.length;
+    document.getElementById('statsContainer').innerHTML = `<div class="stat-card"><div class="number">${total}</div><div class="label">Total</div></div><div class="stat-card"><div class="number">${zonas.size}</div><div class="label">Zonas</div></div><div class="stat-card"><div class="number">${tipos.size}</div><div class="label">Tipos</div></div><div class="stat-card"><div class="number">${mostrando}</div><div class="label">Mostrando</div></div>`;
+    if (filtrados.length === 0) { document.getElementById('tableContent').innerHTML = '<div class="loading">📭 No hay resultados</div>'; return; }
+    
+    const todasColumnas = Object.keys(filtrados[0]);
+    const columnasVisibles = todasColumnas.filter(col => !esColumnaOculta(col));
+    const columnasOrden = ['SITIO', 'POBLADO', 'INI AFECTACION', 'TIPO DE FALLA', 'ZONA'];
+    const columnasExistentes = columnasOrden.filter(col => columnasVisibles.includes(col));
+    const otrasColumnas = columnasVisibles.filter(col => !columnasOrden.includes(col));
+    const columnasFinal = [...columnasExistentes, ...otrasColumnas];
+    
+    let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr>';
+    columnasFinal.forEach(col => {
+        let icono = '';
+        if (col.toUpperCase().includes('SITIO')) icono = '<i class="fas fa-tower-broadcast"></i> ';
+        else if (col.toUpperCase().includes('ZONA')) icono = '<i class="fas fa-map-pin"></i> ';
+        else if (col.toUpperCase().includes('TIPO')) icono = '<i class="fas fa-bug"></i> ';
+        else if (col.toUpperCase().includes('INI')) icono = '<i class="fas fa-calendar-alt"></i> ';
+        else icono = '<i class="fas fa-columns"></i> ';
+        html += `<th>${icono}${col}</th>`;
+    });
+    html += `<th><i class="fas fa-hourglass-half"></i> DÍAS AFECTADO <span class="sort-indicator">⬇</span></th>`;
+    html += '</thead><tbody>';
+    
+    filtrados.forEach(f => {
+        html += '<tr>';
+        columnasFinal.forEach(col => {
+            let valor = obtenerValor(f, col);
+            if (col.toUpperCase().includes('TIPO') && col.toUpperCase().includes('FALLA')) valor = `<span class="badge-falla ${getColorTipoFalla(valor)}">${valor}</span>`;
+            else if (col.toUpperCase().includes('ZONA')) valor = `<span class="badge-zona">${valor}</span>`;
+            html += `<td style="padding:12px; border-bottom:1px solid #eef2f6;">${valor}</td>`;
+        });
+        const dias = calcularDiasAfectado(obtenerIniAfectacion(f));
+        const textoDias = dias === -1 ? '-' : `${dias} día${dias !== 1 ? 's' : ''}`;
+        html += `<td style="padding:12px; border-bottom:1px solid #eef2f6;"><span class="badge-dias ${getColorDias(dias)}">${textoDias}</span></td>`;
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    const tableContent = document.getElementById('tableContent');
+    tableContent.style.opacity = '0.7';
+    tableContent.innerHTML = html;
+    setTimeout(() => tableContent.style.opacity = '1', 50);
+}
+
+function mostrarMensaje(texto, tipo) {
+    const div = document.getElementById('mensajes');
+    const icono = tipo === 'error' ? '❌' : (tipo === 'exito' ? '✅' : 'ℹ️');
+    div.innerHTML = `<div class="mensaje ${tipo}">${icono} ${texto}</div>`;
+    if (timeoutMensaje) clearTimeout(timeoutMensaje);
+    timeoutMensaje = setTimeout(() => { if(div.innerHTML.includes(texto)) div.innerHTML = ''; }, 4000);
+}
+
+async function actualizarCompleto() {
+    try {
+        const response = await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`, {
+            method: 'POST',
+            headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        let registros = [];
+        if (Array.isArray(data)) registros = data;
+        else if (data.Rows && Array.isArray(data.Rows)) registros = data.Rows;
+        else if (data && typeof data === 'object') {
+            for (let key in data) if (Array.isArray(data[key]) && data[key].length > 0) { registros = data[key]; break; }
+            if (registros.length === 0 && (data.SITIO !== undefined)) registros = [data];
+        }
+        if (registros.length > 0) {
+            datosOriginales = registros;
+            actualizarFiltrosSelectores();
+            actualizarEstadisticasYTabla();
+            agregarPuntoGrafica(registros.length, registros);
+            actualizarMapa();
+            actualizarGraficaBarrasZona();
+            actualizarGraficaBarrasTipo();
+            if (document.getElementById('graficaModoSelect').value === 'multizona') { actualizarSelectorZonasMulti(); }
+            mostrarMensaje(`✅ ${registros.length} registros`, 'exito');
+        }
+    } catch (error) {
+        console.error(error);
+        if (datosOriginales.length === 0) { document.getElementById('tableContent').innerHTML = `<div class="loading">❌ Error: ${error.message}</div>`; }
+    }
+}
+
+function reiniciarIntervalo(segundos) {
+    if (intervaloActualizacion) clearInterval(intervaloActualizacion);
+    document.getElementById('intervaloActual').innerText = segundos;
+    intervaloActualizacion = setInterval(() => actualizarCompleto(), segundos * 1000);
+    mostrarMensaje(`⏱️ Intervalo: ${segundos} segundos`, 'exito');
+}
+
+function resetearGrafica() {
+    historialPorZona = {};
+    zonasSeleccionadasMulti.clear();
+    chart.data.labels = [];
+    chart.data.datasets = [];
+    chart.update('none');
+    actualizarTituloPestana();
+    mostrarMensaje('📈 Gráfica reiniciada', 'exito');
+}
+
+function exportarCSV() {
+    if (datosOriginales.length === 0) { mostrarMensaje('No hay datos', 'error'); return; }
+    const todasColumnas = Object.keys(datosOriginales[0]);
+    const columnas = todasColumnas.filter(c => !esColumnaOculta(c));
+    let csv = columnas.join(',') + ",DIAS AFECTADO\n";
+    const datosOrdenados = [...datosOriginales].sort((a, b) => {
+        const diasA = calcularDiasAfectado(obtenerIniAfectacion(a));
+        const diasB = calcularDiasAfectado(obtenerIniAfectacion(b));
+        return diasB - diasA;
+    });
+    datosOrdenados.forEach(f => {
+        csv += columnas.map(c => `"${obtenerValor(f, c)}"`).join(',');
+        const dias = calcularDiasAfectado(obtenerIniAfectacion(f));
+        csv += `,"${dias === -1 ? '-' : dias}"\n`;
+    });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `FAST_TRACK_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    mostrarMensaje('✅ CSV exportado', 'exito');
+}
+
+function exportarDatosGrafica() {
+    const modo = document.getElementById('graficaModoSelect').value;
+    let csv = "Hora,Cantidad,Zona\n";
+    if (modo === 'todas') {
+        (historialPorZona["todas"] || []).forEach(p => csv += `"${p.label}","${p.cantidad}","TODAS"\n`);
+    } else {
+        Array.from(zonasSeleccionadasMulti).forEach(zona => {
+            (historialPorZona[zona] || []).forEach(p => csv += `"${p.label}","${p.cantidad}","${zona}"\n`);
+        });
+    }
+    if (csv === "Hora,Cantidad,Zona\n") { mostrarMensaje('No hay datos', 'error'); return; }
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `GRAFICA_${modo}_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    mostrarMensaje('✅ Datos gráfica exportados', 'exito');
+}
+
+inicializarMapa();
+inicializarGraficaLineas();
+inicializarGraficaBarrasZona();
+inicializarGraficaBarrasTipo();
+setTimeout(() => actualizarCompleto(), 500);
+reiniciarIntervalo(10);
+
+document.getElementById('expandMapBtn').addEventListener('click', expandirMapa);
+document.getElementById('mapModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('mapModal')) cerrarMapaExpandido();
+});
+
+document.getElementById('aplicarMapaFiltroBtn').addEventListener('click', aplicarFiltroMapa);
+document.getElementById('limpiarMapaFiltroBtn').addEventListener('click', limpiarFiltroMapa);
+
+document.getElementById('alertToggle').addEventListener('change', () => {
+    alertaActiva = document.getElementById('alertToggle').checked;
+    const statusSpan = document.getElementById('alertStatusText');
+    if (alertaActiva) { statusSpan.className = 'alert-status activo'; statusSpan.innerHTML = '<i class="fas fa-check-circle"></i> Activado'; }
+    else { statusSpan.className = 'alert-status inactivo'; statusSpan.innerHTML = '<i class="fas fa-ban"></i> Desactivado'; }
+});
+document.getElementById('testSoundBtn').addEventListener('click', probarSonido);
+document.getElementById('searchInput').addEventListener('input', () => actualizarEstadisticasYTabla());
+document.getElementById('zonaFilter').addEventListener('change', () => {
+    actualizarEstadisticasYTabla();
+    actualizarGraficaBarrasTipo();
+});
+document.getElementById('tipoFilter').addEventListener('change', () => {
+    actualizarEstadisticasYTabla();
+    actualizarGraficaBarrasTipo();
+});
+document.getElementById('graficaModoSelect').addEventListener('change', () => {
+    const multiDiv = document.getElementById('selectorZonasMulti');
+    if (document.getElementById('graficaModoSelect').value === 'multizona') {
+        multiDiv.style.display = 'flex';
+        actualizarSelectorZonasMulti();
+        actualizarGraficaMultiZona();
+        document.getElementById('modoGraficaSpan').innerText = 'Comparativa por zonas';
+    } else {
+        multiDiv.style.display = 'none';
+        actualizarGraficaSimple();
+        document.getElementById('modoGraficaSpan').innerText = 'Todas las zonas';
+    }
+    actualizarTituloPestana();
+});
+document.getElementById('refreshBtn').addEventListener('click', () => actualizarCompleto());
+document.getElementById('resetGraficaBtn').addEventListener('click', resetearGrafica);
+document.getElementById('exportBtn').addEventListener('click', exportarCSV);
+document.getElementById('exportGraficaBtn').addEventListener('click', exportarDatosGrafica);
+document.getElementById('aplicarIntervaloBtn').addEventListener('click', () => {
+    let seg = parseInt(document.getElementById('intervaloSegundos').value);
+    if (isNaN(seg) || seg < 1) seg = 1;
+    if (seg > 300) seg = 300;
+    document.getElementById('intervaloSegundos').value = seg;
+    reiniciarIntervalo(seg);
+});
+</script>
+</body>
+</html>
