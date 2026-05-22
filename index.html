@@ -30,6 +30,7 @@
             --accent-ft: #4f46e5;      /* Fast Track (Indigo) */
             --accent-bq: #d946ef;      /* Bloqueos Calidad (Fuchsia) */
             --accent-sd: #f59e0b;      /* Sitios Disabled (Amber) */
+            --accent-ftotal: #ef4444;  /* Sitios Falla Totales (Red) */
             
             --success: #10b981;
             --info: #06b6d4;
@@ -461,29 +462,31 @@
         }
 
         /* Asymmetry mapping for standard cards */
-        /* Card 1 (Casos Críticos): Prominent Hero, span 12 */
         .portal-card.card-r4 {
             grid-column: span 12;
             background: linear-gradient(135deg, rgba(13, 18, 34, 0.8) 0%, rgba(20, 10, 24, 0.8) 100%);
             border-left: 5px solid var(--accent-r4);
         }
 
-        /* Card 2 (Fast Track): Span 6 */
         .portal-card.card-ft {
             grid-column: span 6;
             border-left: 5px solid var(--accent-ft);
         }
 
-        /* Card 3 (Bloqueos Calidad): Span 6 */
         .portal-card.card-bq {
             grid-column: span 6;
             border-left: 5px solid var(--accent-bq);
         }
 
-        /* Card 4 (Sitios Disabled): Span 12 or 7 (let's make it span 12) */
         .portal-card.card-sd {
             grid-column: span 12;
             border-left: 5px solid var(--accent-sd);
+        }
+
+        /* NEW: Card 5 - Sitios Falla Totales */
+        .portal-card.card-ftotal {
+            grid-column: span 12;
+            border-left: 5px solid var(--accent-ftotal);
         }
 
         /* Interactive Card Glows & Hovers */
@@ -543,6 +546,7 @@
         .card-ft .card-badge { background: rgba(79, 70, 229, 0.12); color: #818cf8; border: 1px solid rgba(79, 70, 229, 0.2); }
         .card-bq .card-badge { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.2); }
         .card-sd .card-badge { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .card-ftotal .card-badge { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
 
         .card-icon-container {
             width: 48px;
@@ -696,6 +700,7 @@
         .stagger-2 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
         .stagger-3 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
         .stagger-4 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+        .stagger-5 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; opacity: 0; }
 
         @keyframes slideUpFade {
             from {
@@ -796,7 +801,7 @@
                     <div class="system-meta-list">
                         <div class="meta-item">
                             <span class="meta-label">Módulos:</span>
-                            <span class="meta-value">4 Activos</span>
+                            <span class="meta-value">5 Activos</span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Entorno:</span>
@@ -825,11 +830,11 @@
                         <div class="filter-options">
                             <button class="filter-btn active" data-filter="all">
                                 <span><i class="fa-solid fa-border-all" style="margin-right: 8px; opacity: 0.7;"></i> Todos</span>
-                                <span class="count">4</span>
+                                <span class="count">5</span>
                             </button>
                             <button class="filter-btn" data-filter="monitoreo">
                                 <span><i class="fa-solid fa-chart-line" style="margin-right: 8px; opacity: 0.7;"></i> Monitoreo</span>
-                                <span class="count">2</span>
+                                <span class="count">3</span>
                             </button>
                             <button class="filter-btn" data-filter="calidad">
                                 <span><i class="fa-solid fa-shield-virus" style="margin-right: 8px; opacity: 0.7;"></i> Calidad</span>
@@ -837,7 +842,7 @@
                             </button>
                             <button class="filter-btn" data-filter="criticos">
                                 <span><i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px; opacity: 0.7;"></i> Críticos</span>
-                                <span class="count">1</span>
+                                <span class="count">2</span>
                             </button>
                         </div>
                     </div>
@@ -1080,6 +1085,58 @@
                             </div>
                         </div>
                         <a href="fast-track-sitios-disabled-2.3.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- MODULE 5: R4 Sitios Falla Totales v1.5 (NEW) -->
+                <article class="portal-card card-ftotal stagger-5" 
+                         style="--card-accent: var(--accent-ftotal); --shadow-glow: rgba(239, 68, 68, 0.12); --glow-color: rgba(239, 68, 68, 0.05);"
+                         data-tags="all criticos monitoreo">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-broadcast-tower"></i> FALLA TOTAL
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">R4 | Sitios Falla Totales</h2>
+                        <p class="card-desc">
+                            Monitoreo integral de sitios con falla total. Visualización en tiempo real de radiobases fuera de operación, análisis de afectación por región y métricas de disponibilidad.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Sitios Afectados</span>
+                                <span style="color: #ef4444; font-weight: bold;">MONITOREO</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Disponibilidad</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 67%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">67%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v1.5</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">REAL-TIME</span>
+                                <span class="metric-lbl">Estado</span>
+                            </div>
+                        </div>
+                        <a href="R4 Sitios Falla Totales 1.5.html" class="enter-btn">
                             Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
                         </a>
                     </div>
