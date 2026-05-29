@@ -31,6 +31,7 @@
             --accent-bq: #d946ef;      /* Bloqueos Calidad (Fuchsia) */
             --accent-sd: #f59e0b;      /* Sitios Disabled (Amber) */
             --accent-ftotal: #ef4444;  /* Sitios Falla Totales (Red) */
+            --accent-fifa: #22c55e;    /* FIFA26 Gestor (Green) */
             
             --success: #10b981;
             --info: #06b6d4;
@@ -483,10 +484,15 @@
             border-left: 5px solid var(--accent-sd);
         }
 
-        /* NEW: Card 5 - Sitios Falla Totales */
         .portal-card.card-ftotal {
             grid-column: span 12;
             border-left: 5px solid var(--accent-ftotal);
+        }
+
+        /* NEW: Card 6 - FIFA26 Gestor */
+        .portal-card.card-fifa {
+            grid-column: span 6;
+            border-left: 5px solid var(--accent-fifa);
         }
 
         /* Interactive Card Glows & Hovers */
@@ -547,6 +553,7 @@
         .card-bq .card-badge { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.2); }
         .card-sd .card-badge { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
         .card-ftotal .card-badge { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .card-fifa .card-badge { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
 
         .card-icon-container {
             width: 48px;
@@ -701,6 +708,7 @@
         .stagger-3 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
         .stagger-4 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
         .stagger-5 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; opacity: 0; }
+        .stagger-6 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; opacity: 0; }
 
         @keyframes slideUpFade {
             from {
@@ -737,7 +745,8 @@
             }
 
             .portal-card.card-ft,
-            .portal-card.card-bq {
+            .portal-card.card-bq,
+            .portal-card.card-fifa {
                 grid-column: span 12;
             }
         }
@@ -801,7 +810,7 @@
                     <div class="system-meta-list">
                         <div class="meta-item">
                             <span class="meta-label">Módulos:</span>
-                            <span class="meta-value">5 Activos</span>
+                            <span class="meta-value">6 Activos</span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Entorno:</span>
@@ -830,7 +839,7 @@
                         <div class="filter-options">
                             <button class="filter-btn active" data-filter="all">
                                 <span><i class="fa-solid fa-border-all" style="margin-right: 8px; opacity: 0.7;"></i> Todos</span>
-                                <span class="count">5</span>
+                                <span class="count">6</span>
                             </button>
                             <button class="filter-btn" data-filter="monitoreo">
                                 <span><i class="fa-solid fa-chart-line" style="margin-right: 8px; opacity: 0.7;"></i> Monitoreo</span>
@@ -843,6 +852,10 @@
                             <button class="filter-btn" data-filter="criticos">
                                 <span><i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px; opacity: 0.7;"></i> Críticos</span>
                                 <span class="count">2</span>
+                            </button>
+                            <button class="filter-btn" data-filter="gestion">
+                                <span><i class="fa-solid fa-chalkboard-user" style="margin-right: 8px; opacity: 0.7;"></i> Gestión</span>
+                                <span class="count">1</span>
                             </button>
                         </div>
                     </div>
@@ -1090,7 +1103,7 @@
                     </div>
                 </article>
 
-                <!-- MODULE 5: R4 Sitios Falla Totales v1.5 (NEW) -->
+                <!-- MODULE 5: R4 Sitios Falla Totales v1.5 -->
                 <article class="portal-card card-ftotal stagger-5" 
                          style="--card-accent: var(--accent-ftotal); --shadow-glow: rgba(239, 68, 68, 0.12); --glow-color: rgba(239, 68, 68, 0.05);"
                          data-tags="all criticos monitoreo">
@@ -1105,7 +1118,7 @@
                         </div>
                     </div>
                     <div class="card-middle">
-                        <h2 class="card-title">R4 | Sitios Falla Totales (No Activo todavia)</h2>
+                        <h2 class="card-title">R4 | Sitios Falla Totales</h2>
                         <p class="card-desc">
                             Monitoreo integral de sitios con falla total. Visualización en tiempo real de radiobases fuera de operación, análisis de afectación por región y métricas de disponibilidad.
                         </p>
@@ -1137,6 +1150,58 @@
                             </div>
                         </div>
                         <a href="r4-sitios-falla-totales-1.5.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- MODULE 6: R4 FIFA26 Gestor v4.1 (NEW) -->
+                <article class="portal-card card-fifa stagger-6" 
+                         style="--card-accent: var(--accent-fifa); --shadow-glow: rgba(34, 197, 94, 0.12); --glow-color: rgba(34, 197, 94, 0.05);"
+                         data-tags="all gestion">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-futbol"></i> FIFA26 GESTOR
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">R4 | FIFA26 Gestor</h2>
+                        <p class="card-desc">
+                            Herramienta integral de gestión y administración de torneos, equipos y estadísticas. Panel de control avanzado con métricas en tiempo real y generación de reportes ejecutivos.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Gestión Activa</span>
+                                <span style="color: #22c55e; font-weight: bold;">OPERATIVO</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Rendimiento</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 94%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">94%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v4.1</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">GESTOR</span>
+                                <span class="metric-lbl">Tipo</span>
+                            </div>
+                        </div>
+                        <a href="r4-fifa26-gestor-4.1.html" class="enter-btn">
                             Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
                         </a>
                     </div>
