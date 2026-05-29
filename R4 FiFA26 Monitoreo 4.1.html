@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>OYM | FIFA 2026 Monterrey - Executive Dashboard</title>
+    
+    <!-- Librerías -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- SweetAlert para edición -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; overflow-x: hidden; }
+        .app-container { display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 260px; background: linear-gradient(180deg, #0a2540 0%, #0f2b3d 100%); color: white; padding: 25px 18px; position: fixed; height: 100vh; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.08); z-index: 10; }
+        .logo-area { text-align: center; padding-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .logo-area h2 { font-size: 1.3rem; font-weight: 600; }
+        .logo-area .fifa-badge { background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 20px; font-size: 0.65rem; display: inline-block; margin-top: 8px; }
+        .stats-summary { margin-bottom: 25px; }
+        .stat-exec { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; transition: all 0.2s; cursor: pointer; }
+        .stat-exec:hover { background: rgba(255,255,255,0.12); transform: translateX(3px); }
+        .stat-exec .stat-value { font-size: 1.4rem; font-weight: 700; line-height: 1; }
+        .stat-exec .stat-label { font-size: 0.65rem; opacity: 0.7; margin-top: 4px; }
+        .priority-stats { margin-top: 15px; }
+        .priority-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; cursor: pointer; }
+        .priority-item:hover { background: rgba(255,255,255,0.05); padding-left: 8px; }
+        .priority-color { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        .btn-edit-sidebar { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px; border-radius: 8px; width: 100%; margin-top: 15px; cursor: pointer; font-size: 0.7rem; font-weight: 500; }
+        .btn-edit-sidebar:hover { background: rgba(255,255,255,0.25); transform: translateY(-2px); }
+        
+        .main-content { flex: 1; margin-left: 260px; padding: 20px 25px; }
+        .exec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .page-title h1 { font-size: 1.3rem; font-weight: 600; color: #1a1a2e; }
+        .page-title p { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+        .date-badge { background: white; padding: 5px 14px; border-radius: 25px; font-size: 0.7rem; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        
+        .tabs-container { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab-btn { background: none; border: none; padding: 10px 22px; font-size: 0.85rem; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; border-radius: 10px 10px 0 0; }
+        .tab-btn:hover { color: #0a2540; background: #f1f5f9; }
+        .tab-btn.active { color: #0a2540; background: white; box-shadow: 0 -2px 0 #0a2540; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 18px; }
+        .card { background: white; border-radius: 14px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eef2f7; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #f0f2f5; }
+        .card-header h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; }
+        .full-width { grid-column: span 2; }
+        
+        #map { height: 380px; border-radius: 10px; z-index: 1; background: #e8eef4; }
+        .map-legend { display: flex; gap: 15px; margin-top: 10px; justify-content: flex-end; flex-wrap: wrap; }
+        .legend-exec { display: flex; align-items: center; gap: 5px; font-size: 0.6rem; font-weight: 500; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        
+        .filters-bar { background: white; border-radius: 12px; padding: 12px 15px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+        .filter-group { flex: 1; min-width: 120px; }
+        .filter-group label { display: block; font-size: 0.55rem; font-weight: 600; text-transform: uppercase; margin-bottom: 3px; color: #64748b; }
+        .filter-group input, .filter-group select { width: 100%; padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem; font-family: 'Inter', sans-serif; }
+        .btn-exec { background: #0a2540; color: white; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.7rem; transition: all 0.2s; }
+        .btn-exec:hover { background: #1a3a5c; }
+        .btn-edit { background: #f59e0b; }
+        .btn-edit:hover { background: #d97706; }
+        .btn-liberar { background: #10b981; }
+        .btn-liberar:hover { background: #059669; }
+        
+        .table-container { background: white; border-radius: 14px; overflow: hidden; border: 1px solid #eef2f7; margin-top: 18px; }
+        .table-header { padding: 12px 15px; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .table-wrapper { overflow-x: auto; max-height: 380px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
+        th { background: #f8fafc; color: #475569; padding: 8px; text-align: left; font-weight: 600; position: sticky; top: 0; }
+        td { padding: 6px 8px; border-bottom: 1px solid #f0f2f5; }
+        tr:hover { background: #fafcff; }
+        
+        .status-badge { display: inline-block; padding: 2px 6px; border-radius: 15px; font-size: 0.6rem; font-weight: 500; }
+        .status-LIBRE { background: #dcfce7; color: #166534; }
+        .status-COMIDA { background: #fef3c7; color: #92400e; }
+        .status-ASIGNACION { background: #dbeafe; color: #1e40af; }
+        .status-UP { background: #dcfce7; color: #166534; }
+        .status-DOWN { background: #fee2e2; color: #991b1b; }
+        .status-Mantenimiento { background: #fed7aa; color: #9a3412; }
+        
+        .edit-btn { background: #0a2540; color: white; border: none; padding: 3px 8px; border-radius: 10px; cursor: pointer; font-size: 0.55rem; transition: all 0.2s; }
+        .edit-btn:hover { background: #1a3a5c; }
+        
+        .loading { text-align: center; padding: 30px; }
+        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #0a2540; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .info-banner { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 15px; border-radius: 10px; margin-bottom: 18px; font-size: 0.7rem; transition: all 0.3s ease; }
+        .info-banner-warning { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+        .footer { text-align: center; margin-top: 20px; padding: 12px; font-size: 0.6rem; color: #94a3b8; }
+        
+        .dispatch-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+        .dispatch-stat-card { background: white; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #eef2f7; }
+        .dispatch-stat-number { font-size: 1.2rem; font-weight: 700; color: #0a2540; }
+        .dispatch-stat-label { font-size: 0.6rem; color: #64748b; margin-top: 3px; }
+        
+        .edit-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 55vh; overflow-y: auto; padding: 3px; }
+        .edit-field { margin-bottom: 5px; }
+        .edit-field label { display: block; font-size: 0.6rem; font-weight: 600; color: #334155; margin-bottom: 2px; }
+        .edit-field input, .edit-field select, .edit-field textarea { width: 100%; padding: 5px 7px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.7rem; }
+        .full-width-field { grid-column: span 2; }
+        
+        .professional-marker { background: transparent; border: none; }
+        
+        .map-filter-bar { display: flex; gap: 10px; margin-bottom: 10px; justify-content: flex-start; flex-wrap: wrap; }
+        .map-filter-btn { background: #f1f5f9; border: none; padding: 4px 12px; border-radius: 15px; font-size: 0.65rem; cursor: pointer; transition: all 0.2s; }
+        .map-filter-btn.active { background: #0a2540; color: white; }
+        
+        .config-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            font-size: 0.7rem;
+        }
+        .config-panel summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #0a2540;
+        }
+        
+        @media (max-width: 1000px) {
+            .sidebar { width: 220px; }
+            .main-content { margin-left: 220px; padding: 15px; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .dispatch-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 12px; }
+            .edit-form-grid { grid-template-columns: 1fr; }
+            .dispatch-stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="sidebar">
+        <div class="logo-area">
+            <h2>OYM<br>FIFA 2026</h2>
+            <div class="fifa-badge">Monterrey · Operación</div>
+        </div>
+        
+        <div class="stats-summary">
+            <div class="stat-exec" data-filter="all" data-tab="monitoreo">
+                <div class="stat-value" id="totalSitiosSide">0</div>
+                <div class="stat-label">SITIOS MONITOREADOS</div>
+            </div>
+            <div class="priority-stats">
+                <div class="priority-item" data-filter="FIFA CALIDAD" data-tab="monitoreo">
+                    <div style="display: flex; align-items: center;"><div class="priority-color" style="background: #dc2626;"></div><span>FIFA CALIDAD</span></div>
+                    <strong id="fifaCalidadSide">0</strong>
+                </div>
+                <div class="priority-item" data-filter="FIFA ALTA PRIORIDAD" data-tab="monitoreo">
+                    <div style="display: flex; align-items: center;"><div class="priority-color" style="background: #ea580c;"></div><span>FIFA ALTA PRIORIDAD</span></div>
+                    <strong id="fifaAltaSide">0</strong>
+                </div>
+                <div class="priority-item" data-filter="NORMAL" data-tab="monitoreo">
+                    <div style="display: flex; align-items: center;"><div class="priority-color" style="background: #f59e0b;"></div><span>NORMAL</span></div>
+                    <strong id="normalSide">0</strong>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-summary">
+            <div class="stat-exec" data-filter="modernizar" data-tab="monitoreo">
+                <div class="stat-value" id="modernizarSide">0</div>
+                <div class="stat-label">SITIOS A MODERNIZAR</div>
+            </div>
+            <div class="stat-exec" data-filter="falla" data-tab="monitoreo">
+                <div class="stat-value" id="fallasSide">0</div>
+                <div class="stat-label">SITIOS DOWN</div>
+            </div>
+        </div>
+        
+        <div class="stats-summary" id="dispatchStatsSide" style="display: none;">
+            <div class="stat-exec"><div class="stat-value" id="dispatchLibresSide">0</div><div class="stat-label">PERSONAL LIBRE</div></div>
+            <div class="stat-exec"><div class="stat-value" id="dispatchAsignadosSide">0</div><div class="stat-label">EN ASIGNACIÓN</div></div>
+        </div>
+        
+        <details class="config-panel">
+            <summary>⚙️ Configuración Telegram</summary>
+            <div style="margin-top: 8px;">
+                <div class="field-hint" style="color: #64748b; font-size: 0.7rem;">✅ Bot Token configurado</div>
+                <div class="field-hint" style="color: #64748b; font-size: 0.7rem;">📨 Notificaciones al asignar y liberar personal</div>
+                <button class="btn-exec" style="margin-top: 8px; width: 100%;" onclick="testTelegramConnection()">📨 Probar Notificación</button>
+                <button class="btn-exec" style="margin-top: 5px; width: 100%; background:#ea580c;" onclick="debugTelegramConfig()">🔍 Depurar Telegram</button>
+            </div>
+        </details>
+        
+        <button class="btn-edit-sidebar" onclick="mostrarAyudaEdicion()">✏️ Guía de edición</button>
+    </div>
+
+    <div class="main-content">
+        <div class="exec-header">
+            <div class="page-title"><h1>Executive Dashboard</h1><p>Control y seguimiento de sitios celulares · FIFA World Cup 2026</p></div>
+            <div class="date-badge" id="dateDisplay"></div>
+        </div>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="monitoreo">📡 Monitoreo de Sitios</button>
+            <button class="tab-btn" data-tab="dispatch">🚨 Dispatch / Personal Técnico</button>
+        </div>
+
+        <!-- Contenido Monitoreo -->
+        <div id="tab-monitoreo" class="tab-content active">
+            <div id="infoBanner" class="info-banner">✅ Conectado a AppSheet · Actualización en tiempo real</div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header"><h3>📊 Distribución por Líder</h3>
+                        <div style="display: flex; gap: 4px;">
+                            <span class="chart-filter-btn" data-filter="all" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#0a2540; color:white; border-radius:12px;">Top10</span>
+                            <span class="chart-filter-btn" data-filter="top5" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Top5</span>
+                            <span class="chart-filter-btn" data-filter="top15" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Top15</span>
+                        </div>
+                    </div>
+                    <canvas id="liderChart" style="max-height: 200px; width: 100%;"></canvas>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header"><h3>🎯 Prioridad FIFA</h3>
+                        <div style="display: flex; gap: 4px;">
+                            <span class="prioridad-filter-btn" data-filter="all" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#0a2540; color:white; border-radius:12px;">Todos</span>
+                            <span class="prioridad-filter-btn" data-filter="modernizar" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Modernizar</span>
+                            <span class="prioridad-filter-btn" data-filter="fallas" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Con Fallas</span>
+                        </div>
+                    </div>
+                    <canvas id="prioridadChart" style="max-height: 200px; width: 100%;"></canvas>
+                </div>
+                
+                <div class="card full-width">
+                    <div class="card-header"><h3>🗺️ Geolocalización Estratégica</h3><div class="icon">📍</div></div>
+                    <div class="map-filter-bar">
+                        <button class="map-filter-btn active" data-filter="todos">📍 Todos los sitios</button>
+                        <button class="map-filter-btn" data-filter="asignados">👤 Solo asignados</button>
+                        <button class="map-filter-btn" data-filter="no_asignados">📌 No asignados</button>
+                        <button class="map-filter-btn" data-filter="up">🟢 UP (Activo)</button>
+                        <button class="map-filter-btn" data-filter="down">🔴 DOWN (Falla)</button>
+                    </div>
+                    <div id="map"></div>
+                    <div class="map-legend">
+                        <div class="legend-exec"><div class="legend-dot" style="background: #22c55e;"></div><span>UP (Activo)</span></div>
+                        <div class="legend-exec"><div class="legend-dot" style="background: #ef4444;"></div><span>DOWN (Falla)</span></div>
+                        <div class="legend-exec"><div class="legend-dot" style="background: #f59e0b;"></div><span>Mantenimiento</span></div>
+                        <div class="legend-exec"><div class="legend-dot" style="background: #3b82f6;"></div><span>Con Personal Asignado</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filters-bar">
+                <div class="filter-group"><label>🔍 Buscar</label><input type="text" id="searchInput" placeholder="Nombre, zona..."></div>
+                <div class="filter-group"><label>📍 Zona FIFA</label><select id="zonaFilter"><option value="todos">Todas</option></select></div>
+                <div class="filter-group"><label>⚠️ Estado</label><select id="estadoFilter"><option value="todos">Todos</option><option value="Activo">UP</option><option value="Falla">DOWN</option><option value="Mantenimiento">Mantenimiento</option></select></div>
+                <div class="filter-group"><label>👤 Líder</label><select id="liderFilter"><option value="todos">Todos</option></select></div>
+                <div class="filter-group"><label>🏆 Prioridad</label><select id="prioridadFilter"><option value="todos">Todas</option><option value="FIFA CALIDAD">FIFA CALIDAD</option><option value="FIFA ALTA PRIORIDAD">FIFA ALTA PRIORIDAD</option><option value="NORMAL">NORMAL</option></select></div>
+                <div><button id="refreshBtn" class="btn-exec">🔄 Actualizar</button></div>
+                <div><button id="resetFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header"><h4>📋 Detalle de Sitios Celulares</h4><button class="btn-exec btn-edit" onclick="mostrarAyudaEdicion()" style="padding: 3px 10px; font-size:0.6rem;">✏️ Ayuda</button></div>
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead><tr><th>ID</th><th>Sitio</th><th>Zona</th><th>Estado</th><th>Prioridad</th><th>Modernizar</th><th>Líder</th><th>Asignación</th><th>Acción</th></tr></thead>
+                        <tbody id="tableBody"><tr><td colspan="9" class="loading"><div class="spinner"></div>Cargando...<\/td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Dispatch -->
+        <div id="tab-dispatch" class="tab-content">
+            <div id="dispatchInfoBanner" class="info-banner">🔄 Conectando a tabla DISPATCH FIFA26...</div>
+            <div class="dispatch-stats">
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="totalPersonal">0</div><div class="dispatch-stat-label">Total Personal</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="libresCount">0</div><div class="dispatch-stat-label">🟢 LIBRE</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="comidaCount">0</div><div class="dispatch-stat-label">🟡 COMIDA</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="asignacionCount">0</div><div class="dispatch-stat-label">🔵 ASIGNACIÓN</div></div>
+            </div>
+            <div class="filters-bar">
+                <div class="filter-group"><label>🔍 Buscar</label><input type="text" id="dispatchSearchInput" placeholder="Personal, sitio..."></div>
+                <div class="filter-group"><label>📍 Zona</label><select id="dispatchZonaFilter"><option value="todos">Todas</option></select></div>
+                <div class="filter-group"><label>📊 Estatus</label><select id="dispatchEstatusFilter"><option value="todos">Todos</option><option value="LIBRE">🟢 LIBRE</option><option value="COMIDA">🟡 COMIDA</option><option value="ASIGNACION">🔵 ASIGNACIÓN</option></select></div>
+                <div><button id="refreshDispatchBtn" class="btn-exec">🔄 Actualizar</button></div>
+                <div><button id="resetDispatchFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
+            </div>
+            <div style="margin-bottom: 12px; text-align: right;">
+                <button class="btn-exec btn-edit" onclick="crearNuevoPersonal()" style="padding: 6px 15px;">➕ Nuevo Personal</button>
+            </div>
+            <div class="table-container">
+                <div class="table-header"><h4>📋 Personal Técnico para Atención de Fallas</h4></div>
+                <div class="table-wrapper">
+                    <table id="dispatchTable">
+                        <thead><tr><th>ID</th><th>Personal</th><th>Proveedor</th><th>Zona</th><th>Zona FIFA</th><th>Jefe FIFA</th><th>Celular</th><th>Sitio Asignado</th><th>Estatus</th><th>Notas</th><th>CHAT ID</th><th>Acción</th></tr></thead>
+                        <tbody id="dispatchBody"><tr><td colspan="12" class="loading"><div class="spinner"></div>Cargando...<\/td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">⚡ Datos en tiempo real · Actualización cada 60s · Notificaciones al asignar y liberar personal</div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // CONFIGURACIÓN
+    // ============================================================
+    const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
+    const API_KEY = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
+    const TABLE_NAME = "FIFA26";
+    const DISPATCH_TABLE = "DISPATCH FIFA26";
+    
+    const CAMPO_ASIGNACION = "ASIGNACION";
+    
+    let sitiosData = [], dispatchData = [];
+    let liderChart, prioridadChart, map, markers = [];
+    let currentLiderFilter = "all", currentPrioridadChartFilter = "all";
+    let currentMapCenter = null, currentMapZoom = null;
+    let isUpdating = false;
+    let currentMapFilter = "todos";
+    
+    const ESTATUS_OPTS = ["LIBRE", "COMIDA", "ASIGNACION"];
+    const CAMPOS_DISPATCH = ["PERSONAL", "PROVEEDOR", "ZONA", "ZONA FIFA", "JEFE FIFA", "CELULAR", "SITIO ACTUAL ASIGNADO", "ESTATUS", "NOTAS", "CHAT ID"];
+
+    // ============================================================
+    // TELEGRAM NOTIFICACIONES
+    // ============================================================
+    const TELEGRAM_BOT_TOKEN = "8766130397:AAFpaq00ml4aywrj9obgWb7sF2Zvr0t2rLk";
+
+    function obtenerChatIdPorPersonal(nombrePersonal) {
+        if (!dispatchData || dispatchData.length === 0) return null;
+        const personalRegistro = dispatchData.find(p => p.PERSONAL === nombrePersonal);
+        if (!personalRegistro) return null;
+        const chatId = personalRegistro["CHAT ID"];
+        if (chatId && chatId !== "-" && chatId !== "" && chatId !== "undefined") return chatId;
+        return null;
+    }
+
+    async function enviarNotificacionTelegram(sitioNombre, personalNombre, prioridad, zona, tipo, sitioAsignadoAnterior = null) {
+        const chatId = obtenerChatIdPorPersonal(personalNombre);
+        if (!chatId) return false;
+        
+        const ahora = new Date();
+        const fechaHora = ahora.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        let emojiPrioridad = "🟡";
+        if (prioridad === "🔴 FIFA CALIDAD") emojiPrioridad = "🔴";
+        else if (prioridad === "🟠 FIFA ALTA PRIORIDAD") emojiPrioridad = "🟠";
+        else if (prioridad === "🟡 NORMAL") emojiPrioridad = "🟡";
+        else emojiPrioridad = "🟢";
+        
+        let message = "";
+        
+        if (tipo === "ASIGNACION") {
+            message = `🚨 *NUEVA ASIGNACIÓN - OYM FIFA 2026*\n\n` +
+                      `📡 *Sitio:* ${sitioNombre}\n` +
+                      `👤 *Personal:* ${personalNombre}\n` +
+                      `📍 *Zona:* ${zona}\n` +
+                      `${emojiPrioridad} *Prioridad:* ${prioridad}\n` +
+                      `🕐 *Asignado:* ${fechaHora}\n\n` +
+                      `📋 *Acción requerida:* Atención inmediata al sitio con falla.`;
+        } else if (tipo === "LIBERACION") {
+            message = `✅ *LIBERACIÓN DE PERSONAL - OYM FIFA 2026*\n\n` +
+                      `👤 *Personal:* ${personalNombre}\n` +
+                      `📡 *Sitio anterior:* ${sitioAsignadoAnterior || sitioNombre}\n` +
+                      `📊 *Nuevo estatus:* LIBRE\n` +
+                      `🕐 *Liberado:* ${fechaHora}\n\n` +
+                      `📋 *El personal está disponible para nuevas asignaciones.*`;
+        }
+        
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' })
+            });
+            const data = await response.json();
+            return data.ok;
+        } catch (error) {
+            console.error("Error enviando notificación:", error);
+            return false;
+        }
+    }
+    
+    window.testTelegramConnection = async function() {
+        const personalConChat = dispatchData.find(p => p["CHAT ID"] && p["CHAT ID"] !== "-" && p["CHAT ID"] !== "");
+        if (!personalConChat) {
+            Swal.fire({ icon: 'warning', title: 'No hay personal con CHAT ID', text: 'No se encontró ningún personal con el campo "CHAT ID" configurado.' });
+            return;
+        }
+        
+        Swal.fire({ title: 'Enviando prueba...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        
+        const enviado = await enviarNotificacionTelegram("SITIO PRUEBA", personalConChat.PERSONAL, "🟡 NORMAL", "Zona de Prueba", "ASIGNACION");
+        
+        if (enviado) {
+            Swal.fire({ icon: 'success', title: '¡Notificación enviada!', text: `Mensaje de prueba enviado a ${personalConChat.PERSONAL}` });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo enviar la notificación.' });
+        }
+    };
+    
+    window.debugTelegramConfig = function() {
+        let tablaHtml = '<table style="width:100%; border-collapse:collapse;">';
+        tablaHtml += '<tr><th style="border:1px solid #ddd; padding:4px;">Personal</th><th style="border:1px solid #ddd; padding:4px;">CHAT ID</th></tr>';
+        dispatchData.forEach(p => {
+            tablaHtml += `<tr><td style="border:1px solid #ddd; padding:4px;">${escapeHtml(p.PERSONAL || "-")}</td>
+                         <td style="border:1px solid #ddd; padding:4px;">${escapeHtml(p["CHAT ID"] || "-")}</td></tr>`;
+        });
+        tablaHtml += '</table>';
+        
+        Swal.fire({
+            title: 'Diagnóstico Telegram',
+            html: `<div style="text-align:left;">
+                <p><strong>Registros Dispatch:</strong> ${dispatchData.length}</p>
+                <p><strong>Personales y sus CHAT ID:</strong></p>
+                ${tablaHtml}
+            </div>`,
+            icon: 'info',
+            width: '500px'
+        });
+    };
+
+    function escapeHtml(str) { if (!str) return ""; return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+    document.getElementById("dateDisplay").innerHTML = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // ============================================================
+    // PESTAÑAS
+    // ============================================================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            const dispatchStats = document.getElementById('dispatchStatsSide');
+            if (tabId === 'dispatch') {
+                if (dispatchStats) dispatchStats.style.display = 'block';
+                if (dispatchData.length === 0) cargarDispatchData(); else renderDispatchTable();
+            } else {
+                if (dispatchStats) dispatchStats.style.display = 'none';
+            }
+        });
+    });
+
+    // ============================================================
+    // MAPA
+    // ============================================================
+    function initMap() {
+        map = L.map('map').setView([25.6866, -100.3161], 11.5);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM & CartoDB', maxZoom: 18 }).addTo(map);
+        currentMapCenter = map.getCenter();
+        currentMapZoom = map.getZoom();
+        
+        document.querySelectorAll('.map-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMapFilter = btn.dataset.filter;
+                actualizarMapa();
+            });
+        });
+    }
+    
+    function saveMapPosition() { if (map) { currentMapCenter = map.getCenter(); currentMapZoom = map.getZoom(); } }
+    function restoreMapPosition() { if (map && currentMapCenter && currentMapZoom) { map.setView(currentMapCenter, currentMapZoom, { animate: false }); } }
+    
+    function getProfessionalIcon(estado, asignacion) {
+        let bgColor, size = 12;
+        let hasPersonal = asignacion && asignacion !== "No asignado";
+        
+        if (estado === "UP") { bgColor = "#22c55e"; }
+        else if (estado === "DOWN") { bgColor = "#ef4444"; }
+        else { bgColor = "#f59e0b"; }
+        
+        const borderStyle = hasPersonal ? `border: 3px solid #3b82f6;` : `border: 2px solid white;`;
+        const extraIcon = hasPersonal ? `<div style="position: absolute; bottom: -4px; right: -4px; width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; border: 1px solid white;"></div>` : '';
+        
+        return L.divIcon({
+            html: `<div style="position: relative; width: ${size}px; height: ${size}px;">
+                        <div style="width: ${size}px; height: ${size}px; background: ${bgColor}; ${borderStyle} border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.3);"></div>
+                        ${extraIcon}
+                    </div>`,
+            className: 'professional-marker',
+            iconSize: [size, size],
+            popupAnchor: [0, -6]
+        });
+    }
+    
+    function filtrarSitiosMapa(sitios) {
+        return sitios.filter(s => {
+            if (currentMapFilter === "todos") return true;
+            if (currentMapFilter === "asignados") return s.asignacion && s.asignacion !== "No asignado";
+            if (currentMapFilter === "no_asignados") return !s.asignacion || s.asignacion === "No asignado";
+            if (currentMapFilter === "up") return s.estadoOriginal === "UP";
+            if (currentMapFilter === "down") return s.estadoOriginal === "DOWN";
+            return true;
+        });
+    }
+
+    // ============================================================
+    // MONITOREO - DATOS
+    // ============================================================
+    async function fetchSitiosFromAppSheet(showMessage = false) {
+        if (isUpdating) return;
+        isUpdating = true;
+        try {
+            if (showMessage) { document.getElementById("infoBanner").innerHTML = "🔄 Actualizando..."; document.getElementById("infoBanner").style.background = "#fef3c7"; }
+            saveMapPosition();
+            const response = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                method: 'POST',
+                headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX", "Selector": "FILTER(FIFA26, TRUE)" } })
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+                sitiosData = data.map(row => {
+                    let estadoOriginal = row["ESTATUS"] || row["Estado"] || "UP";
+                    let estadoDisplay = "";
+                    if (estadoOriginal === "UP") estadoDisplay = "🟢 UP";
+                    else if (estadoOriginal === "DOWN") estadoDisplay = "🔴 DOWN";
+                    else estadoDisplay = "🟡 Mantenimiento";
+                    
+                    return {
+                        rowNumber: row._RowNumber,
+                        nombre: row.Nombre || "Sin nombre",
+                        zona: row.ZONA || "N/D",
+                        estadoOriginal: estadoOriginal,
+                        estadoDisplay: estadoDisplay,
+                        zonaFIFA: row["ZONA FIFA"] || "No definida",
+                        prioridadOriginal: (row["PRIORIDAD FIFA"] || "NORMAL").toString().trim().toUpperCase(),
+                        modernizar: (row["SITIO A MODERNIZAR"] || "NO").toString().toUpperCase() === "SI" ? "SI" : "NO",
+                        jefe: row.JEFE || "No asignado",
+                        asignacion: row[CAMPO_ASIGNACION] || "No asignado",
+                        latitud: parseFloat(row.Latitud) || null,
+                        longitud: parseFloat(row.Longitud) || null,
+                        rawRow: row
+                    };
+                });
+                sitiosData.forEach(s => {
+                    if (s.prioridadOriginal === "FIFA CALIDAD") { s.prioridadColor = "#dc2626"; s.prioridadDisplay = "🔴 FIFA CALIDAD"; }
+                    else if (s.prioridadOriginal === "FIFA ALTA PRIORIDAD") { s.prioridadColor = "#ea580c"; s.prioridadDisplay = "🟠 FIFA ALTA PRIORIDAD"; }
+                    else if (s.prioridadOriginal === "NORMAL") { s.prioridadColor = "#f59e0b"; s.prioridadDisplay = "🟡 NORMAL"; }
+                    else { s.prioridadColor = "#10b981"; s.prioridadDisplay = "🟢 BAJA"; }
+                });
+                actualizarFiltrosOpciones();
+                renderTable();
+                actualizarEstadisticas();
+                actualizarGraficas();
+                actualizarMapa();
+                if (showMessage) {
+                    document.getElementById("infoBanner").innerHTML = "✅ Datos actualizados";
+                    document.getElementById("infoBanner").style.background = "#f0fdf4";
+                    setTimeout(() => { document.getElementById("infoBanner").innerHTML = "✅ Conectado a AppSheet · Actualización en tiempo real"; }, 2000);
+                }
+            }
+            restoreMapPosition();
+        } catch (error) { console.error(error); if (showMessage) { document.getElementById("infoBanner").innerHTML = `❌ Error: ${error.message}`; document.getElementById("infoBanner").style.background = "#fee2e2"; } }
+        finally { isUpdating = false; }
+    }
+    
+    function actualizarFiltrosOpciones() {
+        const zonas = new Set(), lideres = new Set();
+        sitiosData.forEach(s => { if (s.zonaFIFA && s.zonaFIFA !== "No definida") zonas.add(s.zonaFIFA); if (s.jefe && s.jefe !== "No asignado") lideres.add(s.jefe); });
+        document.getElementById("zonaFilter").innerHTML = '<option value="todos">🌍 Todas</option>' + Array.from(zonas).sort().map(z => `<option value="${z}">${z}</option>`).join('');
+        document.getElementById("liderFilter").innerHTML = '<option value="todos">👥 Todos</option>' + Array.from(lideres).sort().map(l => `<option value="${l}">${l}</option>`).join('');
+    }
+    
+    function getDatosFiltrados() {
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        const zona = document.getElementById("zonaFilter").value;
+        const estado = document.getElementById("estadoFilter").value;
+        const lider = document.getElementById("liderFilter").value;
+        const prioridad = document.getElementById("prioridadFilter").value;
+        return sitiosData.filter(s => {
+            let estadoComparar = "";
+            if (estado === "Activo") estadoComparar = "UP";
+            else if (estado === "Falla") estadoComparar = "DOWN";
+            else estadoComparar = estado;
+            
+            const matchSearch = search === "" || s.nombre.toLowerCase().includes(search) || s.zona.toLowerCase().includes(search);
+            const matchZona = zona === "todos" || s.zonaFIFA === zona;
+            const matchEstado = estado === "todos" || s.estadoOriginal === estadoComparar;
+            const matchLider = lider === "todos" || s.jefe === lider;
+            const matchPrioridad = prioridad === "todos" || s.prioridadOriginal === prioridad;
+            return matchSearch && matchZona && matchEstado && matchLider && matchPrioridad;
+        });
+    }
+    
+    function getPersonalDisponible() { return dispatchData.filter(p => p.ESTATUS === "LIBRE" || p.ESTATUS === "COMIDA"); }
+    
+    function renderTable() {
+        const datos = getDatosFiltrados();
+        const tbody = document.getElementById("tableBody");
+        const personalDisponible = getPersonalDisponible();
+        if (datos.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="loading">📭 No se encontraron registros<\/td></td>`; return; }
+        tbody.innerHTML = datos.map(s => {
+            let statusClass = "";
+            if (s.estadoOriginal === "UP") statusClass = "status-UP";
+            else if (s.estadoOriginal === "DOWN") statusClass = "status-DOWN";
+            else statusClass = "status-Mantenimiento";
+            
+            const asignacionDisplay = s.asignacion && s.asignacion !== "No asignado" ? `<span style="background:#dbeafe; padding:2px 6px; border-radius:10px;">👤 ${escapeHtml(s.asignacion)}</span>` : `<span style="color:#94a3b8;">No asignado</span>`;
+            let personalSelect = `<select id="personal_select_${s.rowNumber}" style="width:100%; padding:2px; font-size:0.6rem; margin-bottom:2px;"><option value="">Seleccionar...</option>`;
+            personalDisponible.forEach(p => { personalSelect += `<option value="${escapeHtml(p.PERSONAL)}">${escapeHtml(p.PERSONAL)} (${p.ESTATUS})</option>`; });
+            personalSelect += `</select><button class="edit-btn" style="width:100%;" onclick="asignarPersonal(${s.rowNumber})">✓ Asignar</button>`;
+            return `<tr>
+                <td>${s.rowNumber}</td>
+                <td><strong>${escapeHtml(s.nombre)}</strong></td>
+                <td>${escapeHtml(s.zona)}</td>
+                <td><span class="status-badge ${statusClass}">${s.estadoDisplay}</span></td>
+                <td><span style="background:${s.prioridadColor}20; color:${s.prioridadColor}; padding:2px 6px; border-radius:10px;">${s.prioridadDisplay}</span></td>
+                <td>${s.modernizar === "SI" ? "🔧 SI" : "✓ NO"}</td>
+                <td>${escapeHtml(s.jefe)}</td>
+                <td style="min-width:120px;">${asignacionDisplay}<hr style="margin:3px 0;">${personalSelect}</td>
+                <td><button class="edit-btn" onclick="editarSitio(${s.rowNumber})">✏️</button></td>
+             `;
+        }).join("");
+    }
+    
+    // ASIGNAR PERSONAL
+    window.asignarPersonal = async function(rowNumber) {
+        const sitio = sitiosData.find(s => s.rowNumber == rowNumber);
+        if (!sitio) { Swal.fire('Error', 'No se encontró el sitio', 'error'); return; }
+        const select = document.getElementById(`personal_select_${rowNumber}`);
+        const personalSeleccionado = select ? select.value : "";
+        if (!personalSeleccionado) { Swal.fire('Error', 'Seleccione un personal', 'warning'); return; }
+        const personalRegistro = dispatchData.find(p => p.PERSONAL === personalSeleccionado);
+        if (!personalRegistro) { Swal.fire('Error', 'Personal no encontrado', 'error'); return; }
+        
+        const result = await Swal.fire({
+            title: 'Confirmar Asignación',
+            html: `<p>¿Asignar a <strong>${personalSeleccionado}</strong> al sitio <strong>${sitio.nombre}</strong>?</p>
+                   <p>✅ El personal cambiará a <strong>ASIGNACION</strong><br>
+                   ✅ El sitio quedará vinculado al personal<br>
+                   📨 Se enviará notificación vía Telegram</p>`,
+            icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, asignar'
+        });
+        if (result.isConfirmed) await guardarAsignacionCompleta(personalRegistro, sitio);
+    };
+    
+    async function guardarAsignacionCompleta(personalRegistro, sitio) {
+        try {
+            Swal.fire({ title: 'Asignando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            
+            const updateDispatch = {
+                "Action": "Edit",
+                "Properties": { "Locale": "es-MX" },
+                "Rows": [{ "PERSONAL": personalRegistro.PERSONAL, "SITIO ACTUAL ASIGNADO": sitio.nombre, "ESTATUS": "ASIGNACION" }]
+            };
+            const res1 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateDispatch)
+            });
+            if (!res1.ok) throw new Error(`Error en Dispatch: ${await res1.text()}`);
+            
+            const updateSitio = {
+                "Action": "Edit",
+                "Properties": { "Locale": "es-MX" },
+                "Rows": [{ "_RowNumber": sitio.rowNumber, "ASIGNACION": personalRegistro.PERSONAL }]
+            };
+            const res2 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateSitio)
+            });
+            if (!res2.ok) throw new Error(`Error en Sitio: ${await res2.text()}`);
+            
+            await enviarNotificacionTelegram(sitio.nombre, personalRegistro.PERSONAL, sitio.prioridadDisplay, sitio.zonaFIFA, "ASIGNACION");
+            
+            await Swal.fire({ icon: 'success', title: '¡Asignado!', text: `${personalRegistro.PERSONAL} asignado a ${sitio.nombre}\nNotificación enviada`, timer: 2500, showConfirmButton: false });
+            await cargarDispatchData();
+            await fetchSitiosFromAppSheet();
+        } catch (error) { 
+            console.error(error);
+            Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+        }
+    }
+    
+    // LIBERAR PERSONAL - CON NOTIFICACIÓN
+    window.liberarPersonal = async function(rowNumber, personalNombre, sitioAsignado) {
+        const result = await Swal.fire({
+            title: 'Confirmar Liberación',
+            html: `<p>¿Liberar a <strong>${personalNombre}</strong>?</p>
+                   <p>✅ El personal cambiará a <strong>LIBRE</strong><br>
+                   ✅ Se limpiará la asignación del sitio <strong>${sitioAsignado}</strong><br>
+                   📨 Se enviará notificación de liberación vía Telegram</p>`,
+            icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, liberar', cancelButtonText: 'Cancelar'
+        });
+        if (result.isConfirmed) {
+            await guardarLiberacion(personalNombre, sitioAsignado);
+        }
+    };
+    
+    async function guardarLiberacion(personalNombre, sitioAsignado) {
+        try {
+            Swal.fire({ title: 'Liberando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            
+            const updateDispatch = {
+                "Action": "Edit",
+                "Properties": { "Locale": "es-MX" },
+                "Rows": [{ "PERSONAL": personalNombre, "SITIO ACTUAL ASIGNADO": "", "ESTATUS": "LIBRE" }]
+            };
+            const res1 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateDispatch)
+            });
+            if (!res1.ok) throw new Error(`Error en Dispatch: ${await res1.text()}`);
+            
+            if (sitioAsignado && sitioAsignado !== "-") {
+                const sitio = sitiosData.find(s => s.nombre === sitioAsignado);
+                if (sitio) {
+                    const updateSitio = {
+                        "Action": "Edit",
+                        "Properties": { "Locale": "es-MX" },
+                        "Rows": [{ "_RowNumber": sitio.rowNumber, "ASIGNACION": "" }]
+                    };
+                    await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                        method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateSitio)
+                    });
+                }
+            }
+            
+            // Enviar notificación de liberación
+            await enviarNotificacionTelegram(sitioAsignado, personalNombre, "", "", "LIBERACION", sitioAsignado);
+            
+            await Swal.fire({ icon: 'success', title: '¡Liberado!', text: `${personalNombre} ha sido liberado\nNotificación enviada`, timer: 2500, showConfirmButton: false });
+            await cargarDispatchData();
+            await fetchSitiosFromAppSheet();
+        } catch (error) { 
+            console.error(error);
+            Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+        }
+    }
+    
+    async function guardarCambiosPersonal(id, datos, registroOriginal) {
+        try {
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            
+            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Edit", "Properties": { "Locale": "es-MX" }, "Rows": [datos] })
+            });
+            if (!res.ok) throw new Error(`Error ${res.status}`);
+            
+            if (datos.ESTATUS === "ASIGNACION" && datos["SITIO ACTUAL ASIGNADO"] && datos["SITIO ACTUAL ASIGNADO"] !== "-") {
+                const sitioAsignado = sitiosData.find(s => s.nombre === datos["SITIO ACTUAL ASIGNADO"]);
+                if (sitioAsignado) {
+                    const updateSitio = {
+                        "Action": "Edit",
+                        "Properties": { "Locale": "es-MX" },
+                        "Rows": [{ "_RowNumber": sitioAsignado.rowNumber, "ASIGNACION": datos.PERSONAL }]
+                    };
+                    await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                        method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateSitio)
+                    });
+                    await enviarNotificacionTelegram(datos["SITIO ACTUAL ASIGNADO"], datos.PERSONAL, sitioAsignado.prioridadDisplay, sitioAsignado.zonaFIFA, "ASIGNACION");
+                }
+            }
+            else if (registroOriginal && registroOriginal.ESTATUS === "ASIGNACION" && datos.ESTATUS !== "ASIGNACION") {
+                if (registroOriginal["SITIO ACTUAL ASIGNADO"] && registroOriginal["SITIO ACTUAL ASIGNADO"] !== "-") {
+                    const sitio = sitiosData.find(s => s.nombre === registroOriginal["SITIO ACTUAL ASIGNADO"]);
+                    if (sitio) {
+                        const updateSitio = {
+                            "Action": "Edit",
+                            "Properties": { "Locale": "es-MX" },
+                            "Rows": [{ "_RowNumber": sitio.rowNumber, "ASIGNACION": "" }]
+                        };
+                        await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                            method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updateSitio)
+                        });
+                        await enviarNotificacionTelegram(registroOriginal["SITIO ACTUAL ASIGNADO"], datos.PERSONAL, "", "", "LIBERACION", registroOriginal["SITIO ACTUAL ASIGNADO"]);
+                    }
+                }
+            }
+            
+            await Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
+            await cargarDispatchData(true);
+            await fetchSitiosFromAppSheet();
+        } catch (error) { Swal.fire({ icon: 'error', title: 'Error', text: error.message }); }
+    }
+    
+    async function editarPersonal(id) {
+        const item = dispatchData.find(d => d._RowNumber == id);
+        if (!item) { Swal.fire('Error', 'No encontrado'); return; }
+        let html = '<div class="edit-form-grid">';
+        for (const campo of CAMPOS_DISPATCH) {
+            let valor = item[campo] || "";
+            if (campo === "ESTATUS") {
+                html += `<div class="edit-field"><label>📌 ${campo}</label><select id="edit_${campo.replace(/ /g, '_')}">${ESTATUS_OPTS.map(o => `<option value="${o}" ${valor === o ? "selected" : ""}>${o}</option>`).join('')}</select></div>`;
+            } else if (campo === "SITIO ACTUAL ASIGNADO") {
+                html += `<div class="edit-field"><label>📌 ${campo}</label><select id="edit_${campo.replace(/ /g, '_')}"><option value="">Seleccionar...</option>${sitiosData.map(s => `<option value="${escapeHtml(s.nombre)}" ${valor === s.nombre ? "selected" : ""}>${escapeHtml(s.nombre)}</option>`).join('')}</select></div>`;
+            } else if (campo === "NOTAS") {
+                html += `<div class="edit-field full-width-field"><label>📝 ${campo}</label><textarea id="edit_${campo.replace(/ /g, '_')}" rows="2">${escapeHtml(valor)}</textarea></div>`;
+            } else {
+                html += `<div class="edit-field"><label>📌 ${campo}</label><input type="text" id="edit_${campo.replace(/ /g, '_')}" value="${escapeHtml(valor)}"></div>`;
+            }
+        }
+        html += '</div>';
+        const result = await Swal.fire({ title: `✏️ Editar: ${item.PERSONAL}`, html: html, width: '700px', showCancelButton: true, confirmButtonText: "Guardar", preConfirm: () => {
+            const updated = {}; for (const c of CAMPOS_DISPATCH) { const val = document.getElementById(`edit_${c.replace(/ /g, '_')}`)?.value || ""; updated[c] = val === "" ? "-" : val; } return updated;
+        } });
+        if (result.isConfirmed) await guardarCambiosPersonal(item._RowNumber, result.value, item);
+    }
+    
+    function actualizarEstadisticas() {
+        const downSites = sitiosData.filter(s => s.estadoOriginal === "DOWN").length;
+        document.getElementById("totalSitiosSide").innerText = sitiosData.length;
+        document.getElementById("fifaCalidadSide").innerText = sitiosData.filter(s => s.prioridadOriginal === "FIFA CALIDAD").length;
+        document.getElementById("fifaAltaSide").innerText = sitiosData.filter(s => s.prioridadOriginal === "FIFA ALTA PRIORIDAD").length;
+        document.getElementById("normalSide").innerText = sitiosData.filter(s => s.prioridadOriginal === "NORMAL").length;
+        document.getElementById("modernizarSide").innerText = sitiosData.filter(s => s.modernizar === "SI").length;
+        document.getElementById("fallasSide").innerText = downSites;
+    }
+    
+    function actualizarGraficas() {
+        const datos = getDatosFiltrados();
+        const liderCount = {};
+        datos.forEach(s => { if (s.jefe && s.jefe !== "No asignado") liderCount[s.jefe] = (liderCount[s.jefe] || 0) + 1; });
+        let lideres = Object.entries(liderCount).sort((a,b) => b[1] - a[1]);
+        let limite = currentLiderFilter === "top5" ? 5 : (currentLiderFilter === "top15" ? 15 : 10);
+        lideres = lideres.slice(0, limite);
+        if (liderChart) liderChart.destroy();
+        liderChart = new Chart(document.getElementById('liderChart'), { type: 'bar', data: { labels: lideres.map(l => l[0].length > 15 ? l[0].substring(0,15)+'..' : l[0]), datasets: [{ label: 'Sitios', data: lideres.map(l => l[1]), backgroundColor: '#0a2540', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: true } });
+        
+        let prioridadData = { "FIFA CALIDAD": 0, "FIFA ALTA PRIORIDAD": 0, "NORMAL": 0 };
+        let datosParaPrioridad = currentPrioridadChartFilter === "modernizar" ? datos.filter(s => s.modernizar === "SI") : currentPrioridadChartFilter === "fallas" ? datos.filter(s => s.estadoOriginal === "DOWN" || s.estadoOriginal === "Mantenimiento") : datos;
+        datosParaPrioridad.forEach(s => { if (s.prioridadOriginal === "FIFA CALIDAD") prioridadData["FIFA CALIDAD"]++; else if (s.prioridadOriginal === "FIFA ALTA PRIORIDAD") prioridadData["FIFA ALTA PRIORIDAD"]++; else prioridadData["NORMAL"]++; });
+        if (prioridadChart) prioridadChart.destroy();
+        prioridadChart = new Chart(document.getElementById('prioridadChart'), { type: 'doughnut', data: { labels: ['FIFA CALIDAD', 'FIFA ALTA PRIORIDAD', 'NORMAL'], datasets: [{ data: [prioridadData["FIFA CALIDAD"], prioridadData["FIFA ALTA PRIORIDAD"], prioridadData["NORMAL"]], backgroundColor: ['#dc2626', '#ea580c', '#f59e0b'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: true } });
+    }
+    
+    function actualizarMapa() {
+        const datos = getDatosFiltrados();
+        const datosFiltradosMapa = filtrarSitiosMapa(datos);
+        
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+        
+        const sitiosConCoords = datosFiltradosMapa.filter(s => s.latitud && s.longitud);
+        sitiosConCoords.forEach(s => {
+            const icon = getProfessionalIcon(s.estadoOriginal, s.asignacion);
+            const marker = L.marker([s.latitud, s.longitud], { icon: icon }).addTo(map);
+            
+            let estadoTexto = s.estadoOriginal === "UP" ? "🟢 UP" : (s.estadoOriginal === "DOWN" ? "🔴 DOWN" : "🟡 Mantenimiento");
+            let personalInfo = s.asignacion && s.asignacion !== "No asignado" ? `<br>👨‍🔧 <strong>Personal:</strong> ${escapeHtml(s.asignacion)}` : '<br>👨‍🔧 <strong>Personal:</strong> No asignado';
+            
+            marker.bindPopup(`
+                <div style="min-width:200px;">
+                    <b>🏢 ${escapeHtml(s.nombre)}</b><br>
+                    📍 Zona: ${escapeHtml(s.zona)}<br>
+                    📊 Estado: ${estadoTexto}<br>
+                    🏆 ${s.prioridadDisplay}<br>
+                    👤 Líder: ${escapeHtml(s.jefe)}${personalInfo}
+                </div>
+            `);
+            markers.push(marker);
+        });
+        restoreMapPosition();
+    }
+    
+    function editarSitio(rowNumber) {
+        const sitio = sitiosData.find(s => s.rowNumber == rowNumber);
+        Swal.fire({ title: 'Editar Sitio', html: `<p><strong>${sitio.nombre}</strong></p><p>Asignación actual: <strong>${sitio.asignacion}</strong></p><p>Use el selector de personal para modificar</p>`, icon: 'info' });
+    }
+    
+    // ============================================================
+    // DISPATCH FUNCIONES
+    // ============================================================
+    async function cargarDispatchData(showMessage = false) {
+        try {
+            if (showMessage) { const b = document.getElementById("dispatchInfoBanner"); b.innerHTML = "🔄 Cargando personal..."; b.className = "info-banner info-banner-warning"; }
+            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX", "Selector": "FILTER('DISPATCH FIFA26', TRUE)" } })
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                dispatchData = data.map((r, i) => ({ ...r, _RowNumber: r._RowNumber || i+1, id: r._RowNumber || i+1 }));
+                actualizarFiltrosDispatch(); renderDispatchTable(); actualizarEstadisticasDispatch();
+                const b = document.getElementById("dispatchInfoBanner"); b.innerHTML = `✅ ${dispatchData.length} registros de personal`; b.className = "info-banner";
+                setTimeout(() => { if (document.getElementById("dispatchInfoBanner").innerHTML.includes("✅")) b.innerHTML = "✅ Dispatch FIFA26 · Gestión de personal"; }, 2000);
+            } else { dispatchData = []; renderDispatchTable(); actualizarEstadisticasDispatch(); }
+        } catch (error) {
+            document.getElementById("dispatchInfoBanner").innerHTML = `⚠️ Error: ${error.message}`;
+            document.getElementById("dispatchInfoBanner").className = "info-banner info-banner-warning";
+        }
+    }
+    
+    function actualizarFiltrosDispatch() {
+        const zonas = new Set(); dispatchData.forEach(d => { if (d.ZONA) zonas.add(d.ZONA); });
+        document.getElementById("dispatchZonaFilter").innerHTML = '<option value="todos">Todas</option>' + Array.from(zonas).sort().map(z => `<option value="${z}">${z}</option>`).join('');
+    }
+    
+    function actualizarEstadisticasDispatch() {
+        const libres = dispatchData.filter(d => d.ESTATUS === "LIBRE").length;
+        const comida = dispatchData.filter(d => d.ESTATUS === "COMIDA").length;
+        const asignacion = dispatchData.filter(d => d.ESTATUS === "ASIGNACION").length;
+        document.getElementById("totalPersonal").innerText = dispatchData.length;
+        document.getElementById("libresCount").innerText = libres;
+        document.getElementById("comidaCount").innerText = comida;
+        document.getElementById("asignacionCount").innerText = asignacion;
+        document.getElementById("dispatchLibresSide").innerText = libres;
+        document.getElementById("dispatchAsignadosSide").innerText = asignacion;
+    }
+    
+    function getDispatchFiltrados() {
+        const search = document.getElementById("dispatchSearchInput").value.toLowerCase();
+        const zona = document.getElementById("dispatchZonaFilter").value;
+        const estatus = document.getElementById("dispatchEstatusFilter").value;
+        return dispatchData.filter(i => {
+            const matchSearch = search === "" || (i.PERSONAL || "").toLowerCase().includes(search) || (i["SITIO ACTUAL ASIGNADO"] || "").toLowerCase().includes(search);
+            const matchZona = zona === "todos" || i.ZONA === zona;
+            const matchEstatus = estatus === "todos" || i.ESTATUS === estatus;
+            return matchSearch && matchZona && matchEstatus;
+        });
+    }
+    
+    function renderDispatchTable() {
+        const filtrados = getDispatchFiltrados();
+        const tbody = document.getElementById("dispatchBody");
+        if (filtrados.length === 0) { tbody.innerHTML = `<tr><td colspan="12" class="loading">📭 No hay registros<\/td></td>`; return; }
+        tbody.innerHTML = filtrados.map(i => {
+            let statusClass = i.ESTATUS === "LIBRE" ? "status-LIBRE" : (i.ESTATUS === "COMIDA" ? "status-COMIDA" : "status-ASIGNACION");
+            const tieneAsignacion = i["SITIO ACTUAL ASIGNADO"] && i["SITIO ACTUAL ASIGNADO"] !== "-";
+            return `<tr>
+                <td>${i._RowNumber}</td>
+                <td><strong>${escapeHtml(i.PERSONAL || "-")}</strong></td>
+                <td>${escapeHtml(i.PROVEEDOR || "-")}</td>
+                <td>${escapeHtml(i.ZONA || "-")}</td>
+                <td>${escapeHtml(i["ZONA FIFA"] || "-")}</td>
+                <td>${escapeHtml(i["JEFE FIFA"] || "-")}</td>
+                <td>${escapeHtml(i.CELULAR || "-")}</td>
+                <td>${escapeHtml(i["SITIO ACTUAL ASIGNADO"] || "-")}</td>
+                <td><span class="status-badge ${statusClass}">${i.ESTATUS || "LIBRE"}</span></td>
+                <td style="max-width:120px; overflow:hidden;">${escapeHtml(i.NOTAS || "-")}</td>
+                <td>${escapeHtml(i["CHAT ID"] || "-")}</td>
+                <td style="white-space: nowrap;">
+                    <button class="edit-btn" onclick="editarPersonal(${i._RowNumber})" style="margin-right: 4px;">✏️</button>
+                    ${tieneAsignacion ? `<button class="edit-btn" style="background:#10b981;" onclick="liberarPersonal(${i._RowNumber}, '${escapeHtml(i.PERSONAL)}', '${escapeHtml(i["SITIO ACTUAL ASIGNADO"])}')">🔓 Liberar</button>` : ''}
+                </td>
+             `;
+        }).join("");
+    }
+    
+    async function crearNuevoPersonal() {
+        let html = '<div class="edit-form-grid">';
+        for (const campo of CAMPOS_DISPATCH) {
+            if (campo === "ESTATUS") {
+                html += `<div class="edit-field"><label>📌 ${campo}</label><select id="edit_${campo.replace(/ /g, '_')}">${ESTATUS_OPTS.map(o => `<option value="${o}">${o}</option>`).join('')}</select></div>`;
+            } else if (campo === "SITIO ACTUAL ASIGNADO") {
+                html += `<div class="edit-field"><label>📌 ${campo}</label><select id="edit_${campo.replace(/ /g, '_')}"><option value="">Seleccionar...</option>${sitiosData.map(s => `<option value="${escapeHtml(s.nombre)}">${escapeHtml(s.nombre)}</option>`).join('')}</select></div>`;
+            } else if (campo === "NOTAS") {
+                html += `<div class="edit-field full-width-field"><label>📝 ${campo}</label><textarea id="edit_${campo.replace(/ /g, '_')}" rows="2"></textarea></div>`;
+            } else {
+                html += `<div class="edit-field"><label>📌 ${campo}</label><input type="text" id="edit_${campo.replace(/ /g, '_')}"></div>`;
+            }
+        }
+        html += '</div>';
+        const result = await Swal.fire({ title: '➕ Nuevo Personal', html: html, width: '700px', showCancelButton: true, confirmButtonText: "Crear", preConfirm: () => {
+            const newData = {}; for (const c of CAMPOS_DISPATCH) { const val = document.getElementById(`edit_${c.replace(/ /g, '_')}`)?.value || ""; newData[c] = val === "" ? "-" : val; } return newData;
+        } });
+        if (result.isConfirmed) await guardarNuevoPersonal(result.value);
+    }
+    
+    async function guardarNuevoPersonal(nuevo) {
+        try {
+            Swal.fire({ title: 'Creando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Add", "Properties": { "Locale": "es-MX" }, "Rows": [nuevo] })
+            });
+            if (!res.ok) throw new Error(`Error ${res.status}`);
+            await Swal.fire({ icon: 'success', title: 'Creado', timer: 1500, showConfirmButton: false });
+            await cargarDispatchData(true);
+        } catch (error) { Swal.fire({ icon: 'error', title: 'Error', text: error.message }); }
+    }
+    
+    function mostrarAyudaEdicion() {
+        Swal.fire({ title: 'Guía', html: `<div style="text-align:left;">
+            <p><strong>🎨 Mapa:</strong> 🟢 UP / 🔴 DOWN / 🔵 Borde azul = Asignado</p>
+            <p><strong>📌 Asignación:</strong> Seleccione personal y confirme</p>
+            <p><strong>📨 Telegram:</strong> Notificaciones al ASIGNAR y al LIBERAR personal</p>
+            <p><strong>🔓 Liberación:</strong> Botón "Liberar" en Dispatch - envía notificación al técnico</p>
+        </div>`, icon: 'info' });
+    }
+    
+    function aplicarFiltrosMonitoreo() { renderTable(); actualizarGraficas(); actualizarMapa(); }
+    function resetFiltersMonitoreo() {
+        document.getElementById("searchInput").value = ""; document.getElementById("zonaFilter").value = "todos";
+        document.getElementById("estadoFilter").value = "todos"; document.getElementById("liderFilter").value = "todos";
+        document.getElementById("prioridadFilter").value = "todos";
+        aplicarFiltrosMonitoreo();
+    }
+    function aplicarFiltrosDispatch() { renderDispatchTable(); }
+    function resetFiltersDispatch() {
+        document.getElementById("dispatchSearchInput").value = ""; document.getElementById("dispatchZonaFilter").value = "todos";
+        document.getElementById("dispatchEstatusFilter").value = "todos";
+        renderDispatchTable();
+    }
+    
+    // Event Listeners
+    document.querySelectorAll(".chart-filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".chart-filter-btn").forEach(b => { b.style.background = "#f1f5f9"; b.style.color = "#475569"; });
+            btn.style.background = "#0a2540"; btn.style.color = "white";
+            currentLiderFilter = btn.dataset.filter;
+            actualizarGraficas();
+        });
+    });
+    document.querySelectorAll(".prioridad-filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".prioridad-filter-btn").forEach(b => { b.style.background = "#f1f5f9"; b.style.color = "#475569"; });
+            btn.style.background = "#0a2540"; btn.style.color = "white";
+            currentPrioridadChartFilter = btn.dataset.filter;
+            actualizarGraficas();
+        });
+    });
+    document.getElementById("refreshBtn").addEventListener("click", () => fetchSitiosFromAppSheet(true));
+    document.getElementById("resetFiltersBtn").addEventListener("click", () => resetFiltersMonitoreo());
+    document.getElementById("searchInput").addEventListener("input", () => aplicarFiltrosMonitoreo());
+    document.getElementById("zonaFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
+    document.getElementById("estadoFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
+    document.getElementById("liderFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
+    document.getElementById("prioridadFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
+    
+    document.getElementById("refreshDispatchBtn").addEventListener("click", () => cargarDispatchData(true));
+    document.getElementById("resetDispatchFiltersBtn").addEventListener("click", () => resetFiltersDispatch());
+    document.getElementById("dispatchSearchInput").addEventListener("input", () => renderDispatchTable());
+    document.getElementById("dispatchZonaFilter").addEventListener("change", () => renderDispatchTable());
+    document.getElementById("dispatchEstatusFilter").addEventListener("change", () => renderDispatchTable());
+    
+    window.editarSitio = editarSitio;
+    window.mostrarAyudaEdicion = mostrarAyudaEdicion;
+    window.crearNuevoPersonal = crearNuevoPersonal;
+    window.editarPersonal = editarPersonal;
+    window.asignarPersonal = asignarPersonal;
+    window.liberarPersonal = liberarPersonal;
+    window.debugTelegramConfig = debugTelegramConfig;
+    
+    initMap();
+    fetchSitiosFromAppSheet();
+    cargarDispatchData();
+    setInterval(() => { fetchSitiosFromAppSheet(false); if (document.querySelector('.tab-btn.active').dataset.tab === 'dispatch') cargarDispatchData(false); }, 60000);
+</script>
+</body>
+</html>
