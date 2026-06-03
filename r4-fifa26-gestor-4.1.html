@@ -373,7 +373,7 @@
                 <div class="table-header"><h4>📋 Detalle de Sitios Celulares</h4><div style="display:flex;gap:6px;align-items:center;"><button class="btn-exec btn-edit action-protegida" onclick="crearNuevoSitio()" style="padding:6px 14px;">➕ Nuevo Sitio</button><button class="btn-exec btn-edit" onclick="mostrarAyudaEdicion()" style="padding:3px 10px;font-size:0.6rem;">✏️ Ayuda</button></div></div>
                 <div class="table-wrapper">
                     <table id="dataTable">
-                        <thead><tr><th>ID</th><th>Sitio</th><th>Zona</th><th>Estado</th><th>Prioridad</th><th>Líder</th><th>Asignación</th><th>Acción</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Sitio</th><th>Zona</th><th>Estado</th><th>Prioridad</th><th>Líder</th><th>Tipo Falla</th><th>Folio</th><th>Inicio Falla</th><th>Comentario</th><th>Asignación</th><th>Acción</th></tr></thead>
                         <tbody id="tableBody"><tr><td colspan="9" class="loading"><div class="spinner"></div>Cargando...<\/td></table></tbody>
                     </table>
                 </div>
@@ -1154,6 +1154,10 @@
                         asignacion: row[CAMPO_ASIGNACION] || "No asignado",
                         latitud: parseFloat(row.Latitud) || null,
                         longitud: parseFloat(row.Longitud) || null,
+                        tipoFalla:    row["TIPO DE FALLA"] || "",
+                        folio:        row["FOLIO"]         || "",
+                        iniciofalla:  row["INICIO DE FALLA"] || "",
+                        comentario:   row["COMENTARIO"]    || "",
                         rawRow: row
                     };
                 });
@@ -1220,7 +1224,7 @@
         const datos = getDatosFiltrados();
         const tbody = document.getElementById("tableBody");
         const personalDisponible = getPersonalDisponible();
-        if (datos.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="loading">📭 No se encontraron registros</td></tr>`; return; }
+        if (datos.length === 0) { tbody.innerHTML = `<tr><td colspan="12" class="loading">📭 No se encontraron registros</td></tr>`; return; }
         tbody.innerHTML = datos.map(s => {
             let statusClass = "";
             if (s.estadoOriginal === "UP") statusClass = "status-UP";
@@ -1238,6 +1242,10 @@
                 <td><span class="status-badge ${statusClass}">${s.estadoDisplay}</span></td>
                 <td><span style="background:${s.prioridadColor}20; color:${s.prioridadColor}; padding:2px 6px; border-radius:10px;">${s.prioridadDisplay}</span></td>
                 <td>${escapeHtml(s.jefe)}</td>
+                <td style="max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(s.tipoFalla)}">${escapeHtml(s.tipoFalla || '-')}</td>
+                <td>${escapeHtml(s.folio || '-')}</td>
+                <td style="font-size:0.68rem;">${s.iniciofalla ? fechaLocal(s.iniciofalla) : '-'}</td>
+                <td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(s.comentario)}">${escapeHtml(s.comentario || '-')}</td>
                 <td style="min-width:120px;">${asignacionDisplay}<hr style="margin:3px 0;" class="action-protegida"><span class="action-protegida">${personalSelect}</span></td>
                 <td><button class="edit-btn action-protegida" onclick="editarSitio(${s.rowNumber})">✏️</button></td>
              `;
@@ -1616,31 +1624,42 @@
             return '#0a2540';
         });
         
-        if (liderChart) liderChart.destroy();
-        const liderCtx = document.getElementById('liderChart').getContext('2d');
-        liderChart = new Chart(liderCtx, { 
-            type: 'bar', 
-            data: { 
-                labels: lideresArray.map(l => l[0].length > 18 ? l[0].substring(0,18)+'..' : l[0]), 
-                datasets: [{ label: 'Sitios', data: lideresArray.map(l => l[1]), backgroundColor: colores, borderRadius: 6, barPercentage: 0.7 }] 
-            }, 
-            options: { 
-                responsive: true, maintainAspectRatio: true,
-                onClick: (e, activeEls) => {
-                    if (activeEls.length > 0) {
-                        const index = activeEls[0].index;
-                        const lider = lideresArray[index][0];
-                        aplicarFiltroLiderDesdeGrafica(lider);
+        const liderLabels = lideresArray.map(l => l[0].length > 18 ? l[0].substring(0,18)+'..' : l[0]);
+        const liderValues = lideresArray.map(l => l[1]);
+        if (liderChart) {
+            liderChart.data.labels = liderLabels;
+            liderChart.data.datasets[0].data = liderValues;
+            liderChart.data.datasets[0].backgroundColor = colores;
+            liderChart.update('none');
+        } else {
+            const liderCtx = document.getElementById('liderChart').getContext('2d');
+            liderChart = new Chart(liderCtx, {
+                type: 'bar',
+                data: { labels: liderLabels, datasets: [{ label: 'Sitios', data: liderValues, backgroundColor: colores, borderRadius: 6, barPercentage: 0.7 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    animation: { duration: 400 },
+                    onClick: (e, activeEls) => {
+                        if (activeEls.length > 0) { const index = activeEls[0].index; aplicarFiltroLiderDesdeGrafica(lideresArray[index][0]); }
                     }
                 }
-            } 
-        });
+            });
+        }
         
         let prioridadData = { "FIFA CALIDAD": 0, "FIFA ALTA PRIORIDAD": 0, "NORMAL": 0 };
         let datosParaPrioridad = currentPrioridadChartFilter === "modernizar" ? datos.filter(s => s.modernizar === "SI") : currentPrioridadChartFilter === "fallas" ? datos.filter(s => s.estadoOriginal === "DOWN" || s.estadoOriginal === "Mantenimiento") : datos;
         datosParaPrioridad.forEach(s => { if (s.prioridadOriginal === "FIFA CALIDAD") prioridadData["FIFA CALIDAD"]++; else if (s.prioridadOriginal === "FIFA ALTA PRIORIDAD") prioridadData["FIFA ALTA PRIORIDAD"]++; else prioridadData["NORMAL"]++; });
-        if (prioridadChart) prioridadChart.destroy();
-        prioridadChart = new Chart(document.getElementById('prioridadChart'), { type: 'doughnut', data: { labels: ['FIFA CALIDAD', 'FIFA ALTA PRIORIDAD', 'NORMAL'], datasets: [{ data: [prioridadData["FIFA CALIDAD"], prioridadData["FIFA ALTA PRIORIDAD"], prioridadData["NORMAL"]], backgroundColor: ['#dc2626', '#ea580c', '#f59e0b'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: true } });
+        const priorVals = [prioridadData["FIFA CALIDAD"], prioridadData["FIFA ALTA PRIORIDAD"], prioridadData["NORMAL"]];
+        if (prioridadChart) {
+            prioridadChart.data.datasets[0].data = priorVals;
+            prioridadChart.update('none');
+        } else {
+            prioridadChart = new Chart(document.getElementById('prioridadChart'), {
+                type: 'doughnut',
+                data: { labels: ['FIFA CALIDAD', 'FIFA ALTA PRIORIDAD', 'NORMAL'], datasets: [{ data: priorVals, backgroundColor: ['#dc2626', '#ea580c', '#f59e0b'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: true, animation: { duration: 400 } }
+            });
+        }
     }
     
     function actualizarMapa() {
@@ -1925,28 +1944,28 @@
 
         const ctxProv = document.getElementById('chartProveedorAsig');
         if (ctxProv) {
-            if (chartProveedorAsig) chartProveedorAsig.destroy();
-            chartProveedorAsig = new Chart(ctxProv.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: provLabels.map(l => l.length > 16 ? l.substring(0,16)+'..' : l),
-                    datasets: [{
-                        label: 'Asignaciones',
-                        data: provValues,
-                        backgroundColor: provLabels.map((_, i) => provColors[i % provColors.length]),
-                        borderRadius: 6,
-                        barPercentage: 0.65
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-                        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+            const provLbls = provLabels.map(l => l.length > 16 ? l.substring(0,16)+'..' : l);
+            const provBgColors = provLabels.map((_, i) => provColors[i % provColors.length]);
+            if (chartProveedorAsig) {
+                chartProveedorAsig.data.labels = provLbls;
+                chartProveedorAsig.data.datasets[0].data = provValues;
+                chartProveedorAsig.data.datasets[0].backgroundColor = provBgColors;
+                chartProveedorAsig.update('none');
+            } else {
+                chartProveedorAsig = new Chart(ctxProv.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: provLbls, datasets: [{ label: 'Asignaciones', data: provValues, backgroundColor: provBgColors, borderRadius: 6, barPercentage: 0.65 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                        }
                     }
-                }
-            });
+                });
+            }
         }
 
         // ── Gráfica 2: Línea por Día ──────────────────────────────
@@ -1972,33 +1991,25 @@
 
         const ctxDia = document.getElementById('chartAsigPorDia');
         if (ctxDia) {
-            if (chartAsigPorDia) chartAsigPorDia.destroy();
-            chartAsigPorDia = new Chart(ctxDia.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: diasLabels,
-                    datasets: [{
-                        label: 'Asignaciones',
-                        data: diasValues,
-                        borderColor: '#0a2540',
-                        backgroundColor: 'rgba(10,37,64,0.08)',
-                        borderWidth: 2.5,
-                        pointBackgroundColor: '#0a2540',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-                        x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
+            if (chartAsigPorDia) {
+                chartAsigPorDia.data.labels = diasLabels;
+                chartAsigPorDia.data.datasets[0].data = diasValues;
+                chartAsigPorDia.update('none');
+            } else {
+                chartAsigPorDia = new Chart(ctxDia.getContext('2d'), {
+                    type: 'line',
+                    data: { labels: diasLabels, datasets: [{ label: 'Asignaciones', data: diasValues, borderColor: '#0a2540', backgroundColor: 'rgba(10,37,64,0.08)', borderWidth: 2.5, pointBackgroundColor: '#0a2540', pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.3 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                            x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     }
 
