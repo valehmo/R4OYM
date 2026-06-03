@@ -87,6 +87,8 @@
         .status-UP { background: #dcfce7; color: #166534; }
         .status-DOWN { background: #fee2e2; color: #991b1b; }
         .status-Mantenimiento { background: #fed7aa; color: #9a3412; }
+        .status-ACTIVA { background: #dbeafe; color: #1e40af; }
+        .status-LIBERADA { background: #dcfce7; color: #166534; }
         
         .edit-btn { background: #0a2540; color: white; border: none; padding: 3px 8px; border-radius: 10px; cursor: pointer; font-size: 0.55rem; transition: all 0.2s; }
         .edit-btn:hover { background: #1a3a5c; }
@@ -116,6 +118,16 @@
         .map-filter-btn { background: #f1f5f9; border: none; padding: 4px 12px; border-radius: 15px; font-size: 0.65rem; cursor: pointer; transition: all 0.2s; }
         .map-filter-btn.active { background: #0a2540; color: white; }
         
+        .filtro-activo-badge {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.65rem;
+            margin-left: 10px;
+        }
+        
         .config-panel {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -130,27 +142,100 @@
             color: #0a2540;
         }
         
+        .asignaciones-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .asignaciones-stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #eef2f7;
+        }
+        .asignaciones-stat-number { font-size: 1.2rem; font-weight: 700; color: #0a2540; }
+        .asignaciones-stat-label { font-size: 0.6rem; color: #64748b; margin-top: 3px; }
+        
         @media (max-width: 1000px) {
             .sidebar { width: 220px; }
             .main-content { margin-left: 220px; padding: 15px; }
             .dashboard-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
             .dispatch-stats { grid-template-columns: repeat(2, 1fr); }
+            .asignaciones-stats { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0; padding: 12px; }
             .edit-form-grid { grid-template-columns: 1fr; }
             .dispatch-stats { grid-template-columns: 1fr; }
+            .asignaciones-stats { grid-template-columns: 1fr; }
         }
+
+        /* ── LOGIN OVERLAY ── */
+        #loginOverlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #0a2540 0%, #0f3460 60%, #0a2540 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: white; border-radius: 20px; padding: 40px 36px;
+            width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .login-logo { font-size: 2rem; font-weight: 700; color: #0a2540; line-height: 1; }
+        .login-sub  { font-size: 0.7rem; color: #64748b; margin: 6px 0 28px; }
+        .login-badge { background: #0a2540; color: white; font-size: 0.6rem; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 24px; }
+        .login-field { text-align: left; margin-bottom: 14px; }
+        .login-field label { display: block; font-size: 0.65rem; font-weight: 600; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .login-field input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; font-family: 'Inter', sans-serif; transition: border 0.2s; outline: none; }
+        .login-field input:focus { border-color: #0a2540; }
+        .login-btn { width: 100%; padding: 11px; background: #0a2540; color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 6px; transition: background 0.2s; }
+        .login-btn:hover { background: #1a3a5c; }
+        .login-error { color: #dc2626; font-size: 0.7rem; margin-top: 10px; min-height: 18px; }
+        .login-footer { font-size: 0.6rem; color: #94a3b8; margin-top: 20px; }
+
+        /* ── MODO SOLO LECTURA — ocultar botones de acción ── */
+        body.modo-viewer .action-protegida { display: none !important; }
+        body.modo-viewer .col-asignar      { display: none !important; }
+
+        /* Badge de rol en sidebar */
+        #rolBadge { font-size: 0.6rem; padding: 3px 8px; border-radius: 12px; display: inline-block; margin-top: 6px; }
+        .rol-operador { background: #10b981; color: white; }
+        .rol-viewer   { background: #64748b; color: white; }
+
     </style>
 </head>
 <body>
+
+<!-- ═══════════════════════════════ LOGIN OVERLAY ═══════════════════════════════ -->
+<div id="loginOverlay">
+    <div class="login-box">
+        <div class="login-logo">OYM</div>
+        <div class="login-sub">FIFA World Cup 2026 · Monterrey</div>
+        <div class="login-badge">🔒 Acceso Restringido</div>
+        <div class="login-field">
+            <label>Usuario</label>
+            <input type="text" id="loginUser" placeholder="Ingresa tu usuario" autocomplete="username">
+        </div>
+        <div class="login-field">
+            <label>Contraseña</label>
+            <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="login-btn" onclick="intentarLogin()">Ingresar →</button>
+        <div class="login-error" id="loginError"></div>
+        <div class="login-footer">OYM · Operación y Mantenimiento FIFA 2026</div>
+    </div>
+</div>
+
 <div class="app-container">
     <div class="sidebar">
         <div class="logo-area">
             <h2>OYM<br>FIFA 2026</h2>
             <div class="fifa-badge">Monterrey · Operación</div>
+            <div id="rolBadge"></div>
         </div>
         
         <div class="stats-summary">
@@ -190,6 +275,16 @@
             <div class="stat-exec"><div class="stat-value" id="dispatchAsignadosSide">0</div><div class="stat-label">EN ASIGNACIÓN</div></div>
         </div>
         
+        <div class="stats-summary" id="plantasStatsSide" style="display: none;">
+            <div class="stat-exec"><div class="stat-value" id="plantasLibresSide">0</div><div class="stat-label">PLANTAS LIBRES</div></div>
+            <div class="stat-exec"><div class="stat-value" id="plantasAsignadasSide">0</div><div class="stat-label">PLANTAS ASIGNADAS</div></div>
+        </div>
+        
+        <div class="stats-summary" id="asignacionesStatsSide" style="display: none;">
+            <div class="stat-exec"><div class="stat-value" id="asignacionesActivasSide">0</div><div class="stat-label">ASIGNACIONES ACTIVAS</div></div>
+            <div class="stat-exec"><div class="stat-value" id="asignacionesHoySide">0</div><div class="stat-label">ASIGNACIONES HOY</div></div>
+        </div>
+        
         <details class="config-panel">
             <summary>⚙️ Configuración Telegram</summary>
             <div style="margin-top: 8px;">
@@ -201,6 +296,7 @@
         </details>
         
         <button class="btn-edit-sidebar" onclick="mostrarAyudaEdicion()">✏️ Guía de edición</button>
+        <button class="btn-edit-sidebar" style="margin-top:8px; background:rgba(239,68,68,0.3);" onclick="cerrarSesion()">🔓 Cerrar sesión</button>
     </div>
 
     <div class="main-content">
@@ -212,6 +308,8 @@
         <div class="tabs-container">
             <button class="tab-btn active" data-tab="monitoreo">📡 Monitoreo de Sitios</button>
             <button class="tab-btn" data-tab="dispatch">🚨 Dispatch / Personal Técnico</button>
+            <button class="tab-btn" data-tab="asignaciones">📋 Sitios Asignados</button>
+            <button class="tab-btn" data-tab="plantas">⚡ Plantas de Emergencia</button>
         </div>
 
         <!-- Contenido Monitoreo -->
@@ -220,14 +318,14 @@
 
             <div class="dashboard-grid">
                 <div class="card">
-                    <div class="card-header"><h3>📊 Distribución por Líder</h3>
-                        <div style="display: flex; gap: 4px;">
-                            <span class="chart-filter-btn" data-filter="all" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#0a2540; color:white; border-radius:12px;">Top10</span>
-                            <span class="chart-filter-btn" data-filter="top5" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Top5</span>
-                            <span class="chart-filter-btn" data-filter="top15" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Top15</span>
+                    <div class="card-header">
+                        <h3>📊 Distribución por Líder</h3>
+                        <div style="font-size: 0.65rem; color: #64748b;">
+                            💡 Haz clic en cualquier barra para filtrar por ese líder
+                            <span id="filtroActivoBadge" class="filtro-activo-badge" style="display: none;"></span>
                         </div>
                     </div>
-                    <canvas id="liderChart" style="max-height: 200px; width: 100%;"></canvas>
+                    <canvas id="liderChart" style="max-height: 220px; width: 100%;"></canvas>
                 </div>
                 
                 <div class="card">
@@ -238,7 +336,7 @@
                             <span class="prioridad-filter-btn" data-filter="fallas" style="cursor:pointer; font-size:0.55rem; padding:2px 6px; background:#f1f5f9; border-radius:12px;">Con Fallas</span>
                         </div>
                     </div>
-                    <canvas id="prioridadChart" style="max-height: 200px; width: 100%;"></canvas>
+                    <canvas id="prioridadChart" style="max-height: 220px; width: 100%;"></canvas>
                 </div>
                 
                 <div class="card full-width">
@@ -268,14 +366,15 @@
                 <div class="filter-group"><label>🏆 Prioridad</label><select id="prioridadFilter"><option value="todos">Todas</option><option value="FIFA CALIDAD">FIFA CALIDAD</option><option value="FIFA ALTA PRIORIDAD">FIFA ALTA PRIORIDAD</option><option value="NORMAL">NORMAL</option></select></div>
                 <div><button id="refreshBtn" class="btn-exec">🔄 Actualizar</button></div>
                 <div><button id="resetFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
+                <div><button id="limpiarFiltroLiderBtn" class="btn-exec" style="background:#e74c3c;">✖️ Quitar filtro líder</button></div>
             </div>
 
             <div class="table-container">
-                <div class="table-header"><h4>📋 Detalle de Sitios Celulares</h4><button class="btn-exec btn-edit" onclick="mostrarAyudaEdicion()" style="padding: 3px 10px; font-size:0.6rem;">✏️ Ayuda</button></div>
+                <div class="table-header"><h4>📋 Detalle de Sitios Celulares</h4><div style="display:flex;gap:6px;align-items:center;"><button class="btn-exec btn-edit action-protegida" onclick="crearNuevoSitio()" style="padding:6px 14px;">➕ Nuevo Sitio</button><button class="btn-exec btn-edit" onclick="mostrarAyudaEdicion()" style="padding:3px 10px;font-size:0.6rem;">✏️ Ayuda</button></div></div>
                 <div class="table-wrapper">
                     <table id="dataTable">
-                        <thead><tr><th>ID</th><th>Sitio</th><th>Zona</th><th>Estado</th><th>Prioridad</th><th>Modernizar</th><th>Líder</th><th>Asignación</th><th>Acción</th></tr></thead>
-                        <tbody id="tableBody"><tr><td colspan="9" class="loading"><div class="spinner"></div>Cargando...<\/td></tr></tbody>
+                        <thead><tr><th>ID</th><th>Sitio</th><th>Zona</th><th>Estado</th><th>Prioridad</th><th>Líder</th><th>Asignación</th><th>Acción</th></tr></thead>
+                        <tbody id="tableBody"><tr><td colspan="9" class="loading"><div class="spinner"></div>Cargando...<\/td></table></tbody>
                     </table>
                 </div>
             </div>
@@ -298,19 +397,112 @@
                 <div><button id="resetDispatchFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
             </div>
             <div style="margin-bottom: 12px; text-align: right;">
-                <button class="btn-exec btn-edit" onclick="crearNuevoPersonal()" style="padding: 6px 15px;">➕ Nuevo Personal</button>
+                <button class="btn-exec btn-edit action-protegida" onclick="crearNuevoPersonal()" style="padding: 6px 15px;">➕ Nuevo Personal</button>
             </div>
             <div class="table-container">
                 <div class="table-header"><h4>📋 Personal Técnico para Atención de Fallas</h4></div>
                 <div class="table-wrapper">
                     <table id="dispatchTable">
-                        <thead><tr><th>ID</th><th>Personal</th><th>Proveedor</th><th>Zona</th><th>Zona FIFA</th><th>Jefe FIFA</th><th>Celular</th><th>Sitio Asignado</th><th>Estatus</th><th>Notas</th><th>CHAT ID</th><th>Acción</th></tr></thead>
-                        <tbody id="dispatchBody"><tr><td colspan="12" class="loading"><div class="spinner"></div>Cargando...<\/td></tr></tbody>
+                        <thead><tr><th>ID</th><th>Personal</th><th>Proveedor</th><th>Zona</th><th>Celular</th><th>Sitio Asignado</th><th>Estatus</th><th>Notas</th><th>CHAT ID</th><th>Acción</th></tr></thead>
+                        <tbody id="dispatchBody"><tr><td colspan="10" class="loading"><div class="spinner"></div>Cargando...<\/td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Asignaciones -->
+        <div id="tab-asignaciones" class="tab-content">
+            <div id="asignacionesInfoBanner" class="info-banner">🔄 Cargando historial de asignaciones...</div>
+            <div class="asignaciones-stats">
+                <div class="asignaciones-stat-card"><div class="asignaciones-stat-number" id="totalAsignaciones">0</div><div class="asignaciones-stat-label">Total Asignaciones</div></div>
+                <div class="asignaciones-stat-card"><div class="asignaciones-stat-number" id="asignacionesActivas">0</div><div class="asignaciones-stat-label">🔵 Activas</div></div>
+                <div class="asignaciones-stat-card"><div class="asignaciones-stat-number" id="asignacionesLiberadas">0</div><div class="asignaciones-stat-label">✅ Liberadas</div></div>
+                <div class="asignaciones-stat-card"><div class="asignaciones-stat-number" id="asignacionesHoy">0</div><div class="asignaciones-stat-label">📅 Asignaciones Hoy</div></div>
+                <div class="asignaciones-stat-card"><div class="asignaciones-stat-number" id="tiempoPromedio">0</div><div class="asignaciones-stat-label">⏱️ Tiempo Promedio</div></div>
+            </div>
+            <div class="filters-bar">
+                <div class="filter-group"><label>🔍 Buscar</label><input type="text" id="asignacionSearchInput" placeholder="Sitio, personal..."></div>
+                <div class="filter-group"><label>📊 Estado</label><select id="asignacionEstadoFilter"><option value="todos">Todos</option><option value="ACTIVA">🔵 Activa</option><option value="LIBERADA">✅ Liberada</option></select></div>
+                <div class="filter-group"><label>📅 Fecha desde</label><input type="date" id="fechaDesdeFilter"></div>
+                <div class="filter-group"><label>📅 Fecha hasta</label><input type="date" id="fechaHastaFilter"></div>
+                <div><button id="refreshAsignacionesBtn" class="btn-exec">🔄 Actualizar</button></div>
+                <div><button id="resetAsignacionesFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
+            </div>
+
+            <!-- Gráficas Sitios Asignados -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
+                <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+                    <h4 style="margin:0 0 10px; font-size:0.78rem; color:#0a2540; font-weight:700;">📊 Asignaciones por Proveedor</h4>
+                    <canvas id="chartProveedorAsig" style="max-height:200px; width:100%;"></canvas>
+                </div>
+                <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+                    <h4 style="margin:0 0 10px; font-size:0.78rem; color:#0a2540; font-weight:700;">📈 Sitios Asignados por Día</h4>
+                    <canvas id="chartAsigPorDia" style="max-height:200px; width:100%;"></canvas>
+                </div>
+            </div>
+            <div class="table-container">
+                <div class="table-header"><h4>📋 Historial de Asignaciones de Sitios</h4></div>
+                <div class="table-wrapper">
+                    <table id="asignacionesTable">
+                        <thead><tr>
+                            <th>ID</th><th>Sitio</th><th>Zona</th><th>Jefe</th><th>Prioridad</th>
+                            <th>Personal</th><th>Proveedor</th><th>Tipo Falla</th><th>Folio</th>
+                            <th>Inicio</th><th>Fin</th><th>Comentario</th><th>Estado</th><th>Acción</th>
+                        </tr></thead>
+                        <tbody id="asignacionesBody"><tr><td colspan="14" class="loading"><div class="spinner"></div>Cargando historial...<\/td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
         
+
+        <!-- Contenido Plantas de Emergencia -->
+        <div id="tab-plantas" class="tab-content">
+            <div id="plantasInfoBanner" class="info-banner">🔄 Conectando a tabla PLANTAS FIFA26...</div>
+            <div class="dispatch-stats">
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="totalPlantas">0</div><div class="dispatch-stat-label">Total Plantas</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="plantasLibresCount">0</div><div class="dispatch-stat-label">🟢 LIBRE</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="plantasAsignadasCount">0</div><div class="dispatch-stat-label">🔴 ASIGNADA</div></div>
+            </div>
+            <div class="filters-bar">
+                <div class="filter-group"><label>🔍 Buscar</label><input type="text" id="plantasSearchInput" placeholder="Planta, sitio..."></div>
+                <div class="filter-group"><label>📊 Estatus</label>
+                    <select id="plantasEstatusFilter">
+                        <option value="todos">Todos</option>
+                        <option value="LIBRE">🟢 LIBRE</option>
+                        <option value="ASIGNADA">🔴 ASIGNADA</option>
+                    </select>
+                </div>
+                <div><button id="refreshPlantasBtn" class="btn-exec">🔄 Actualizar</button></div>
+                <div><button id="resetPlantasFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
+            </div>
+            <div style="margin-bottom:12px; text-align:right;">
+                <button class="btn-exec btn-edit action-protegida" onclick="crearNuevaPlanta()" style="padding:6px 15px;">➕ Nueva Planta</button>
+            </div>
+            <div class="table-container">
+                <div class="table-header"><h4>⚡ Plantas de Emergencia FIFA 2026</h4><button class="btn-exec btn-edit action-protegida" onclick="crearNuevaPlanta()" style="padding:6px 15px;">➕ Nueva Planta</button></div>
+                <div class="table-wrapper">
+                    <table id="plantasTable">
+                        <thead><tr>
+                            <th>ID</th>
+                            <th>Planta</th>
+                            <th>Capacidad</th>
+                            <th>Motor</th>
+                            <th>Planta Stock</th>
+                            <th>Lugar STBY</th>
+                            <th>Sitio Asignado</th>
+                            <th>Estatus</th>
+                            <th>Notas</th>
+                            <th>Acción</th>
+                        </tr></thead>
+                        <tbody id="plantasBody">
+                            <tr><td colspan="8" class="loading"><div class="spinner"></div>Cargando plantas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">⚡ Datos en tiempo real · Actualización cada 60s · Notificaciones al asignar y liberar personal</div>
     </div>
 </div>
@@ -323,15 +515,20 @@
     const API_KEY = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
     const TABLE_NAME = "FIFA26";
     const DISPATCH_TABLE = "DISPATCH FIFA26";
+    const ASIGNACIONES_TABLE = "ASIGNADOS FIFA26";
+    const PLANTAS_TABLE = "PLANTAS FIFA26";
     
     const CAMPO_ASIGNACION = "ASIGNACION";
     
-    let sitiosData = [], dispatchData = [];
-    let liderChart, prioridadChart, map, markers = [];
+    let sitiosData = [], dispatchData = [], asignacionesData = [], plantasData = [];
+    let liderChart, prioridadChart, chartProveedorAsig, chartAsigPorDia, map, markers = [];
     let currentLiderFilter = "all", currentPrioridadChartFilter = "all";
     let currentMapCenter = null, currentMapZoom = null;
     let isUpdating = false;
     let currentMapFilter = "todos";
+    
+    let filtroLiderActivo = false;
+    let liderFiltroActual = null;
     
     const ESTATUS_OPTS = ["LIBRE", "COMIDA", "ASIGNACION"];
     const CAMPOS_DISPATCH = ["PERSONAL", "PROVEEDOR", "ZONA", "ZONA FIFA", "JEFE FIFA", "CELULAR", "SITIO ACTUAL ASIGNADO", "ESTATUS", "NOTAS", "CHAT ID"];
@@ -418,8 +615,7 @@
         let tablaHtml = '<table style="width:100%; border-collapse:collapse;">';
         tablaHtml += '<tr><th style="border:1px solid #ddd; padding:4px;">Personal</th><th style="border:1px solid #ddd; padding:4px;">CHAT ID</th></tr>';
         dispatchData.forEach(p => {
-            tablaHtml += `<tr><td style="border:1px solid #ddd; padding:4px;">${escapeHtml(p.PERSONAL || "-")}</td>
-                         <td style="border:1px solid #ddd; padding:4px;">${escapeHtml(p["CHAT ID"] || "-")}</td></tr>`;
+            tablaHtml += `<tr><td style="border:1px solid #ddd; padding:4px;">${escapeHtml(p.PERSONAL || "-")}</td><td style="border:1px solid #ddd; padding:4px;">${escapeHtml(p["CHAT ID"] || "-")}</td></tr>`;
         });
         tablaHtml += '</table>';
         
@@ -435,6 +631,34 @@
         });
     };
 
+
+    // Formato DateTime para AppSheet: MM/DD/YYYY HH:MM:SS
+    function toAppSheetDateTime(date) {
+        const d = (date instanceof Date) ? date : new Date();
+        const mm  = String(d.getMonth() + 1).padStart(2, '0');
+        const dd  = String(d.getDate()).padStart(2, '0');
+        const yyyy= d.getFullYear();
+        const hh  = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        const ss  = String(d.getSeconds()).padStart(2, '0');
+        return `${mm}/${dd}/${yyyy} ${hh}:${min}:${ss}`;
+    }
+
+    // Parseo seguro de fechas — nunca lanza excepción
+    function parseFechaSafe(valor) {
+        if (!valor || valor === "-" || valor === "" || valor === "undefined" || valor === "null") return null;
+        const d = new Date(valor);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    function fechaLocal(valor) {
+        const d = parseFechaSafe(valor);
+        return d ? d.toLocaleString('es-MX') : "-";
+    }
+    function fechaISO(valor) {
+        const d = parseFechaSafe(valor);
+        return d ? d.toISOString().split('T')[0] : null;
+    }
+
     function escapeHtml(str) { if (!str) return ""; return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
     document.getElementById("dateDisplay").innerHTML = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -448,12 +672,36 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
+            
             const dispatchStats = document.getElementById('dispatchStatsSide');
+            const asignacionesStats = document.getElementById('asignacionesStatsSide');
+            
+            const plantasStats = document.getElementById('plantasStatsSide');
             if (tabId === 'dispatch') {
                 if (dispatchStats) dispatchStats.style.display = 'block';
+                if (asignacionesStats) asignacionesStats.style.display = 'none';
+                if (plantasStats) plantasStats.style.display = 'none';
                 if (dispatchData.length === 0) cargarDispatchData(); else renderDispatchTable();
+            } else if (tabId === 'asignaciones') {
+                if (dispatchStats) dispatchStats.style.display = 'none';
+                if (asignacionesStats) asignacionesStats.style.display = 'block';
+                if (plantasStats) plantasStats.style.display = 'none';
+                if (asignacionesData.length === 0) {
+                    cargarAsignacionesData();
+                } else {
+                    renderAsignacionesTable();
+                    actualizarEstadisticasAsignaciones();
+                    // Redraw charts — canvas may not have been visible before
+                    setTimeout(() => actualizarGraficasAsignaciones(), 50);
+                }
+            } else if (tabId === 'plantas') {
+                if (dispatchStats) dispatchStats.style.display = 'none';
+                if (asignacionesStats) asignacionesStats.style.display = 'none';
+                if (plantasStats) plantasStats.style.display = 'block';
+                if (plantasData.length === 0) cargarPlantasData(); else renderPlantasTable();
             } else {
                 if (dispatchStats) dispatchStats.style.display = 'none';
+                if (asignacionesStats) asignacionesStats.style.display = 'none';
             }
         });
     });
@@ -503,14 +751,369 @@
     }
     
     function filtrarSitiosMapa(sitios) {
-        return sitios.filter(s => {
-            if (currentMapFilter === "todos") return true;
-            if (currentMapFilter === "asignados") return s.asignacion && s.asignacion !== "No asignado";
-            if (currentMapFilter === "no_asignados") return !s.asignacion || s.asignacion === "No asignado";
-            if (currentMapFilter === "up") return s.estadoOriginal === "UP";
-            if (currentMapFilter === "down") return s.estadoOriginal === "DOWN";
-            return true;
+        let filtrados = sitios;
+        
+        if (filtroLiderActivo && liderFiltroActual) {
+            filtrados = filtrados.filter(s => s.jefe === liderFiltroActual);
+        }
+        
+        if (currentMapFilter === "asignados") {
+            filtrados = filtrados.filter(s => s.asignacion && s.asignacion !== "No asignado");
+        } else if (currentMapFilter === "no_asignados") {
+            filtrados = filtrados.filter(s => !s.asignacion || s.asignacion === "No asignado");
+        } else if (currentMapFilter === "up") {
+            filtrados = filtrados.filter(s => s.estadoOriginal === "UP");
+        } else if (currentMapFilter === "down") {
+            filtrados = filtrados.filter(s => s.estadoOriginal === "DOWN");
+        }
+        
+        return filtrados;
+    }
+
+    // ============================================================
+    // ASIGNACIONES - CORREGIDO CON LOS CAMPOS CORRECTOS
+    // ============================================================
+    async function cargarAsignacionesData(showMessage = false) {
+        try {
+            if (showMessage) { 
+                const b = document.getElementById("asignacionesInfoBanner"); 
+                if(b) { b.innerHTML = "🔄 Cargando historial de asignaciones..."; b.className = "info-banner info-banner-warning"; }
+            }
+            
+            const response = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${ASIGNACIONES_TABLE}/Action`, {
+                method: 'POST',
+                headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" } })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn("Error cargando asignaciones:", errorText);
+                if (showMessage) {
+                    const b = document.getElementById("asignacionesInfoBanner");
+                    if(b) { b.innerHTML = `⚠️ Tabla "${ASIGNACIONES_TABLE}" no encontrada. Se creará automáticamente al asignar.`; b.className = "info-banner info-banner-warning"; }
+                }
+                asignacionesData = [];
+                renderAsignacionesTable();
+                actualizarEstadisticasAsignaciones();
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (Array.isArray(data) && data.length > 0) {
+                asignacionesData = data.map((row, idx) => ({ ...row, _RowNumber: row._RowNumber || idx + 1 })).sort((a,b) => (b._RowNumber || 0) - (a._RowNumber || 0));
+                console.log('📊 asignacionesData cargado:', asignacionesData.length, 'registros');
+                console.log('📊 Muestra PROVEEDOR/INICIO:', asignacionesData.slice(0,3).map(a => `PROV="${a.PROVEEDOR}" INICIO="${a.INICIO}"`));
+                renderAsignacionesTable();
+                actualizarEstadisticasAsignaciones();
+                actualizarGraficasAsignaciones();
+                const b = document.getElementById("asignacionesInfoBanner");
+                if(b) { b.innerHTML = `✅ ${asignacionesData.length} registros de asignaciones`; b.className = "info-banner"; }
+                setTimeout(() => { if(b && b.innerHTML.includes("✅")) b.innerHTML = "✅ ASIGNADOS FIFA26 · Historial de asignaciones"; }, 2000);
+            } else { 
+                asignacionesData = []; 
+                renderAsignacionesTable(); 
+                actualizarEstadisticasAsignaciones();
+                actualizarGraficasAsignaciones();
+            }
+        } catch (error) {
+            console.error("Error cargando asignaciones:", error);
+            const b = document.getElementById("asignacionesInfoBanner");
+            if(b) { b.innerHTML = `⚠️ Tabla "${ASIGNACIONES_TABLE}" no disponible. Se creará al asignar.`; b.className = "info-banner info-banner-warning"; }
+            asignacionesData = [];
+            renderAsignacionesTable();
+            actualizarEstadisticasAsignaciones();
+            actualizarGraficasAsignaciones();
+        }
+    }
+    
+    // Campos reales de ASIGNADOS FIFA26 (confirmados por diagnóstico):
+    // ZONA, SITIO, JEFE, "PRIORIDAD FIFA", ESTATUS, PERSONAL, PROVEEDOR,
+    // "TIPO DE FALLA", FOLIO, INICIO, FIN, COMENTARIO
+    // NOTA: el campo de estado se llama ESTATUS (no ESTADO)
+
+    async function assheetPost(action, rows) {
+        const url = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(ASIGNACIONES_TABLE)}/Action`;
+        const resp = await fetch(url, {
+            method: "POST",
+            headers: { "ApplicationAccessKey": API_KEY, "Content-Type": "application/json" },
+            body: JSON.stringify({ "Action": action, "Properties": { "Locale": "es-MX" }, "Rows": rows })
         });
+        const txt = await resp.text();
+        console.log(`[ASIGNADOS FIFA26] ${action} status=${resp.status}`, txt.substring(0, 300));
+        return { ok: resp.ok, status: resp.status, text: txt };
+    }
+
+    // INICIO: registrar al asignar personal a un sitio
+    async function registrarAsignacion(sitio, personal, proveedor, zona, jefe, prioridad) {
+        try {
+            const fechaInicio = toAppSheetDateTime(new Date());
+            // Limpiar emojis del campo prioridad
+            const prioridadTexto = (prioridad || "").replace(/[^\w\sÁÉÍÓÚáéíóúÑñ]/gi, "").trim();
+
+            const fila = {
+                "SITIO":          sitio    || "",
+                "ZONA":           zona     || "",
+                "JEFE":           jefe     || "",
+                "PRIORIDAD FIFA": prioridadTexto,
+                "PERSONAL":       personal || "",
+                "PROVEEDOR":      proveedor|| "",
+                "TIPO DE FALLA":  "",
+                "FOLIO":          "",
+                "INICIO":         fechaInicio,
+                "FIN":            "",
+                "COMENTARIO":     "",
+                "ESTATUS":        "ACTIVA"
+            };
+
+            const r = await assheetPost("Add", [fila]);
+            if (!r.ok) { console.warn("registrarAsignacion Add falló:", r.text); return false; }
+            console.log("✅ INICIO registrado:", fechaInicio, "| Sitio:", sitio, "| Personal:", personal);
+            await cargarAsignacionesData();
+            return true;
+        } catch(e) { console.error("registrarAsignacion error:", e); return false; }
+    }
+
+    // FIN: registrar al liberar personal de un sitio
+    async function actualizarFinAsignacion(sitio, personal, tipoFalla, folio, comentario) {
+        try {
+            const fechaFin = toAppSheetDateTime(new Date());
+
+            // 1. Obtener datos frescos de AppSheet para encontrar la fila ACTIVA
+            let filaActiva = null;
+            const findR = await assheetPost("Find", []);  // Find no usa Rows pero necesita el array
+            // Find usa Action distinta — llamar directo
+            const urlFind = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(ASIGNACIONES_TABLE)}/Action`;
+            const findResp = await fetch(urlFind, {
+                method: "POST",
+                headers: { "ApplicationAccessKey": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" } })
+            });
+            if (findResp.ok) {
+                try {
+                    const arr = await findResp.json();
+                    if (Array.isArray(arr)) {
+                        asignacionesData = arr.map((row, i) => ({ ...row, _RowNumber: row._RowNumber || (i + 1) }))
+                                              .sort((a, b) => (b._RowNumber || 0) - (a._RowNumber || 0));
+                        filaActiva = arr.find(a =>
+                            String(a.SITIO    || "").trim() === String(sitio    || "").trim() &&
+                            String(a.PERSONAL || "").trim() === String(personal || "").trim() &&
+                            String(a.ESTATUS  || "").trim() === "ACTIVA"
+                        );
+                        console.log("Find OK, total filas:", arr.length, "| filaActiva:", filaActiva ? "ENCONTRADA _RowNumber=" + filaActiva._RowNumber : "NO ENCONTRADA");
+                    }
+                } catch(e) { console.warn("Find parse error:", e); }
+            }
+
+            // Fallback caché local si Find no respondió
+            if (!filaActiva) {
+                filaActiva = asignacionesData.find(a =>
+                    String(a.SITIO    || "").trim() === String(sitio    || "").trim() &&
+                    String(a.PERSONAL || "").trim() === String(personal || "").trim() &&
+                    String(a.ESTATUS  || "").trim() === "ACTIVA"
+                );
+            }
+
+            // 2a. Si existe fila ACTIVA → Edit con todos los campos (AppSheet necesita key column)
+            if (filaActiva) {
+                const rowEdit = {
+                    "_RowNumber":    filaActiva._RowNumber,
+                    "SITIO":         filaActiva.SITIO         || sitio,
+                    "ZONA":          filaActiva.ZONA          || "",
+                    "JEFE":          filaActiva.JEFE          || "",
+                    "PRIORIDAD FIFA":filaActiva["PRIORIDAD FIFA"] || "",
+                    "PERSONAL":      filaActiva.PERSONAL      || personal,
+                    "PROVEEDOR":     filaActiva.PROVEEDOR     || "",
+                    "TIPO DE FALLA": tipoFalla  || "",
+                    "FOLIO":         folio      || "",
+                    "INICIO":        filaActiva.INICIO        || "",
+                    "FIN":           fechaFin,
+                    "COMENTARIO":    comentario || "",
+                    "ESTATUS":       "LIBERADA"
+                };
+                const editR = await assheetPost("Edit", [rowEdit]);
+                if (editR.ok) {
+                    console.log("✅ FIN registrado (Edit):", fechaFin, "| _RowNumber:", filaActiva._RowNumber);
+                    await cargarAsignacionesData();
+                    return true;
+                }
+                console.warn("Edit falló, intentando Add LIBERADA...");
+            }
+
+            // 2b. Si no hay fila ACTIVA o Edit falló → Add fila LIBERADA directamente
+            const sitioInfo    = sitiosData.find(s => s.nombre === sitio);
+            const personalInfo = dispatchData.find(p => p.PERSONAL === personal);
+            const filaLiberar = {
+                "SITIO":          sitio    || "",
+                "ZONA":           (filaActiva?.ZONA)  || sitioInfo?.zona     || "",
+                "JEFE":           (filaActiva?.JEFE)  || sitioInfo?.jefe     || "",
+                "PRIORIDAD FIFA": (filaActiva?.["PRIORIDAD FIFA"]) || sitioInfo?.prioridadOriginal || "",
+                "PERSONAL":       personal || "",
+                "PROVEEDOR":      (filaActiva?.PROVEEDOR) || personalInfo?.PROVEEDOR || "",
+                "TIPO DE FALLA":  tipoFalla  || "",
+                "FOLIO":          folio      || "",
+                "INICIO":         filaActiva?.INICIO || "",
+                "FIN":            fechaFin,
+                "COMENTARIO":     comentario || "",
+                "ESTATUS":        "LIBERADA"
+            };
+            const addR = await assheetPost("Add", [filaLiberar]);
+            if (addR.ok) {
+                console.log("✅ FIN registrado (Add LIBERADA):", fechaFin);
+                await cargarAsignacionesData();
+                return true;
+            }
+            console.error("❌ Edit y Add fallaron. Último error:", addR.status, addR.text);
+            return false;
+        } catch(e) { console.error("actualizarFinAsignacion error:", e); return false; }
+    }
+    
+    function getAsignacionesFiltradas() {
+        const search = document.getElementById("asignacionSearchInput") ? document.getElementById("asignacionSearchInput").value.toLowerCase() : "";
+        const estado = document.getElementById("asignacionEstadoFilter") ? document.getElementById("asignacionEstadoFilter").value : "todos";
+        const fechaDesde = document.getElementById("fechaDesdeFilter") ? document.getElementById("fechaDesdeFilter").value : "";
+        const fechaHasta = document.getElementById("fechaHastaFilter") ? document.getElementById("fechaHastaFilter").value : "";
+        
+        return asignacionesData.filter(a => {
+            const matchSearch = search === "" || 
+                (a.SITIO || "").toLowerCase().includes(search) || 
+                (a.PERSONAL || "").toLowerCase().includes(search);
+            const matchEstado = estado === "todos" || a.ESTATUS === estado;
+            
+            let matchFecha = true;
+            if (fechaDesde && a.INICIO) {
+                const fechaInicio = fechaISO(a.INICIO);
+                if (fechaInicio && fechaInicio < fechaDesde) matchFecha = false;
+            }
+            if (fechaHasta && a.INICIO) {
+                const fechaInicio = fechaISO(a.INICIO);
+                if (fechaInicio && fechaInicio > fechaHasta) matchFecha = false;
+            }
+            
+            return matchSearch && matchEstado && matchFecha;
+        });
+    }
+    
+    function renderAsignacionesTable() {
+        const filtrados = getAsignacionesFiltradas();
+        const tbody = document.getElementById("asignacionesBody");
+        
+        if (!tbody) return;
+        
+        if (filtrados.length === 0) {
+            tbody.innerHTML = `<td><td colspan="14" class="loading">📭 No hay registros de asignaciones</td></td>`;
+            return;
+        }
+        
+        tbody.innerHTML = filtrados.map((a, idx) => {
+            const estadoClass = a.ESTATUS === "ACTIVA" ? "status-ACTIVA" : "status-LIBERADA";
+            const estadoDisplay = a.ESTATUS === "ACTIVA" ? "🔵 Activa" : "✅ Liberada";
+            const fechaInicio = fechaLocal(a.INICIO);
+            const fechaFin = fechaLocal(a.FIN);
+            
+            let prioridadDisplay = a["PRIORIDAD FIFA"] || "NORMAL";
+            if (prioridadDisplay === "FIFA CALIDAD") prioridadDisplay = "🔴 FIFA CALIDAD";
+            else if (prioridadDisplay === "FIFA ALTA PRIORIDAD") prioridadDisplay = "🟠 FIFA ALTA PRIORIDAD";
+            else if (prioridadDisplay === "NORMAL") prioridadDisplay = "🟡 NORMAL";
+            else prioridadDisplay = "🟢 BAJA";
+            
+            return `<tr>
+                <td>${a._RowNumber || idx + 1}</td>
+                <td><strong>${escapeHtml(a.SITIO || "-")}</strong></td>
+                <td>${escapeHtml(a.ZONA || "-")}</td>
+                <td>${escapeHtml(a.JEFE || "-")}</td>
+                <td>${prioridadDisplay}</td>
+                <td>${escapeHtml(a.PERSONAL || "-")}</td>
+                <td>${escapeHtml(a.PROVEEDOR || "-")}</td>
+                <td>${escapeHtml(a["TIPO DE FALLA"] || "-")}</td>
+                <td>${escapeHtml(a.FOLIO || "-")}</td>
+                <td>${fechaInicio}</td>
+                <td>${fechaFin}</td>
+                <td>${escapeHtml(a.COMENTARIO || "-")}</td>
+                <td><span class="status-badge ${estadoClass}">${estadoDisplay}</span></td>
+                <td style="white-space: nowrap;">
+                    ${a.ESTATUS === "ACTIVA" ? `<button class="edit-btn action-protegida" style="background:#e74c3c;" onclick="finalizarAsignacionManual('${escapeHtml(a.SITIO)}', '${escapeHtml(a.PERSONAL)}')">🔚 Finalizar</button>` : '-'}
+                </td>
+             `;
+        }).join("");
+    }
+    
+    window.finalizarAsignacionManual = async function(sitio, personal) {
+        if (!requireOperador()) return;
+        const result = await Swal.fire({
+            title: '📋 Finalizar Asignación',
+            width: '540px',
+            html: `
+                <div style="background:#f8fafc; border-radius:10px; padding:12px 14px; margin-bottom:14px; text-align:left;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.8rem;">
+                        <div><span style="color:#64748b; font-size:0.7rem;">SITIO</span><br><strong>${escapeHtml(sitio)}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.7rem;">TÉCNICO</span><br><strong>${escapeHtml(personal)}</strong></div>
+                    </div>
+                </div>
+                <div style="text-align:left; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.8rem;">
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">⚡ Tipo de Falla</label>
+                        <select id="modal_tipoFalla" class="swal2-select" style="width:100%; margin:0; font-size:0.8rem;">
+                            <option value="">Seleccionar...</option>
+                            <option value="Falla de energía">⚡ Falla de energía</option>
+                            <option value="Falla de conectividad">📡 Falla de conectividad</option>
+                            <option value="Falla de hardware">🖥️ Falla de hardware</option>
+                            <option value="Falla de software">💻 Falla de software</option>
+                            <option value="Mantenimiento preventivo">🔧 Mantenimiento preventivo</option>
+                            <option value="Otro">📝 Otro</option>
+                        </select>
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">📋 Folio</label>
+                        <input type="text" id="modal_folio" class="swal2-input"
+                            placeholder="Número de folio" style="width:100%; margin:0; font-size:0.8rem;">
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">💬 Comentario</label>
+                        <textarea id="modal_comentario" class="swal2-textarea" rows="2"
+                            placeholder="Detalles de la atención..."
+                            style="width:100%; margin:0; font-size:0.8rem; height:60px;"></textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: '✅ Finalizar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0a2540',
+            preConfirm: () => ({
+                tipoFalla:  document.getElementById('modal_tipoFalla').value,
+                folio:      document.getElementById('modal_folio').value,
+                comentario: document.getElementById('modal_comentario').value
+            })
+        });
+        
+        if (result.isConfirmed) {
+            // guardarLiberacion hace el flujo completo:
+            // 1. Libera en Dispatch  2. Libera en Monitoreo  3. Graba historial FIN  4. Telegram
+            await guardarLiberacion(personal, sitio, result.value.tipoFalla, result.value.folio, result.value.comentario);
+        }
+    };
+    
+    function actualizarEstadisticasAsignaciones() {
+        const total = asignacionesData.length;
+        const activas = asignacionesData.filter(a => a.ESTATUS === "ACTIVA").length;
+        const liberadas = asignacionesData.filter(a => a.ESTATUS === "LIBERADA").length;
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        const asignacionesHoy = asignacionesData.filter(a => {
+            if (!a.INICIO) return false;
+            const fi = fechaISO(a.INICIO);
+            return fi !== null && fi === hoy;
+        }).length;
+        
+        document.getElementById("totalAsignaciones").innerText = total;
+        document.getElementById("asignacionesActivas").innerText = activas;
+        document.getElementById("asignacionesLiberadas").innerText = liberadas;
+        document.getElementById("asignacionesHoy").innerText = asignacionesHoy;
+        document.getElementById("tiempoPromedio").innerText = "N/A";
+        
+        document.getElementById("asignacionesActivasSide").innerText = activas;
+        document.getElementById("asignacionesHoySide").innerText = asignacionesHoy;
     }
 
     // ============================================================
@@ -541,6 +1144,7 @@
                         rowNumber: row._RowNumber,
                         nombre: row.Nombre || "Sin nombre",
                         zona: row.ZONA || "N/D",
+                        mnemonico: row.Mnemonico || "",
                         estadoOriginal: estadoOriginal,
                         estadoDisplay: estadoDisplay,
                         zonaFIFA: row["ZONA FIFA"] || "No definida",
@@ -588,7 +1192,8 @@
         const estado = document.getElementById("estadoFilter").value;
         const lider = document.getElementById("liderFilter").value;
         const prioridad = document.getElementById("prioridadFilter").value;
-        return sitiosData.filter(s => {
+        
+        let datosFiltrados = sitiosData.filter(s => {
             let estadoComparar = "";
             if (estado === "Activo") estadoComparar = "UP";
             else if (estado === "Falla") estadoComparar = "DOWN";
@@ -601,6 +1206,12 @@
             const matchPrioridad = prioridad === "todos" || s.prioridadOriginal === prioridad;
             return matchSearch && matchZona && matchEstado && matchLider && matchPrioridad;
         });
+        
+        if (filtroLiderActivo && liderFiltroActual) {
+            datosFiltrados = datosFiltrados.filter(s => s.jefe === liderFiltroActual);
+        }
+        
+        return datosFiltrados;
     }
     
     function getPersonalDisponible() { return dispatchData.filter(p => p.ESTATUS === "LIBRE" || p.ESTATUS === "COMIDA"); }
@@ -609,7 +1220,7 @@
         const datos = getDatosFiltrados();
         const tbody = document.getElementById("tableBody");
         const personalDisponible = getPersonalDisponible();
-        if (datos.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="loading">📭 No se encontraron registros<\/td></td>`; return; }
+        if (datos.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="loading">📭 No se encontraron registros</td></tr>`; return; }
         tbody.innerHTML = datos.map(s => {
             let statusClass = "";
             if (s.estadoOriginal === "UP") statusClass = "status-UP";
@@ -626,16 +1237,18 @@
                 <td>${escapeHtml(s.zona)}</td>
                 <td><span class="status-badge ${statusClass}">${s.estadoDisplay}</span></td>
                 <td><span style="background:${s.prioridadColor}20; color:${s.prioridadColor}; padding:2px 6px; border-radius:10px;">${s.prioridadDisplay}</span></td>
-                <td>${s.modernizar === "SI" ? "🔧 SI" : "✓ NO"}</td>
                 <td>${escapeHtml(s.jefe)}</td>
-                <td style="min-width:120px;">${asignacionDisplay}<hr style="margin:3px 0;">${personalSelect}</td>
-                <td><button class="edit-btn" onclick="editarSitio(${s.rowNumber})">✏️</button></td>
+                <td style="min-width:120px;">${asignacionDisplay}<hr style="margin:3px 0;" class="action-protegida"><span class="action-protegida">${personalSelect}</span></td>
+                <td><button class="edit-btn action-protegida" onclick="editarSitio(${s.rowNumber})">✏️</button></td>
              `;
         }).join("");
     }
     
-    // ASIGNAR PERSONAL
+    // ============================================================
+    // ASIGNAR PERSONAL (con registro en historial)
+    // ============================================================
     window.asignarPersonal = async function(rowNumber) {
+        if (!requireOperador()) return;
         const sitio = sitiosData.find(s => s.rowNumber == rowNumber);
         if (!sitio) { Swal.fire('Error', 'No se encontró el sitio', 'error'); return; }
         const select = document.getElementById(`personal_select_${rowNumber}`);
@@ -649,6 +1262,7 @@
             html: `<p>¿Asignar a <strong>${personalSeleccionado}</strong> al sitio <strong>${sitio.nombre}</strong>?</p>
                    <p>✅ El personal cambiará a <strong>ASIGNACION</strong><br>
                    ✅ El sitio quedará vinculado al personal<br>
+                   ✅ Se registrará en el historial de asignaciones con fecha/hora de inicio<br>
                    📨 Se enviará notificación vía Telegram</p>`,
             icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, asignar'
         });
@@ -659,21 +1273,24 @@
         try {
             Swal.fire({ title: 'Asignando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             
+            // 1. Actualizar DISPATCH
             const updateDispatch = {
                 "Action": "Edit",
                 "Properties": { "Locale": "es-MX" },
                 "Rows": [{ "PERSONAL": personalRegistro.PERSONAL, "SITIO ACTUAL ASIGNADO": sitio.nombre, "ESTATUS": "ASIGNACION" }]
             };
             const res1 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
-                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
                 body: JSON.stringify(updateDispatch)
             });
             if (!res1.ok) throw new Error(`Error en Dispatch: ${await res1.text()}`);
             
+            // 2. Actualizar FIFA26
             const updateSitio = {
                 "Action": "Edit",
                 "Properties": { "Locale": "es-MX" },
-                "Rows": [{ "_RowNumber": sitio.rowNumber, "ASIGNACION": personalRegistro.PERSONAL }]
+                "Rows": [{ "Nombre": sitio.nombre, "ASIGNACION": personalRegistro.PERSONAL }]
             };
             const res2 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
                 method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
@@ -681,36 +1298,97 @@
             });
             if (!res2.ok) throw new Error(`Error en Sitio: ${await res2.text()}`);
             
+            // 3. Registrar en historial de asignaciones con INICIO
+            const registrado = await registrarAsignacion(
+                sitio.nombre, 
+                personalRegistro.PERSONAL, 
+                personalRegistro.PROVEEDOR,
+                sitio.zona,
+                sitio.jefe,
+                sitio.prioridadDisplay
+            );
+            
+            // 4. Enviar notificación Telegram
             await enviarNotificacionTelegram(sitio.nombre, personalRegistro.PERSONAL, sitio.prioridadDisplay, sitio.zonaFIFA, "ASIGNACION");
             
-            await Swal.fire({ icon: 'success', title: '¡Asignado!', text: `${personalRegistro.PERSONAL} asignado a ${sitio.nombre}\nNotificación enviada`, timer: 2500, showConfirmButton: false });
+            let mensajeFinal = `${personalRegistro.PERSONAL} asignado a ${sitio.nombre}\nNotificación enviada`;
+            if (registrado) {
+                mensajeFinal += "\n✅ Registrado en historial con fecha/hora de inicio";
+            } else {
+                mensajeFinal += "\n⚠️ No se pudo registrar en historial";
+            }
+            
+            await Swal.fire({ icon: 'success', title: '¡Asignado!', text: mensajeFinal, timer: 3000, showConfirmButton: false });
             await cargarDispatchData();
             await fetchSitiosFromAppSheet();
+            await cargarAsignacionesData();
         } catch (error) { 
             console.error(error);
             Swal.fire({ icon: 'error', title: 'Error', text: error.message });
         }
     }
     
-    // LIBERAR PERSONAL - CON NOTIFICACIÓN
+    // ============================================================
+    // LIBERAR PERSONAL (con actualización de historial con FIN)
+    // ============================================================
     window.liberarPersonal = async function(rowNumber, personalNombre, sitioAsignado) {
+        if (!requireOperador()) return;
         const result = await Swal.fire({
-            title: 'Confirmar Liberación',
-            html: `<p>¿Liberar a <strong>${personalNombre}</strong>?</p>
-                   <p>✅ El personal cambiará a <strong>LIBRE</strong><br>
-                   ✅ Se limpiará la asignación del sitio <strong>${sitioAsignado}</strong><br>
-                   📨 Se enviará notificación de liberación vía Telegram</p>`,
-            icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, liberar', cancelButtonText: 'Cancelar'
+            title: '🔓 Liberar Personal',
+            width: '540px',
+            html: `
+                <div style="background:#f8fafc; border-radius:10px; padding:12px 14px; margin-bottom:14px; text-align:left;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.8rem;">
+                        <div><span style="color:#64748b; font-size:0.7rem;">TÉCNICO</span><br><strong>${escapeHtml(personalNombre)}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.7rem;">SITIO ATENDIDO</span><br><strong>${escapeHtml(sitioAsignado)}</strong></div>
+                    </div>
+                </div>
+                <div style="text-align:left; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.8rem;">
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">⚡ Tipo de Falla</label>
+                        <select id="modal_tipoFalla" class="swal2-select" style="width:100%; margin:0; font-size:0.8rem;">
+                            <option value="">Seleccionar...</option>
+                            <option value="Falla de energía">⚡ Falla de energía</option>
+                            <option value="Falla de conectividad">📡 Falla de conectividad</option>
+                            <option value="Falla de hardware">🖥️ Falla de hardware</option>
+                            <option value="Falla de software">💻 Falla de software</option>
+                            <option value="Mantenimiento preventivo">🔧 Mantenimiento preventivo</option>
+                            <option value="Otro">📝 Otro</option>
+                        </select>
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">📋 Folio</label>
+                        <input type="text" id="modal_folio" class="swal2-input"
+                            placeholder="Número de folio" style="width:100%; margin:0; font-size:0.8rem;">
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">💬 Comentario</label>
+                        <textarea id="modal_comentario" class="swal2-textarea" rows="2"
+                            placeholder="Detalles de la atención..."
+                            style="width:100%; margin:0; font-size:0.8rem; height:60px;"></textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: '🔓 Liberar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#10b981',
+            preConfirm: () => ({
+                tipoFalla:  document.getElementById('modal_tipoFalla').value,
+                folio:      document.getElementById('modal_folio').value,
+                comentario: document.getElementById('modal_comentario').value
+            })
         });
+        
         if (result.isConfirmed) {
-            await guardarLiberacion(personalNombre, sitioAsignado);
+            await guardarLiberacion(personalNombre, sitioAsignado, result.value.tipoFalla, result.value.folio, result.value.comentario);
         }
     };
     
-    async function guardarLiberacion(personalNombre, sitioAsignado) {
+    async function guardarLiberacion(personalNombre, sitioAsignado, tipoFalla, folio, comentario) {
         try {
             Swal.fire({ title: 'Liberando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             
+            // 1. Actualizar DISPATCH
             const updateDispatch = {
                 "Action": "Edit",
                 "Properties": { "Locale": "es-MX" },
@@ -722,27 +1400,39 @@
             });
             if (!res1.ok) throw new Error(`Error en Dispatch: ${await res1.text()}`);
             
+            // 2. Actualizar FIFA26 (Monitoreo) — limpiar asignación del sitio
             if (sitioAsignado && sitioAsignado !== "-") {
-                const sitio = sitiosData.find(s => s.nombre === sitioAsignado);
-                if (sitio) {
-                    const updateSitio = {
-                        "Action": "Edit",
-                        "Properties": { "Locale": "es-MX" },
-                        "Rows": [{ "_RowNumber": sitio.rowNumber, "ASIGNACION": "" }]
-                    };
-                    await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
-                        method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updateSitio)
-                    });
-                }
+                const updateSitio = {
+                    "Action": "Edit",
+                    "Properties": { "Locale": "es-MX" },
+                    "Rows": [{ "Nombre": sitioAsignado, "ASIGNACION": "" }]
+                };
+                const res2 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                    method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateSitio)
+                });
+                const txt2 = await res2.text();
+                console.log('[guardarLiberacion] FIFA26 status=' + res2.status, txt2.substring(0, 200));
+                if (!res2.ok) console.warn('⚠️ No se pudo actualizar Monitoreo:', txt2);
             }
             
-            // Enviar notificación de liberación
+            // 3. Finalizar asignación en historial con FIN
+            const actualizado = await actualizarFinAsignacion(sitioAsignado, personalNombre, tipoFalla, folio, comentario);
+            
+            // 4. Enviar notificación
             await enviarNotificacionTelegram(sitioAsignado, personalNombre, "", "", "LIBERACION", sitioAsignado);
             
-            await Swal.fire({ icon: 'success', title: '¡Liberado!', text: `${personalNombre} ha sido liberado\nNotificación enviada`, timer: 2500, showConfirmButton: false });
+            let mensajeFinal = `${personalNombre} ha sido liberado\nNotificación enviada`;
+            if (actualizado) {
+                mensajeFinal += "\n✅ Historial actualizado con fecha/hora de fin";
+            } else {
+                mensajeFinal += "\n⚠️ No se pudo actualizar el historial";
+            }
+            
+            await Swal.fire({ icon: 'success', title: '¡Liberado!', text: mensajeFinal, timer: 3000, showConfirmButton: false });
             await cargarDispatchData();
             await fetchSitiosFromAppSheet();
+            await cargarAsignacionesData();
         } catch (error) { 
             console.error(error);
             Swal.fire({ icon: 'error', title: 'Error', text: error.message });
@@ -759,34 +1449,77 @@
             });
             if (!res.ok) throw new Error(`Error ${res.status}`);
             
+            // Si se asignó un sitio desde el formulario de Dispatch
             if (datos.ESTATUS === "ASIGNACION" && datos["SITIO ACTUAL ASIGNADO"] && datos["SITIO ACTUAL ASIGNADO"] !== "-") {
                 const sitioAsignado = sitiosData.find(s => s.nombre === datos["SITIO ACTUAL ASIGNADO"]);
                 if (sitioAsignado) {
                     const updateSitio = {
                         "Action": "Edit",
                         "Properties": { "Locale": "es-MX" },
-                        "Rows": [{ "_RowNumber": sitioAsignado.rowNumber, "ASIGNACION": datos.PERSONAL }]
+                        "Rows": [{ "Nombre": datos["SITIO ACTUAL ASIGNADO"], "ASIGNACION": datos.PERSONAL }]
                     };
                     await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
                         method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
                         body: JSON.stringify(updateSitio)
                     });
+                    await registrarAsignacion(
+                        datos["SITIO ACTUAL ASIGNADO"], 
+                        datos.PERSONAL, 
+                        datos.PROVEEDOR,
+                        sitioAsignado.zona,
+                        sitioAsignado.jefe,
+                        sitioAsignado.prioridadDisplay
+                    );
                     await enviarNotificacionTelegram(datos["SITIO ACTUAL ASIGNADO"], datos.PERSONAL, sitioAsignado.prioridadDisplay, sitioAsignado.zonaFIFA, "ASIGNACION");
                 }
             }
+            // Si se liberó desde el formulario de Dispatch
             else if (registroOriginal && registroOriginal.ESTATUS === "ASIGNACION" && datos.ESTATUS !== "ASIGNACION") {
                 if (registroOriginal["SITIO ACTUAL ASIGNADO"] && registroOriginal["SITIO ACTUAL ASIGNADO"] !== "-") {
-                    const sitio = sitiosData.find(s => s.nombre === registroOriginal["SITIO ACTUAL ASIGNADO"]);
-                    if (sitio) {
-                        const updateSitio = {
-                            "Action": "Edit",
-                            "Properties": { "Locale": "es-MX" },
-                            "Rows": [{ "_RowNumber": sitio.rowNumber, "ASIGNACION": "" }]
-                        };
-                        await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
-                            method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
-                            body: JSON.stringify(updateSitio)
-                        });
+                    const updateSitio = {
+                        "Action": "Edit",
+                        "Properties": { "Locale": "es-MX" },
+                        "Rows": [{ "Nombre": registroOriginal["SITIO ACTUAL ASIGNADO"], "ASIGNACION": "" }]
+                    };
+                    await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
+                        method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateSitio)
+                    });
+                    
+                    const result = await Swal.fire({
+                        title: 'Completar Liberación',
+                        html: `
+                            <div style="text-align: left;">
+                                <label><strong>Tipo de Falla:</strong></label>
+                                <select id="modal_tipoFalla" class="swal2-select" style="width:100%; margin-bottom:10px;">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Falla de energía">⚡ Falla de energía</option>
+                                    <option value="Falla de conectividad">📡 Falla de conectividad</option>
+                                    <option value="Falla de hardware">🖥️ Falla de hardware</option>
+                                    <option value="Falla de software">💻 Falla de software</option>
+                                    <option value="Mantenimiento preventivo">🔧 Mantenimiento preventivo</option>
+                                    <option value="Otro">📝 Otro</option>
+                                </select>
+                                <label><strong>Folio:</strong></label>
+                                <input type="text" id="modal_folio" class="swal2-input" placeholder="Número de folio" style="width:100%; margin-bottom:10px;">
+                                <label><strong>Comentario:</strong></label>
+                                <textarea id="modal_comentario" class="swal2-textarea" rows="3" placeholder="Detalles de la atención..." style="width:100%;"></textarea>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Finalizar liberación',
+                        cancelButtonText: 'Cancelar',
+                        preConfirm: () => {
+                            return {
+                                tipoFalla: document.getElementById('modal_tipoFalla').value,
+                                folio: document.getElementById('modal_folio').value,
+                                comentario: document.getElementById('modal_comentario').value
+                            }
+                        }
+                    });
+                    
+                    if (result.isConfirmed) {
+                        await actualizarFinAsignacion(registroOriginal["SITIO ACTUAL ASIGNADO"], datos.PERSONAL, result.value.tipoFalla, result.value.folio, result.value.comentario);
                         await enviarNotificacionTelegram(registroOriginal["SITIO ACTUAL ASIGNADO"], datos.PERSONAL, "", "", "LIBERACION", registroOriginal["SITIO ACTUAL ASIGNADO"]);
                     }
                 }
@@ -795,10 +1528,12 @@
             await Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
             await cargarDispatchData(true);
             await fetchSitiosFromAppSheet();
+            await cargarAsignacionesData();
         } catch (error) { Swal.fire({ icon: 'error', title: 'Error', text: error.message }); }
     }
     
     async function editarPersonal(id) {
+        if (!requireOperador()) return;
         const item = dispatchData.find(d => d._RowNumber == id);
         if (!item) { Swal.fire('Error', 'No encontrado'); return; }
         let html = '<div class="edit-form-grid">';
@@ -831,15 +1566,75 @@
         document.getElementById("fallasSide").innerText = downSites;
     }
     
+    function aplicarFiltroLiderDesdeGrafica(liderNombre) {
+        if (!liderNombre) return;
+        
+        if (filtroLiderActivo && liderFiltroActual === liderNombre) {
+            filtroLiderActivo = false;
+            liderFiltroActual = null;
+            document.getElementById("filtroActivoBadge").style.display = "none";
+            Swal.fire({ icon: 'info', title: 'Filtro removido', text: 'Mostrando todos los líderes', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+        } else {
+            filtroLiderActivo = true;
+            liderFiltroActual = liderNombre;
+            const badge = document.getElementById("filtroActivoBadge");
+            badge.style.display = "inline-block";
+            badge.innerHTML = `Filtrando por: ${liderNombre}`;
+            Swal.fire({ icon: 'success', title: 'Filtro aplicado', text: `Mostrando solo sitios del líder: ${liderNombre}`, timer: 2000, showConfirmButton: false, toast: true, position: 'top-end' });
+        }
+        actualizarTodoConFiltro();
+    }
+    
+    function limpiarFiltroLider() {
+        filtroLiderActivo = false;
+        liderFiltroActual = null;
+        document.getElementById("filtroActivoBadge").style.display = "none";
+        actualizarTodoConFiltro();
+        Swal.fire({ icon: 'success', title: 'Filtro limpiado', text: 'Mostrando todos los líderes', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+    }
+    
+    function actualizarTodoConFiltro() {
+        renderTable();
+        actualizarGraficas();
+        actualizarMapa();
+    }
+    
     function actualizarGraficas() {
         const datos = getDatosFiltrados();
+        
         const liderCount = {};
-        datos.forEach(s => { if (s.jefe && s.jefe !== "No asignado") liderCount[s.jefe] = (liderCount[s.jefe] || 0) + 1; });
-        let lideres = Object.entries(liderCount).sort((a,b) => b[1] - a[1]);
-        let limite = currentLiderFilter === "top5" ? 5 : (currentLiderFilter === "top15" ? 15 : 10);
-        lideres = lideres.slice(0, limite);
+        datos.forEach(s => { 
+            if (s.jefe && s.jefe !== "No asignado") {
+                liderCount[s.jefe] = (liderCount[s.jefe] || 0) + 1; 
+            } 
+        });
+        let lideresArray = Object.entries(liderCount).sort((a,b) => b[1] - a[1]);
+        lideresArray = lideresArray.slice(0, 15);
+        
+        const colores = lideresArray.map(l => {
+            if (filtroLiderActivo && l[0] === liderFiltroActual) return '#f59e0b';
+            return '#0a2540';
+        });
+        
         if (liderChart) liderChart.destroy();
-        liderChart = new Chart(document.getElementById('liderChart'), { type: 'bar', data: { labels: lideres.map(l => l[0].length > 15 ? l[0].substring(0,15)+'..' : l[0]), datasets: [{ label: 'Sitios', data: lideres.map(l => l[1]), backgroundColor: '#0a2540', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: true } });
+        const liderCtx = document.getElementById('liderChart').getContext('2d');
+        liderChart = new Chart(liderCtx, { 
+            type: 'bar', 
+            data: { 
+                labels: lideresArray.map(l => l[0].length > 18 ? l[0].substring(0,18)+'..' : l[0]), 
+                datasets: [{ label: 'Sitios', data: lideresArray.map(l => l[1]), backgroundColor: colores, borderRadius: 6, barPercentage: 0.7 }] 
+            }, 
+            options: { 
+                responsive: true, maintainAspectRatio: true,
+                onClick: (e, activeEls) => {
+                    if (activeEls.length > 0) {
+                        const index = activeEls[0].index;
+                        const lider = lideresArray[index][0];
+                        aplicarFiltroLiderDesdeGrafica(lider);
+                    }
+                }
+            } 
+        });
         
         let prioridadData = { "FIFA CALIDAD": 0, "FIFA ALTA PRIORIDAD": 0, "NORMAL": 0 };
         let datosParaPrioridad = currentPrioridadChartFilter === "modernizar" ? datos.filter(s => s.modernizar === "SI") : currentPrioridadChartFilter === "fallas" ? datos.filter(s => s.estadoOriginal === "DOWN" || s.estadoOriginal === "Mantenimiento") : datos;
@@ -863,52 +1658,411 @@
             let estadoTexto = s.estadoOriginal === "UP" ? "🟢 UP" : (s.estadoOriginal === "DOWN" ? "🔴 DOWN" : "🟡 Mantenimiento");
             let personalInfo = s.asignacion && s.asignacion !== "No asignado" ? `<br>👨‍🔧 <strong>Personal:</strong> ${escapeHtml(s.asignacion)}` : '<br>👨‍🔧 <strong>Personal:</strong> No asignado';
             
+            // Opciones de personal libre para asignar desde el mapa
+            const personalLibre = dispatchData.filter(d => d.ESTATUS === "LIBRE" || d.ESTATUS === "libre");
+            const selectOpts = personalLibre.map(p =>
+                `<option value="${escapeHtml(p.PERSONAL)}">${escapeHtml(p.PERSONAL)} — ${escapeHtml(p.PROVEEDOR || '')}</option>`
+            ).join('');
+
+            const tieneAsignacion = s.asignacion && s.asignacion !== "No asignado" && s.asignacion !== "";
+            const asignacionHtml = tieneAsignacion
+                ? `<div style="margin-top:8px;padding:5px 8px;background:#dbeafe;border-radius:6px;font-size:0.75rem;">
+                       👨‍🔧 <strong>${escapeHtml(s.asignacion)}</strong>
+                       <br><button onclick="liberarDesdeMapaConfirm('${escapeHtml(s.nombre)}','${escapeHtml(s.asignacion)}')"
+                           style="margin-top:5px;width:100%;padding:4px;background:#10b981;color:white;border:none;border-radius:5px;cursor:pointer;font-size:0.72rem;">
+                           🔓 Liberar personal
+                       </button>
+                   </div>`
+                : personalLibre.length > 0
+                    ? `<div style="margin-top:8px;">
+                           <select id="mapSelect_${s.rowNumber}"
+                               style="width:100%;padding:4px;font-size:0.72rem;border:1px solid #cbd5e1;border-radius:5px;margin-bottom:4px;">
+                               <option value="">Seleccionar técnico...</option>
+                               ${selectOpts}
+                           </select>
+                           <button onclick="asignarDesdeMapaConfirm(${s.rowNumber})"
+                               style="width:100%;padding:5px;background:#0a2540;color:white;border:none;border-radius:5px;cursor:pointer;font-size:0.72rem;">
+                               ✓ Asignar a este sitio
+                           </button>
+                       </div>`
+                    : `<div style="margin-top:6px;font-size:0.72rem;color:#64748b;">Sin técnicos disponibles</div>`;
+
             marker.bindPopup(`
-                <div style="min-width:200px;">
-                    <b>🏢 ${escapeHtml(s.nombre)}</b><br>
-                    📍 Zona: ${escapeHtml(s.zona)}<br>
-                    📊 Estado: ${estadoTexto}<br>
-                    🏆 ${s.prioridadDisplay}<br>
-                    👤 Líder: ${escapeHtml(s.jefe)}${personalInfo}
+                <div style="min-width:220px;font-size:0.8rem;">
+                    <b style="font-size:0.85rem;">🏢 ${escapeHtml(s.nombre)}</b><br>
+                    <span style="color:#475569;">📍 ${escapeHtml(s.zona)} · ${estadoTexto}</span><br>
+                    <span style="color:${s.prioridadColor};">${s.prioridadDisplay}</span><br>
+                    👤 ${escapeHtml(s.jefe)}
+                    ${asignacionHtml}
                 </div>
-            `);
+            `, { maxWidth: 260 });
             markers.push(marker);
         });
         restoreMapPosition();
     }
     
     function editarSitio(rowNumber) {
+        if (!requireOperador()) return;
         const sitio = sitiosData.find(s => s.rowNumber == rowNumber);
         Swal.fire({ title: 'Editar Sitio', html: `<p><strong>${sitio.nombre}</strong></p><p>Asignación actual: <strong>${sitio.asignacion}</strong></p><p>Use el selector de personal para modificar</p>`, icon: 'info' });
     }
     
+
+    // ============================================================
+    // NUEVO SITIO
+    // ============================================================
+    async function crearNuevoSitio() {
+        if (!requireOperador()) return;
+
+        const { value: datos } = await Swal.fire({
+            title: '➕ Nuevo Sitio Celular',
+            width: '640px',
+            html: `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;font-size:0.8rem;">
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Nombre / ID *</label>
+                        <input id="ns_nombre" class="swal2-input" placeholder="Ej. GONZAGA" style="width:100%;margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Mnemónico</label>
+                        <input id="ns_mnemonic" class="swal2-input" placeholder="Ej. GONZ" style="width:100%;margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Zona</label>
+                        <input id="ns_zona" class="swal2-input" placeholder="Ej. CARRANZA" style="width:100%;margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Zona FIFA</label>
+                        <input id="ns_zonaFifa" class="swal2-input" placeholder="Ej. CENTRO" style="width:100%;margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Jefe / Líder</label>
+                        <input id="ns_jefe" class="swal2-input" placeholder="Nombre del líder" style="width:100%;margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Prioridad FIFA</label>
+                        <select id="ns_prioridad" class="swal2-select" style="width:100%;margin:0;font-size:0.8rem;">
+                            <option value="NORMAL">🟡 NORMAL</option>
+                            <option value="FIFA ALTA PRIORIDAD">🟠 FIFA ALTA PRIORIDAD</option>
+                            <option value="FIFA CALIDAD">🔴 FIFA CALIDAD</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Estatus</label>
+                        <select id="ns_estatus" class="swal2-select" style="width:100%;margin:0;font-size:0.8rem;">
+                            <option value="UP">🟢 UP</option>
+                            <option value="DOWN">🔴 DOWN</option>
+                            <option value="Mantenimiento">🟡 Mantenimiento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Latitud</label>
+                        <input id="ns_lat" class="swal2-input" type="number" step="any" placeholder="Ej. 25.6714" style="width:100%;margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Longitud</label>
+                        <input id="ns_lon" class="swal2-input" type="number" step="any" placeholder="Ej. -100.3089" style="width:100%;margin:0;">
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: '➕ Crear Sitio',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0a2540',
+            preConfirm: () => {
+                const nombre = document.getElementById('ns_nombre').value.trim();
+                if (!nombre) { Swal.showValidationMessage('El nombre del sitio es obligatorio'); return false; }
+                return {
+                    nombre:   nombre,
+                    mnemonic: document.getElementById('ns_mnemonic').value.trim(),
+                    zona:     document.getElementById('ns_zona').value.trim(),
+                    zonaFifa: document.getElementById('ns_zonaFifa').value.trim(),
+                    jefe:     document.getElementById('ns_jefe').value.trim(),
+                    prioridad:document.getElementById('ns_prioridad').value,
+                    estatus:  document.getElementById('ns_estatus').value,
+                    lat:      document.getElementById('ns_lat').value.trim(),
+                    lon:      document.getElementById('ns_lon').value.trim()
+                };
+            }
+        });
+        if (!datos) return;
+
+        Swal.fire({ title: 'Creando sitio...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const nuevaFila = {
+            "Nombre":              datos.nombre,
+            "Mnemonico":           datos.mnemonic,
+            "ZONA":                datos.zona,
+            "ZONA FIFA":           datos.zonaFifa,
+            "JEFE":                datos.jefe,
+            "PRIORIDAD FIFA":      datos.prioridad,
+            "ESTATUS":             datos.estatus,
+            "Latitud":             datos.lat,
+            "Longitud":            datos.lon,
+            "ASIGNACION":          "",
+            "SITIO A MODERNIZAR":  "NO"
+        };
+
+        try {
+            const resp = await fetch(
+                `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`,
+                { method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ "Action": "Add", "Properties": { "Locale": "es-MX" }, "Rows": [nuevaFila] }) }
+            );
+            const txt = await resp.text();
+            console.log('[crearNuevoSitio] Add status=' + resp.status, txt.substring(0,200));
+            if (!resp.ok) {
+                Swal.fire({ icon: 'error', title: 'Error AppSheet',
+                    html: `<pre style="text-align:left;font-size:0.65rem;overflow:auto;max-height:200px;">${escapeHtml(txt)}</pre>`,
+                    width: '500px' });
+                return;
+            }
+            await Swal.fire({ icon: 'success', title: '¡Sitio creado!',
+                text: `${datos.nombre} agregado correctamente`, timer: 2500, showConfirmButton: false });
+            await fetchSitiosFromAppSheet(true);
+        } catch (e) {
+            console.error(e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        }
+    }
+    window.crearNuevoSitio = crearNuevoSitio;
+
+    // ============================================================
+    // ASIGNAR DESDE MAPA
+    // ============================================================
+    window.asignarDesdeMapaConfirm = async function(rowNumber) {
+        if (!requireOperador()) { return; }
+        const sitio = sitiosData.find(s => s.rowNumber == rowNumber);
+        if (!sitio) return;
+        const select = document.getElementById(`mapSelect_${rowNumber}`);
+        const personal = select ? select.value : '';
+        if (!personal) { Swal.fire({ icon: 'warning', title: 'Selecciona un técnico', timer: 1800, showConfirmButton: false, toast: true, position: 'top-end' }); return; }
+
+        // Reusar asignarPersonal: buscar el rowNumber del sitio y establecer el select
+        // Llamamos directamente a la lógica interna de asignar
+        const sitioRow = sitiosData.find(s => s.rowNumber == rowNumber);
+        if (!sitioRow) return;
+
+        Swal.fire({ title: 'Asignando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            // 1. Actualizar Dispatch
+            const personalRecord = dispatchData.find(p => p.PERSONAL === personal);
+            if (!personalRecord) throw new Error('No se encontró el registro del técnico');
+
+            const r1 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(DISPATCH_TABLE)}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Edit", "Properties": { "Locale": "es-MX" },
+                    "Rows": [{ "PERSONAL": personal, "SITIO ACTUAL ASIGNADO": sitioRow.nombre, "ESTATUS": "ASIGNACION" }] })
+            });
+            if (!r1.ok) throw new Error('Error actualizando dispatch: ' + await r1.text());
+
+            // 2. Actualizar FIFA26
+            const r2 = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`, {
+                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Edit", "Properties": { "Locale": "es-MX" },
+                    "Rows": [{ "Nombre": sitioRow.nombre, "ASIGNACION": personal }] })
+            });
+            if (!r2.ok) throw new Error('Error actualizando sitio: ' + await r2.text());
+
+            // 3. Registrar en historial
+            await registrarAsignacion(sitioRow.nombre, personal,
+                personalRecord.PROVEEDOR || '', sitioRow.zona,
+                sitioRow.jefe, sitioRow.prioridadOriginal);
+
+            // 4. Telegram
+            await enviarNotificacionTelegram(sitioRow.nombre, personal,
+                personalRecord.PROVEEDOR || '', sitioRow.jefe, "ASIGNACION", sitioRow.nombre);
+
+            await Swal.fire({ icon: 'success', title: '¡Asignado desde mapa!',
+                text: `${personal} → ${sitioRow.nombre}`, timer: 2000, showConfirmButton: false });
+            await fetchSitiosFromAppSheet();
+            await cargarDispatchData();
+            await cargarAsignacionesData();
+        } catch(e) {
+            console.error(e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        }
+    };
+
+    // ============================================================
+    // LIBERAR DESDE MAPA
+    // ============================================================
+    window.liberarDesdeMapaConfirm = async function(sitioNombre, personalNombre) {
+        if (!requireOperador()) return;
+        const confirm = await Swal.fire({
+            title: '🔓 Liberar desde mapa',
+            html: `<p>¿Liberar a <strong>${escapeHtml(personalNombre)}</strong><br>del sitio <strong>${escapeHtml(sitioNombre)}</strong>?</p>`,
+            icon: 'question', showCancelButton: true,
+            confirmButtonText: 'Sí, liberar', cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#10b981'
+        });
+        if (!confirm.isConfirmed) return;
+        await guardarLiberacion(personalNombre, sitioNombre, '', '', '');
+    };
+
+
+    // ============================================================
+    // GRÁFICAS SITIOS ASIGNADOS
+    // ============================================================
+    function actualizarGraficasAsignaciones() {
+        const datos = asignacionesData;
+        console.log('📊 Total registros asignaciones:', datos.length);
+        if (datos.length > 0) {
+            console.log('📊 Primer registro:', JSON.stringify(datos[0]));
+            console.log('📊 Campos disponibles:', Object.keys(datos[0]).join(', '));
+            // Sample PROVEEDOR and INICIO values
+            datos.slice(0,5).forEach((a,i) => console.log(`  [${i}] PROVEEDOR="${a.PROVEEDOR}" INICIO="${a.INICIO}" ESTATUS="${a.ESTATUS}"`));
+        }
+
+        // ── Gráfica 1: Barras por Proveedor ──────────────────────
+        const provCount = {};
+        datos.forEach(a => {
+            const prov = (a.PROVEEDOR || 'Sin proveedor').trim();
+            if (prov) provCount[prov] = (provCount[prov] || 0) + 1;
+        });
+        const provLabels = Object.keys(provCount).sort((a,b) => provCount[b] - provCount[a]);
+        const provValues = provLabels.map(p => provCount[p]);
+        const provColors = ['#0a2540','#1e40af','#0369a1','#0891b2','#0d9488','#059669','#16a34a','#65a30d','#ca8a04','#dc2626'];
+
+        const ctxProv = document.getElementById('chartProveedorAsig');
+        if (ctxProv) {
+            if (chartProveedorAsig) chartProveedorAsig.destroy();
+            chartProveedorAsig = new Chart(ctxProv.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: provLabels.map(l => l.length > 16 ? l.substring(0,16)+'..' : l),
+                    datasets: [{
+                        label: 'Asignaciones',
+                        data: provValues,
+                        backgroundColor: provLabels.map((_, i) => provColors[i % provColors.length]),
+                        borderRadius: 6,
+                        barPercentage: 0.65
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // ── Gráfica 2: Línea por Día ──────────────────────────────
+        // Agrupar por fecha de INICIO, últimos 14 días
+        const diaCount = {};
+        datos.forEach(a => {
+            const fecha = fechaISO(a.INICIO);
+            if (fecha) diaCount[fecha] = (diaCount[fecha] || 0) + 1;
+        });
+
+        // Generar rango de últimos 14 días
+        const hoy = new Date();
+        const diasLabels = [];
+        const diasValues = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(hoy);
+            d.setDate(hoy.getDate() - i);
+            const key = d.toISOString().split('T')[0];
+            const label = d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' });
+            diasLabels.push(label);
+            diasValues.push(diaCount[key] || 0);
+        }
+
+        const ctxDia = document.getElementById('chartAsigPorDia');
+        if (ctxDia) {
+            if (chartAsigPorDia) chartAsigPorDia.destroy();
+            chartAsigPorDia = new Chart(ctxDia.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: diasLabels,
+                    datasets: [{
+                        label: 'Asignaciones',
+                        data: diasValues,
+                        borderColor: '#0a2540',
+                        backgroundColor: 'rgba(10,37,64,0.08)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#0a2540',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                        x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+    }
+
     // ============================================================
     // DISPATCH FUNCIONES
     // ============================================================
     async function cargarDispatchData(showMessage = false) {
         try {
             if (showMessage) { const b = document.getElementById("dispatchInfoBanner"); b.innerHTML = "🔄 Cargando personal..."; b.className = "info-banner info-banner-warning"; }
-            const res = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
-                method: 'POST', headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+            
+            const response = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${DISPATCH_TABLE}/Action`, {
+                method: 'POST',
+                headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX", "Selector": "FILTER('DISPATCH FIFA26', TRUE)" } })
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn("Error cargando dispatch:", errorText);
+                if (showMessage) {
+                    const b = document.getElementById("dispatchInfoBanner");
+                    b.innerHTML = `⚠️ Tabla "${DISPATCH_TABLE}" no encontrada. Agrega personal usando el botón "+ Nuevo Personal"`;
+                    b.className = "info-banner info-banner-warning";
+                }
+                dispatchData = [];
+                renderDispatchTable();
+                actualizarEstadisticasDispatch();
+                return;
+            }
+            
+            const data = await response.json();
+            
             if (Array.isArray(data) && data.length > 0) {
                 dispatchData = data.map((r, i) => ({ ...r, _RowNumber: r._RowNumber || i+1, id: r._RowNumber || i+1 }));
-                actualizarFiltrosDispatch(); renderDispatchTable(); actualizarEstadisticasDispatch();
-                const b = document.getElementById("dispatchInfoBanner"); b.innerHTML = `✅ ${dispatchData.length} registros de personal`; b.className = "info-banner";
-                setTimeout(() => { if (document.getElementById("dispatchInfoBanner").innerHTML.includes("✅")) b.innerHTML = "✅ Dispatch FIFA26 · Gestión de personal"; }, 2000);
-            } else { dispatchData = []; renderDispatchTable(); actualizarEstadisticasDispatch(); }
+                actualizarFiltrosDispatch(); 
+                renderDispatchTable(); 
+                actualizarEstadisticasDispatch();
+                const b = document.getElementById("dispatchInfoBanner");
+                b.innerHTML = `✅ ${dispatchData.length} registros de personal`;
+                b.className = "info-banner";
+                setTimeout(() => { if(b.innerHTML.includes("✅")) b.innerHTML = "✅ Dispatch FIFA26 · Gestión de personal"; }, 2000);
+            } else { 
+                dispatchData = []; 
+                renderDispatchTable(); 
+                actualizarEstadisticasDispatch(); 
+            }
         } catch (error) {
-            document.getElementById("dispatchInfoBanner").innerHTML = `⚠️ Error: ${error.message}`;
-            document.getElementById("dispatchInfoBanner").className = "info-banner info-banner-warning";
+            console.error("Error cargando dispatch:", error);
+            const b = document.getElementById("dispatchInfoBanner");
+            b.innerHTML = `⚠️ Error: ${error.message}. Verifica la tabla DISPATCH FIFA26`;
+            b.className = "info-banner info-banner-warning";
+            dispatchData = [];
+            renderDispatchTable();
+            actualizarEstadisticasDispatch();
         }
     }
     
     function actualizarFiltrosDispatch() {
-        const zonas = new Set(); dispatchData.forEach(d => { if (d.ZONA) zonas.add(d.ZONA); });
-        document.getElementById("dispatchZonaFilter").innerHTML = '<option value="todos">Todas</option>' + Array.from(zonas).sort().map(z => `<option value="${z}">${z}</option>`).join('');
+        const zonas = new Set(); 
+        dispatchData.forEach(d => { if (d.ZONA) zonas.add(d.ZONA); });
+        const zonaSelect = document.getElementById("dispatchZonaFilter");
+        if(zonaSelect) {
+            zonaSelect.innerHTML = '<option value="todos">Todas</option>' + Array.from(zonas).sort().map(z => `<option value="${z}">${z}</option>`).join('');
+        }
     }
     
     function actualizarEstadisticasDispatch() {
@@ -924,9 +2078,9 @@
     }
     
     function getDispatchFiltrados() {
-        const search = document.getElementById("dispatchSearchInput").value.toLowerCase();
-        const zona = document.getElementById("dispatchZonaFilter").value;
-        const estatus = document.getElementById("dispatchEstatusFilter").value;
+        const search = document.getElementById("dispatchSearchInput") ? document.getElementById("dispatchSearchInput").value.toLowerCase() : "";
+        const zona = document.getElementById("dispatchZonaFilter") ? document.getElementById("dispatchZonaFilter").value : "todos";
+        const estatus = document.getElementById("dispatchEstatusFilter") ? document.getElementById("dispatchEstatusFilter").value : "todos";
         return dispatchData.filter(i => {
             const matchSearch = search === "" || (i.PERSONAL || "").toLowerCase().includes(search) || (i["SITIO ACTUAL ASIGNADO"] || "").toLowerCase().includes(search);
             const matchZona = zona === "todos" || i.ZONA === zona;
@@ -938,7 +2092,13 @@
     function renderDispatchTable() {
         const filtrados = getDispatchFiltrados();
         const tbody = document.getElementById("dispatchBody");
-        if (filtrados.length === 0) { tbody.innerHTML = `<tr><td colspan="12" class="loading">📭 No hay registros<\/td></td>`; return; }
+        if (!tbody) return;
+        
+        if (filtrados.length === 0) { 
+            tbody.innerHTML = `<tr><td colspan="12" class="loading">📭 No hay registros. Use "+ Nuevo Personal" para agregar.<\/td></tr>`; 
+            return; 
+        }
+        
         tbody.innerHTML = filtrados.map(i => {
             let statusClass = i.ESTATUS === "LIBRE" ? "status-LIBRE" : (i.ESTATUS === "COMIDA" ? "status-COMIDA" : "status-ASIGNACION");
             const tieneAsignacion = i["SITIO ACTUAL ASIGNADO"] && i["SITIO ACTUAL ASIGNADO"] !== "-";
@@ -947,22 +2107,21 @@
                 <td><strong>${escapeHtml(i.PERSONAL || "-")}</strong></td>
                 <td>${escapeHtml(i.PROVEEDOR || "-")}</td>
                 <td>${escapeHtml(i.ZONA || "-")}</td>
-                <td>${escapeHtml(i["ZONA FIFA"] || "-")}</td>
-                <td>${escapeHtml(i["JEFE FIFA"] || "-")}</td>
                 <td>${escapeHtml(i.CELULAR || "-")}</td>
                 <td>${escapeHtml(i["SITIO ACTUAL ASIGNADO"] || "-")}</td>
                 <td><span class="status-badge ${statusClass}">${i.ESTATUS || "LIBRE"}</span></td>
                 <td style="max-width:120px; overflow:hidden;">${escapeHtml(i.NOTAS || "-")}</td>
                 <td>${escapeHtml(i["CHAT ID"] || "-")}</td>
                 <td style="white-space: nowrap;">
-                    <button class="edit-btn" onclick="editarPersonal(${i._RowNumber})" style="margin-right: 4px;">✏️</button>
-                    ${tieneAsignacion ? `<button class="edit-btn" style="background:#10b981;" onclick="liberarPersonal(${i._RowNumber}, '${escapeHtml(i.PERSONAL)}', '${escapeHtml(i["SITIO ACTUAL ASIGNADO"])}')">🔓 Liberar</button>` : ''}
+                    <button class="edit-btn action-protegida" onclick="editarPersonal(${i._RowNumber})" style="margin-right: 4px;">✏️</button>
+                    ${tieneAsignacion ? `<button class="edit-btn action-protegida" style="background:#10b981;" onclick="liberarPersonal(${i._RowNumber}, '${escapeHtml(i.PERSONAL)}', '${escapeHtml(i["SITIO ACTUAL ASIGNADO"])}')">🔓 Liberar</button>` : ''}
                 </td>
              `;
         }).join("");
     }
     
     async function crearNuevoPersonal() {
+        if (!requireOperador()) return;
         let html = '<div class="edit-form-grid">';
         for (const campo of CAMPOS_DISPATCH) {
             if (campo === "ESTATUS") {
@@ -1000,25 +2159,42 @@
             <p><strong>🎨 Mapa:</strong> 🟢 UP / 🔴 DOWN / 🔵 Borde azul = Asignado</p>
             <p><strong>📌 Asignación:</strong> Seleccione personal y confirme</p>
             <p><strong>📨 Telegram:</strong> Notificaciones al ASIGNAR y al LIBERAR personal</p>
-            <p><strong>🔓 Liberación:</strong> Botón "Liberar" en Dispatch - envía notificación al técnico</p>
+            <p><strong>🔓 Liberación:</strong> Botón "Liberar" en Dispatch - completa los datos de la atención</p>
+            <p><strong>📊 Gráfica de Líderes:</strong> Haga clic en una barra para filtrar por ese líder</p>
+            <p><strong>📋 Sitios Asignados:</strong> Historial completo con INICIO y FIN automáticos</p>
         </div>`, icon: 'info' });
     }
     
     function aplicarFiltrosMonitoreo() { renderTable(); actualizarGraficas(); actualizarMapa(); }
     function resetFiltersMonitoreo() {
-        document.getElementById("searchInput").value = ""; document.getElementById("zonaFilter").value = "todos";
-        document.getElementById("estadoFilter").value = "todos"; document.getElementById("liderFilter").value = "todos";
+        document.getElementById("searchInput").value = "";
+        document.getElementById("zonaFilter").value = "todos";
+        document.getElementById("estadoFilter").value = "todos";
+        document.getElementById("liderFilter").value = "todos";
         document.getElementById("prioridadFilter").value = "todos";
+        limpiarFiltroLider();
         aplicarFiltrosMonitoreo();
     }
     function aplicarFiltrosDispatch() { renderDispatchTable(); }
     function resetFiltersDispatch() {
-        document.getElementById("dispatchSearchInput").value = ""; document.getElementById("dispatchZonaFilter").value = "todos";
-        document.getElementById("dispatchEstatusFilter").value = "todos";
+        if(document.getElementById("dispatchSearchInput")) document.getElementById("dispatchSearchInput").value = "";
+        if(document.getElementById("dispatchZonaFilter")) document.getElementById("dispatchZonaFilter").value = "todos";
+        if(document.getElementById("dispatchEstatusFilter")) document.getElementById("dispatchEstatusFilter").value = "todos";
         renderDispatchTable();
+    }
+    function aplicarFiltrosAsignaciones() { renderAsignacionesTable(); actualizarEstadisticasAsignaciones(); }
+    function resetFiltersAsignaciones() {
+        if(document.getElementById("asignacionSearchInput")) document.getElementById("asignacionSearchInput").value = "";
+        if(document.getElementById("asignacionEstadoFilter")) document.getElementById("asignacionEstadoFilter").value = "todos";
+        if(document.getElementById("fechaDesdeFilter")) document.getElementById("fechaDesdeFilter").value = "";
+        if(document.getElementById("fechaHastaFilter")) document.getElementById("fechaHastaFilter").value = "";
+        renderAsignacionesTable();
+        actualizarEstadisticasAsignaciones();
     }
     
     // Event Listeners
+    document.getElementById("limpiarFiltroLiderBtn").addEventListener("click", () => limpiarFiltroLider());
+    
     document.querySelectorAll(".chart-filter-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".chart-filter-btn").forEach(b => { b.style.background = "#f1f5f9"; b.style.color = "#475569"; });
@@ -1049,6 +2225,13 @@
     document.getElementById("dispatchZonaFilter").addEventListener("change", () => renderDispatchTable());
     document.getElementById("dispatchEstatusFilter").addEventListener("change", () => renderDispatchTable());
     
+    document.getElementById("refreshAsignacionesBtn").addEventListener("click", () => cargarAsignacionesData(true));
+    document.getElementById("resetAsignacionesFiltersBtn").addEventListener("click", () => resetFiltersAsignaciones());
+    document.getElementById("asignacionSearchInput").addEventListener("input", () => aplicarFiltrosAsignaciones());
+    document.getElementById("asignacionEstadoFilter").addEventListener("change", () => aplicarFiltrosAsignaciones());
+    document.getElementById("fechaDesdeFilter").addEventListener("change", () => aplicarFiltrosAsignaciones());
+    document.getElementById("fechaHastaFilter").addEventListener("change", () => aplicarFiltrosAsignaciones());
+    
     window.editarSitio = editarSitio;
     window.mostrarAyudaEdicion = mostrarAyudaEdicion;
     window.crearNuevoPersonal = crearNuevoPersonal;
@@ -1056,11 +2239,453 @@
     window.asignarPersonal = asignarPersonal;
     window.liberarPersonal = liberarPersonal;
     window.debugTelegramConfig = debugTelegramConfig;
+    window.finalizarAsignacionManual = finalizarAsignacionManual;
     
     initMap();
     fetchSitiosFromAppSheet();
     cargarDispatchData();
-    setInterval(() => { fetchSitiosFromAppSheet(false); if (document.querySelector('.tab-btn.active').dataset.tab === 'dispatch') cargarDispatchData(false); }, 60000);
+    cargarAsignacionesData();
+    setInterval(() => { 
+        fetchSitiosFromAppSheet(false); 
+        if (document.querySelector('.tab-btn.active').dataset.tab === 'dispatch') cargarDispatchData(false);
+        if (document.querySelector('.tab-btn.active').dataset.tab === 'asignaciones') cargarAsignacionesData(false);
+        if (document.querySelector('.tab-btn.active').dataset.tab === 'plantas') cargarPlantasData(false);
+    }, 60000);
+
+
+    // ============================================================
+    // PLANTAS DE EMERGENCIA
+    // ============================================================
+    async function cargarPlantasData(showMessage = true) {
+        try {
+            const url = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(PLANTAS_TABLE)}/Action`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Find", "Properties": { "Locale": "es-MX" } })
+            });
+            if (!resp.ok) {
+                const b = document.getElementById('plantasInfoBanner');
+                b.innerHTML = `⚠️ Tabla "${PLANTAS_TABLE}" no disponible. Verifica en AppSheet.`;
+                b.className = 'info-banner info-banner-warning';
+                plantasData = []; renderPlantasTable(); actualizarEstadisticasPlantas(); return;
+            }
+            const data = await resp.json();
+            if (Array.isArray(data) && data.length > 0) {
+                plantasData = data.map((r, i) => ({ ...r, _RowNumber: r._RowNumber || (i + 1) }));
+                console.log('🌿 PLANTAS FIFA26 campos reales:', Object.keys(data[0]));
+                console.log('🌿 Primer registro completo:', JSON.stringify(data[0]));
+            } else {
+                plantasData = [];
+            }
+            renderPlantasTable();
+            actualizarEstadisticasPlantas();
+            const b = document.getElementById('plantasInfoBanner');
+            b.innerHTML = `✅ ${plantasData.length} plantas cargadas · PLANTAS FIFA26`;
+            b.className = 'info-banner';
+            setTimeout(() => { if (b.innerHTML.includes('✅')) b.innerHTML = '✅ Plantas de Emergencia FIFA26 · Tiempo real'; }, 2000);
+        } catch (e) {
+            console.error('cargarPlantasData error:', e);
+            plantasData = []; renderPlantasTable(); actualizarEstadisticasPlantas();
+        }
+    }
+
+    function actualizarEstadisticasPlantas() {
+        const libres    = plantasData.filter(p => (p.ESTATUS || 'LIBRE') === 'LIBRE').length;
+        const asignadas = plantasData.filter(p => p.ESTATUS === 'ASIGNADA').length;
+        document.getElementById('totalPlantas').innerText       = plantasData.length;
+        document.getElementById('plantasLibresCount').innerText = libres;
+        document.getElementById('plantasAsignadasCount').innerText = asignadas;
+        document.getElementById('plantasLibresSide').innerText    = libres;
+        document.getElementById('plantasAsignadasSide').innerText = asignadas;
+    }
+
+    function getPlantasFiltradas() {
+        const search  = (document.getElementById('plantasSearchInput')?.value || '').toLowerCase();
+        const estatus = document.getElementById('plantasEstatusFilter')?.value || 'todos';
+        return plantasData.filter(p => {
+            const matchSearch  = search === '' ||
+                (p.PLANTA || '').toLowerCase().includes(search) ||
+                (p['SITIO ASIGNADO'] || '').toLowerCase().includes(search) ||
+                (p['PLANTA STOCK'] || '').toLowerCase().includes(search) ||
+                (p.NOTAS || '').toLowerCase().includes(search);
+            const matchEstatus = estatus === 'todos' || (p.ESTATUS || 'LIBRE') === estatus;
+            return matchSearch && matchEstatus;
+        });
+    }
+
+    function renderPlantasTable() {
+        const tbody = document.getElementById('plantasBody');
+        if (!tbody) return;
+        const datos = getPlantasFiltradas();
+        if (datos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 No se encontraron plantas.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = datos.map(p => {
+            const estatus    = p.ESTATUS || 'LIBRE';
+            const statusClass = estatus === 'LIBRE' ? 'status-LIBRE' : 'status-ASIGNACION';
+            const statusLabel = estatus === 'LIBRE' ? '🟢 LIBRE' : '🔴 ASIGNADA';
+            const sitioActual = p['SITIO ASIGNADO'] || '';
+            const tieneAsignacion = sitioActual && sitioActual !== '-' && sitioActual !== '';
+
+            // Selector de sitios disponibles (para asignar)
+            let sitioSelect = `<select id="planta_sitio_${p._RowNumber}" style="width:100%; padding:2px; font-size:0.6rem; margin-bottom:2px;">
+                <option value="">Seleccionar sitio...</option>`;
+            sitiosData.forEach(s => {
+                sitioSelect += `<option value="${escapeHtml(s.nombre)}">${escapeHtml(s.nombre)}</option>`;
+            });
+            sitioSelect += `</select><button class="edit-btn" style="width:100%; background:#0a2540;" onclick="asignarPlanta(${p._RowNumber})">✓ Asignar</button>`;
+
+            const btnLiberar = tieneAsignacion
+                ? `<button class="edit-btn action-protegida" style="background:#10b981;" onclick="liberarPlanta(${p._RowNumber}, '${escapeHtml(p.PLANTA || '')}', '${escapeHtml(sitioActual)}')">🔓 Liberar</button>`
+                : '';
+
+            return `<tr>
+                <td>${p._RowNumber}</td>
+                <td><strong>${escapeHtml(p.PLANTA || '-')}</strong></td>
+                <td>${escapeHtml(p.CAPACIDAD || '-')}</td>
+                <td>${escapeHtml(p.MOTOR || '-')}</td>
+                <td>${escapeHtml(p['PLANTA STOCK'] || p.PROVEEDOR || p['Planta Stock'] || p.STOCK || '-')}</td>
+                <td>${escapeHtml(p['LUGAR STBY'] || '-')}</td>
+                <td>${tieneAsignacion ? `<span style="background:#dbeafe; padding:2px 6px; border-radius:10px;">📍 ${escapeHtml(sitioActual)}</span>` : '<span style="color:#94a3b8;">No asignada</span>'}</td>
+                <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                <td style="max-width:120px;">${escapeHtml(p.NOTAS || '-')}</td>
+                <td>
+                    ${tieneAsignacion
+                        ? `<div class="action-protegida">${btnLiberar}</div>`
+                        : `<div class="action-protegida">${sitioSelect}</div>`}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+
+    // ── CREAR NUEVA PLANTA ─────────────────────────────────────────
+    async function crearNuevaPlanta() {
+        if (!requireOperador()) return;
+        const { value: datos } = await Swal.fire({
+            title: '➕ Nueva Planta de Emergencia',
+            width: '600px',
+            html: `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left; font-size:0.8rem;">
+                    <div>
+                        <label style="font-weight:600; display:block; margin-bottom:3px;">Planta *</label>
+                        <input id="np_planta" class="swal2-input" placeholder="Nombre / ID de la planta" style="width:100%; margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600; display:block; margin-bottom:3px;">Capacidad</label>
+                        <input id="np_capacidad" class="swal2-input" placeholder="ej. 20 KVA" style="width:100%; margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600; display:block; margin-bottom:3px;">Motor</label>
+                        <input id="np_motor" class="swal2-input" placeholder="ej. Cummins, Kohler..." style="width:100%; margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600; display:block; margin-bottom:3px;">Planta Stock</label>
+                        <input id="np_stock" class="swal2-input" placeholder="Proveedor / stock" style="width:100%; margin:0;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600; display:block; margin-bottom:3px;">Lugar STBY</label>
+                        <input id="np_stby" class="swal2-input" placeholder="Ubicación en standby" style="width:100%; margin:0;">
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:3px;">Notas</label>
+                        <textarea id="np_notas" class="swal2-textarea" placeholder="Observaciones..." style="width:100%; margin:0; height:60px;"></textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: 'Crear Planta',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const planta = document.getElementById('np_planta').value.trim();
+                if (!planta) { Swal.showValidationMessage('El nombre de la planta es obligatorio'); return false; }
+                return {
+                    planta:    planta,
+                    capacidad: document.getElementById('np_capacidad').value.trim(),
+                    motor:     document.getElementById('np_motor').value.trim(),
+                    stock:     document.getElementById('np_stock').value.trim(),
+                    stby:      document.getElementById('np_stby').value.trim(),
+                    notas:     document.getElementById('np_notas').value.trim()
+                };
+            }
+        });
+        if (!datos) return;
+
+        Swal.fire({ title: 'Creando planta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const nuevaFila = {
+            "PLANTA":         datos.planta,
+            "CAPACIDAD":      datos.capacidad,
+            "MOTOR":          datos.motor,
+            "PLANTA STOCK":   datos.stock,
+            "LUGAR STBY":     datos.stby,
+            "SITIO ASIGNADO": "",
+            "ESTATUS":        "LIBRE",
+            "NOTAS":          datos.notas
+        };
+
+        try {
+            const url = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(PLANTAS_TABLE)}/Action`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Action": "Add", "Properties": { "Locale": "es-MX" }, "Rows": [nuevaFila] })
+            });
+            const txt = await resp.text();
+            console.log('[crearNuevaPlanta] Add status=' + resp.status, txt.substring(0, 300));
+            if (!resp.ok) {
+                Swal.fire({ icon: 'error', title: 'Error AppSheet',
+                    html: `<pre style="text-align:left;font-size:0.65rem;overflow:auto;max-height:200px;">${escapeHtml(txt)}</pre>`,
+                    width: '500px' });
+                return;
+            }
+            await Swal.fire({ icon: 'success', title: '¡Planta creada!',
+                text: `${datos.planta} agregada correctamente`, timer: 2500, showConfirmButton: false });
+            await cargarPlantasData();
+        } catch (e) {
+            console.error(e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        }
+    }
+    window.crearNuevaPlanta = crearNuevaPlanta;
+
+    // ── Helper: Edit genérico para PLANTAS FIFA26 ──────────────────
+    // AppSheet Edit necesita la key column del registro, no _RowNumber.
+    // Intentamos con PLANTA como key; si falla, logueamos la respuesta completa.
+    async function editarPlantaAppSheet(filaData, etiqueta) {
+        const url = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(PLANTAS_TABLE)}/Action`;
+        const body = { "Action": "Edit", "Properties": { "Locale": "es-MX" }, "Rows": [filaData] };
+        console.log(`[${etiqueta}] →`, JSON.stringify(body));
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'ApplicationAccessKey': API_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const txt = await resp.text();
+        console.log(`[${etiqueta}] ← status=${resp.status}`, txt);
+        return { ok: resp.ok, status: resp.status, text: txt };
+    }
+
+    // ── ASIGNAR PLANTA A SITIO ──────────────────────────────────────
+    window.asignarPlanta = async function(rowNumber) {
+        if (!requireOperador()) return;
+        const planta = plantasData.find(p => p._RowNumber == rowNumber);
+        if (!planta) { Swal.fire('Error', 'No se encontró la planta', 'error'); return; }
+
+        const select = document.getElementById(`planta_sitio_${rowNumber}`);
+        const sitioSeleccionado = select ? select.value : '';
+        if (!sitioSeleccionado) { Swal.fire('Atención', 'Selecciona un sitio para asignar la planta', 'warning'); return; }
+
+        const confirm = await Swal.fire({
+            title: 'Confirmar Asignación',
+            html: `<p>¿Asignar planta <strong>${escapeHtml(planta.PLANTA || String(rowNumber))}</strong><br>al sitio <strong>${escapeHtml(sitioSeleccionado)}</strong>?</p>
+                   <p style="margin-top:8px;">✅ La planta cambiará a <strong>ASIGNADA</strong></p>`,
+            icon: 'question', showCancelButton: true,
+            confirmButtonText: 'Sí, asignar', cancelButtonText: 'Cancelar'
+        });
+        if (!confirm.isConfirmed) return;
+
+        Swal.fire({ title: 'Asignando planta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        try {
+            // Construir fila con TODOS los campos existentes + los cambios
+            // AppSheet usa el primer campo único como key — enviamos todo para máxima compatibilidad
+            const filaEdit = { ...planta };  // copia todos los campos del registro original
+            filaEdit['SITIO ASIGNADO'] = sitioSeleccionado;
+            filaEdit['ESTATUS']        = 'ASIGNADA';
+
+            const r = await editarPlantaAppSheet(filaEdit, 'asignarPlanta-Edit');
+            if (!r.ok) {
+                // Mostrar respuesta exacta de AppSheet para diagnóstico
+                Swal.fire({ icon: 'error', title: 'Error AppSheet',
+                    html: `<pre style="text-align:left;font-size:0.65rem;overflow:auto;max-height:200px;">${escapeHtml(r.text)}</pre>`,
+                    width: '500px' });
+                return;
+            }
+            await Swal.fire({ icon: 'success', title: '¡Planta asignada!',
+                text: `${planta.PLANTA} asignada a ${sitioSeleccionado}`, timer: 2500, showConfirmButton: false });
+            await cargarPlantasData();
+        } catch (e) {
+            console.error(e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        }
+    };
+
+    // ── LIBERAR PLANTA ──────────────────────────────────────────────
+    window.liberarPlanta = async function(rowNumber, plantaNombre, sitioAsignado) {
+        if (!requireOperador()) return;
+        const planta = plantasData.find(p => p._RowNumber == rowNumber);
+        if (!planta) { Swal.fire('Error', 'No se encontró la planta', 'error'); return; }
+
+        const result = await Swal.fire({
+            title: '🔓 Liberar Planta',
+            width: '520px',
+            html: `
+                <div style="background:#f8fafc; border-radius:10px; padding:12px 14px; margin-bottom:14px; text-align:left;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.8rem;">
+                        <div><span style="color:#64748b; font-size:0.7rem;">PLANTA</span><br><strong>${escapeHtml(plantaNombre)}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.7rem;">SITIO LIBERADO</span><br><strong>${escapeHtml(sitioAsignado)}</strong></div>
+                    </div>
+                </div>
+                <div style="text-align:left; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.8rem;">
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">📍 Lugar STBY <span style="color:#dc2626;">*</span></label>
+                        <input id="lib_stby" class="swal2-input" placeholder="¿Dónde queda la planta en standby?"
+                            value="${escapeHtml(planta['LUGAR STBY'] || '')}"
+                            style="width:100%; margin:0; font-size:0.8rem;">
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600; display:block; margin-bottom:4px;">💬 Comentario</label>
+                        <textarea id="lib_comentario" class="swal2-textarea" rows="2"
+                            placeholder="Observaciones de la liberación..."
+                            style="width:100%; margin:0; font-size:0.8rem; height:60px;">${escapeHtml(planta.NOTAS || '')}</textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: '🔓 Liberar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#10b981',
+            preConfirm: () => {
+                const stby = document.getElementById('lib_stby').value.trim();
+                if (!stby) { Swal.showValidationMessage('Indica el Lugar STBY donde quedará la planta'); return false; }
+                return {
+                    lugarStby:  stby,
+                    comentario: document.getElementById('lib_comentario').value.trim()
+                };
+            }
+        });
+        if (!result.isConfirmed) return;
+
+        Swal.fire({ title: 'Liberando planta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        try {
+            const filaEdit = { ...planta };
+            filaEdit['SITIO ASIGNADO'] = '';
+            filaEdit['ESTATUS']        = 'LIBRE';
+            filaEdit['LUGAR STBY']     = result.value.lugarStby;
+            if (result.value.comentario) filaEdit['NOTAS'] = result.value.comentario;
+
+            const r = await editarPlantaAppSheet(filaEdit, 'liberarPlanta-Edit');
+            if (!r.ok) {
+                Swal.fire({ icon: 'error', title: 'Error AppSheet',
+                    html: `<pre style="text-align:left;font-size:0.65rem;overflow:auto;max-height:200px;">${escapeHtml(r.text)}</pre>`,
+                    width: '500px' });
+                return;
+            }
+            await Swal.fire({ icon: 'success', title: '¡Planta liberada!',
+                text: `${plantaNombre} está nuevamente disponible`, timer: 2500, showConfirmButton: false });
+            await cargarPlantasData();
+        } catch (e) {
+            console.error(e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        }
+    };
+
+    // Listeners para filtros de plantas
+    document.getElementById('refreshPlantasBtn')?.addEventListener('click', () => cargarPlantasData());
+    document.getElementById('resetPlantasFiltersBtn')?.addEventListener('click', () => {
+        document.getElementById('plantasSearchInput').value = '';
+        document.getElementById('plantasEstatusFilter').value = 'todos';
+        renderPlantasTable();
+    });
+    document.getElementById('plantasSearchInput')?.addEventListener('input', renderPlantasTable);
+    document.getElementById('plantasEstatusFilter')?.addEventListener('change', renderPlantasTable);
+
+
+    // ═══════════════════════════════════════════════════════════════
+    // SISTEMA DE ACCESO CON ROLES
+    // ═══════════════════════════════════════════════════════════════
+    var _sesionRol = null; var _sesionUser = null; // sesión en memoria (compatible con file://)
+    var USUARIOS = {
+        // OPERADORES — pueden ver Y modificar
+        "oym":      { pass: "FIFA2026*",  rol: "OPERADOR" },
+        "dispatch": { pass: "OYM2026#",   rol: "OPERADOR" },
+        // VIEWERS — solo lectura
+        "viewer":   { pass: "Monitor26",  rol: "VIEWER"   },
+        "consulta": { pass: "consulta26", rol: "VIEWER"   }
+    };
+
+    let rolActual = null;
+
+    function intentarLogin() {
+        const user = (document.getElementById('loginUser').value || "").trim().toLowerCase();
+        const pass = (document.getElementById('loginPass').value || "").trim();
+        const err  = document.getElementById('loginError');
+
+        const cuenta = USUARIOS[user];
+        if (!cuenta || cuenta.pass !== pass) {
+            err.textContent = '❌ Usuario o contraseña incorrectos';
+            document.getElementById('loginPass').value = '';
+            return;
+        }
+
+        rolActual = cuenta.rol;
+        document.getElementById('loginOverlay').style.display = 'none';
+
+        // Aplicar modo viewer si corresponde
+        if (rolActual === 'VIEWER') {
+            document.body.classList.add('modo-viewer');
+        }
+
+        // Mostrar badge de rol en sidebar
+        const badge = document.getElementById('rolBadge');
+        if (badge) {
+            badge.textContent = rolActual === 'OPERADOR' ? '⚙️ Operador' : '👁 Solo lectura';
+            badge.className   = 'rol-' + rolActual.toLowerCase();
+        }
+
+        // Sesión guardada en memoria (_sesionRol/_sesionUser) — compatible con file://
+        _sesionRol = rolActual; _sesionUser = user;
+    }
+
+    function cerrarSesion() {
+        _sesionRol = null; _sesionUser = null;
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.body.classList.remove('modo-viewer');
+        rolActual = null;
+    }
+
+    // Proteger funciones de escritura — verificar rol antes de ejecutar
+    function requireOperador() {
+        if (rolActual !== 'OPERADOR') {
+            Swal.fire({ icon: 'warning', title: 'Acceso restringido',
+                text: 'Solo los operadores pueden realizar modificaciones.',
+                timer: 2500, showConfirmButton: false });
+            return false;
+        }
+        return true;
+    }
+
+    // Restaurar sesión si recarga la página
+    (function restaurarSesion() {
+        const rol = _sesionRol; const user = _sesionUser;
+        if (rol && user && USUARIOS[user] && USUARIOS[user].rol === rol) {
+            rolActual = rol;
+            document.getElementById('loginOverlay').style.display = 'none';
+            if (rol === 'VIEWER') document.body.classList.add('modo-viewer');
+            const badge = document.getElementById('rolBadge');
+            if (badge) {
+                badge.textContent = rol === 'OPERADOR' ? '⚙️ Operador' : '👁 Solo lectura';
+                badge.className   = 'rol-' + rol.toLowerCase();
+            }
+        }
+    })();
+
+    // Enter key en login
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') {
+            intentarLogin();
+        }
+    });
+
+    window.intentarLogin  = intentarLogin;
+    window.cerrarSesion   = cerrarSesion;
+    window.requireOperador= requireOperador;
+
 </script>
 </body>
 </html>
