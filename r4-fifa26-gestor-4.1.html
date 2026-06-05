@@ -254,9 +254,33 @@
         .gb-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
         /* Push app content down when gamebar is visible */
         body.gamebar-visible .app-container { margin-top: 12px; }
+
+        /* ── MODO TELMEX — solo pestaña TELMEX ── */
+        body.modo-telmex .sidebar              { display: none !important; }
+        body.modo-telmex .tabs-container button:not([data-tab="telmex"]) { display: none !important; }
+        body.modo-telmex .tab-content:not(#tab-telmex) { display: none !important; }
+        body.modo-telmex #tab-telmex           { display: block !important; }
+        body.modo-telmex .app-container        { grid-template-columns: 1fr; }
+        body.modo-telmex .main-content         { margin-left: 0; }
+        body.modo-telmex .telmex-header-bar    { display: flex !important; }
+
     </style>
 </head>
 <body>
+
+<!-- ═══ TELMEX MODE HEADER ═══ -->
+<div class="telmex-header-bar" style="display:none; background:#0a2540; color:white; padding:10px 20px; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:1000; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;font-weight:800;">OYM</span>
+        <span style="opacity:0.5;">|</span>
+        <span style="font-size:0.8rem;font-weight:600;">📡 Seguimiento TELMEX · FIFA 2026 · Monterrey</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+        <span id="telmexModeTime" style="font-size:0.72rem;opacity:0.7;"></span>
+        <button onclick="cerrarSesion()" style="background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.72rem;">🔓 Salir</button>
+    </div>
+</div>
+
 <!-- ═══════════════ GAMEBAR FALLAS ═══════════════ -->
 <div id="fallaGamebar">
     <div id="fallaGamebarTop" onclick="toggleGamebar()">
@@ -400,9 +424,29 @@
                     <canvas id="prioridadChart" style="max-height: 220px; width: 100%;"></canvas>
                 </div>
                 
-                <div class="card">
-                    <div class="card-header"><h3>⏱️ Sitios Afectados por Hora</h3><div style="font-size:0.65rem;color:#64748b;">Basado en INICIO DE FALLA</div></div>
-                    <canvas id="horaFallaChart" style="max-height:220px; width:100%;"></canvas>
+                <div class="card full-width" style="grid-column:1/-1;">
+                    <div class="card-header" style="flex-wrap:wrap;gap:8px;">
+                        <div>
+                            <h3 style="margin:0;">📈 Afectaciones Históricas</h3>
+                            <div style="font-size:0.62rem;color:#64748b;margin-top:1px;">Sitios DOWN · INICIO DE FALLA</div>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
+                            <div id="horaChartStats" style="font-size:0.68rem;color:#64748b;margin-right:8px;"></div>
+                            <button id="horaViewBtn" class="btn-exec" data-mode="hora"
+                                onclick="setHoraChartMode('hora')"
+                                style="padding:4px 12px;font-size:0.7rem;background:#0a2540;">
+                                🕐 Por Hora
+                            </button>
+                            <button id="diaViewBtn" class="btn-exec" data-mode="dia"
+                                onclick="setHoraChartMode('dia')"
+                                style="padding:4px 12px;font-size:0.7rem;background:#64748b;">
+                                📅 Por Día
+                            </button>
+                        </div>
+                    </div>
+                    <div style="position:relative;">
+                        <canvas id="horaFallaChart" style="max-height:260px;width:100%;"></canvas>
+                    </div>
                 </div>
 
 
@@ -590,6 +634,16 @@
                 <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="telmexAlta">0</div><div class="dispatch-stat-label">🟠 ALTA PRIORIDAD</div></div>
                 <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="telmexNormal">0</div><div class="dispatch-stat-label">🟡 NORMAL</div></div>
             </div>
+            <!-- Mapa TELMEX -->
+            <div style="border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <div style="background:#0a2540;color:white;padding:7px 14px;font-size:0.75rem;font-weight:600;display:flex;align-items:center;gap:8px;">
+                    🗺️ Mapa Sitios DOWN · TX TELMEX
+                    <span id="telmexMapCount" style="background:#dc2626;padding:1px 8px;border-radius:10px;font-size:0.7rem;">0 sitios</span>
+                    <div style="display:flex;gap:10px;font-size:0.67rem;opacity:0.85;margin-left:auto;"><span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#7c3aed;border-radius:50%;display:inline-block;"></span>FIFA CALIDAD</span><span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#ea580c;border-radius:50%;display:inline-block;"></span>ALTA</span><span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#f59e0b;border-radius:50%;display:inline-block;"></span>NORMAL</span><span style="display:flex;align-items:center;gap:4px;"><span style="width:11px;height:11px;background:#16a34a;border-radius:50%;display:inline-block;font-size:7px;color:white;font-weight:900;text-align:center;line-height:11px;">R</span>Con respaldo</span><span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#dc2626;border-radius:50%;display:inline-block;"></span>Sin respaldo</span></div>
+                </div>
+                <div id="telmexMap" style="height:320px;width:100%;"></div>
+            </div>
+
             <div class="filters-bar">
                 <div class="filter-group"><label>🔍 Buscar</label><input type="text" id="telmexSearch" placeholder="Sitio, zona, folio..."></div>
                 <div class="filter-group"><label>🏆 Prioridad</label>
@@ -608,10 +662,11 @@
                     <table id="telmexTable">
                         <thead><tr>
                             <th>Sitio</th><th>Zona</th><th>Prioridad</th><th>Líder</th>
+                            <th>Respaldo TX</th><th>Carrier 1</th><th>Carrier 2</th>
                             <th>Folio</th><th>Inicio Falla</th><th>Comentario</th><th>Asignación</th>
                         </tr></thead>
                         <tbody id="telmexBody">
-                            <tr><td colspan="8" class="loading"><div class="spinner"></div>Cargando...</td></tr>
+                            <tr><td colspan="11" class="loading"><div class="spinner"></div>Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -633,7 +688,9 @@
         "dispatch": { pass: "OYM2026#",   rol: "OPERADOR" },
         // VIEWERS — solo lectura
         "viewer":   { pass: "Monitor26",  rol: "VIEWER"   },
-        "consulta": { pass: "consulta26", rol: "VIEWER"   }
+        "consulta": { pass: "consulta26", rol: "VIEWER"   },
+        // TELMEX — solo pestaña TELMEX
+        "telmex":   { pass: "FIFAT26",    rol: "TELMEX"   }
     };
 
     let rolActual = null;
@@ -653,9 +710,26 @@
         rolActual = cuenta.rol;
         document.getElementById('loginOverlay').style.display = 'none';
 
-        // Aplicar modo viewer si corresponde
+        // Aplicar modo según rol
         if (rolActual === 'VIEWER') {
             document.body.classList.add('modo-viewer');
+        } else if (rolActual === 'TELMEX') {
+            document.body.classList.add('modo-telmex');
+            // Activar pestaña TELMEX automáticamente
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const tBtn = document.querySelector('[data-tab="telmex"]');
+            const tTab = document.getElementById('tab-telmex');
+            if (tBtn) tBtn.classList.add('active');
+            if (tTab) tTab.classList.add('active');
+            // Mostrar header TELMEX y reloj
+            document.querySelector('.telmex-header-bar').style.display = 'flex';
+            setInterval(() => {
+                const el = document.getElementById('telmexModeTime');
+                if (el) el.textContent = new Date().toLocaleString('es-MX');
+            }, 1000);
+            renderTelmexTable();
+            if (sitiosData.length === 0) fetchSitiosFromAppSheet();
         }
 
         // Mostrar badge de rol en sidebar
@@ -934,9 +1008,10 @@
                 if (plantasStats) plantasStats.style.display = 'none';
                 try {
                     if (sitiosData.length === 0) {
-                        fetchSitiosFromAppSheet(false).then(() => renderTelmexTable());
+                        fetchSitiosFromAppSheet(false).then(() => { renderTelmexTable(); setTimeout(() => { if(telmexMap) telmexMap.invalidateSize(); }, 200); });
                     } else {
                         renderTelmexTable();
+                        setTimeout(() => { if(telmexMap) telmexMap.invalidateSize(); }, 200);
                     }
                 } catch(e) { console.error('renderTelmexTable error:', e); }
             } else if (tabId === 'plantas') {
@@ -1403,6 +1478,9 @@
                         folio:        row["FOLIO"]         || "",
                         iniciofalla:  (row["INICIO DE FALLA"] || row["INICIO_DE_FALLA"] || row["InicioDeFalla"] || row["inicio de falla"] || row["Inicio de Falla"] || row["INICIOFALLA"] || ""),
                         comentario:   row["COMENTARIO"]    || "",
+                        respaldoTx:   (row["RESPALDO TX"] || "").toString().toUpperCase().trim(),
+                        carrier1:     row["CARRIER1"] || "",
+                        carrier2:     row["CARRIER2"] || "",
                         rawRow: row
                     };
                 });
@@ -2084,57 +2162,156 @@
     // GRÁFICA SITIOS AFECTADOS POR HORA (INICIO DE FALLA)
     // ============================================================
     let horaFallaChart = null;
+    var _horaChartMode = 'hora'; // 'hora' | 'dia'
+
+    window.setHoraChartMode = function(mode) {
+        _horaChartMode = mode;
+        const hBtn = document.getElementById('horaViewBtn');
+        const dBtn = document.getElementById('diaViewBtn');
+        if (hBtn) hBtn.style.background = mode === 'hora' ? '#0a2540' : '#64748b';
+        if (dBtn) dBtn.style.background = mode === 'dia'  ? '#0a2540' : '#64748b';
+        actualizarGraficaHora();
+    };
 
     function actualizarGraficaHora() {
         const ctx = document.getElementById('horaFallaChart');
         if (!ctx) return;
 
-        // Contar sitios DOWN agrupados por hora de INICIO DE FALLA
-        const horaCount = {};
-        sitiosData.filter(s => s.estadoOriginal === 'DOWN' && s.iniciofalla).forEach(s => {
-            const d = parseFechaSafe(s.iniciofalla);
-            if (!d) return;
-            const hora = `${String(d.getHours()).padStart(2,'0')}:00`;
-            horaCount[hora] = (horaCount[hora] || 0) + 1;
-        });
+        // ── Collect all sites with INICIO DE FALLA ────────────────
+        const conFalla = sitiosData.filter(s => s.iniciofalla);
 
-        // Mostrar las 24 horas del día ordenadas
-        const horas = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
-        const valores = horas.map(h => horaCount[h] || 0);
-        const maxVal = Math.max(...valores, 1);
+        let labels = [], valores = [], picos = [];
 
-        if (horaFallaChart) {
-            horaFallaChart.data.labels = horas;
-            horaFallaChart.data.datasets[0].data = valores;
-            horaFallaChart.data.datasets[0].backgroundColor = valores.map(v =>
-                v === maxVal && v > 0 ? '#dc2626' : v > 0 ? '#ea580c' : '#e2e8f0'
-            );
-            horaFallaChart.update('none');
+        if (_horaChartMode === 'hora') {
+            // ── Modo Hora: agrupa todas las fallas por franja horaria ──
+            const horaCount = {};
+            conFalla.forEach(s => {
+                const d = parseFechaSafe(s.iniciofalla);
+                if (!d) return;
+                const h = String(d.getHours()).padStart(2,'0') + ':00';
+                horaCount[h] = (horaCount[h] || 0) + 1;
+            });
+            labels = Array.from({length:24}, (_, i) => String(i).padStart(2,'0') + ':00');
+            valores = labels.map(h => horaCount[h] || 0);
+
         } else {
-            horaFallaChart = new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: horas,
-                    datasets: [{
-                        label: 'Sitios afectados',
-                        data: valores,
-                        backgroundColor: valores.map(v =>
-                            v === maxVal && v > 0 ? '#dc2626' : v > 0 ? '#ea580c' : '#e2e8f0'
-                        ),
-                        borderRadius: 4, barPercentage: 0.8
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: true,
-                    animation: { duration: 400 },
-                    plugins: { legend: { display: false },
-                        tooltip: { callbacks: { title: ctx => `Hora: ${ctx[0].label}`, label: ctx => `${ctx.raw} sitio(s) afectado(s)` } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } }, grid: { color: '#f1f5f9' } },
-                        x: { ticks: { font: { size: 8 }, maxRotation: 0 }, grid: { display: false } }
+            // ── Modo Día: últimos 30 días con fallas ──────────────
+            const diaCount = {};
+            conFalla.forEach(s => {
+                const d = parseFechaSafe(s.iniciofalla);
+                if (!d) return;
+                const key = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                diaCount[key] = (diaCount[key] || 0) + 1;
+            });
+            // Generar los 30 días más recientes
+            const hoy = new Date();
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(hoy);
+                d.setDate(hoy.getDate() - i);
+                const key = d.toISOString().split('T')[0];
+                const label = d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' });
+                labels.push(label);
+                valores.push(diaCount[key] || 0);
+            }
+        }
+
+        const maxVal = Math.max(...valores, 1);
+        const totalFallas = valores.reduce((a, b) => a + b, 0);
+        const picoLabel = labels[valores.indexOf(maxVal)];
+
+        // Update stats label
+        const statsEl = document.getElementById('horaChartStats');
+        if (statsEl) {
+            statsEl.innerHTML = totalFallas > 0
+                ? '<span style="color:#dc2626;font-weight:700;">' + totalFallas + ' registros</span>' +
+                  ' · pico: <strong>' + picoLabel + '</strong> (' + maxVal + ')'
+                : 'Sin registros';
+        }
+
+        // Colors: gradient from low (#3b82f6) → medium (#f59e0b) → peak (#dc2626)
+        const bgColors = valores.map(v => {
+            if (v === 0) return 'rgba(226,232,240,0.4)';
+            const ratio = v / maxVal;
+            if (ratio >= 0.8) return '#dc2626';
+            if (ratio >= 0.5) return '#f97316';
+            if (ratio >= 0.25) return '#f59e0b';
+            return '#3b82f6';
+        });
+        const borderColors = bgColors.map(c => c === 'rgba(226,232,240,0.4)' ? 'transparent' : c);
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            animation: { duration: 500, easing: 'easeInOutQuart' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#0a2540',
+                    titleColor: '#94a3b8',
+                    bodyColor: '#ffffff',
+                    padding: 10,
+                    callbacks: {
+                        title: items => _horaChartMode === 'hora'
+                            ? 'Hora: ' + items[0].label
+                            : 'Fecha: ' + items[0].label,
+                        label: item => ' ' + item.raw + ' falla' + (item.raw !== 1 ? 's' : '') + ' registrada' + (item.raw !== 1 ? 's' : '')
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, font: { size: 9 }, color: '#94a3b8' },
+                    grid: { color: 'rgba(241,245,249,0.8)', drawBorder: false },
+                    border: { display: false }
+                },
+                x: {
+                    ticks: {
+                        font: { size: _horaChartMode === 'hora' ? 8 : 9 },
+                        color: '#94a3b8',
+                        maxRotation: _horaChartMode === 'dia' ? 45 : 0,
+                        autoSkip: _horaChartMode === 'dia'
+                    },
+                    grid: { display: false },
+                    border: { display: false }
+                }
+            }
+        };
+
+        if (horaFallaChart) {
+            // Smooth update
+            horaFallaChart.config.type = 'line';
+            horaFallaChart.data.labels = labels;
+            horaFallaChart.data.datasets[0].data = valores;
+            horaFallaChart.data.datasets[0].backgroundColor = 'rgba(220,38,38,0.08)';
+            horaFallaChart.data.datasets[0].borderColor = '#dc2626';
+            horaFallaChart.data.datasets[0].pointBackgroundColor = bgColors;
+            horaFallaChart.data.datasets[0].pointRadius = valores.map(v => v > 0 ? 5 : 2);
+            horaFallaChart.data.datasets[0].pointHoverRadius = 8;
+            horaFallaChart.options = commonOptions;
+            horaFallaChart.update();
+        } else {
+            horaFallaChart = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Fallas',
+                        data: valores,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220,38,38,0.08)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: bgColors,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: valores.map(v => v > 0 ? 5 : 2),
+                        pointHoverRadius: 8,
+                        fill: true,
+                        tension: 0.35,
+                        spanGaps: true
+                    }]
+                },
+                options: commonOptions
             });
         }
     }
@@ -2153,6 +2330,7 @@
     }
 
     function renderTelmexTable() {
+        actualizarTelmexMap();
         const tbody = document.getElementById('telmexBody');
         if (!tbody) return;
 
@@ -2190,22 +2368,29 @@
         }
 
         if (datos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">✅ Sin sitios afectados por TX TELMEX en este momento</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="loading">✅ Sin sitios afectados por TX TELMEX en este momento</td></tr>';
             return;
         }
 
         tbody.innerHTML = datos.map(s => {
             const priorColor = s.prioridadColor || '#64748b';
             const tiempoAfectado = calcTiempoAfectado(s.iniciofalla);
+            const tieneRespaldo = s.respaldoTx === 'SI';
+            const respaldoBadge = tieneRespaldo
+                ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;">✅ SI</span>'
+                : '<span style="color:#94a3b8;font-size:0.7rem;">NO</span>';
             return `<tr style="${s.prioridadOriginal==='FIFA CALIDAD' ? 'background:#fff5f5;' : ''}">
                 <td><strong>${escapeHtml(s.nombre)}</strong><br><span style="font-size:0.65rem;color:#64748b;">${escapeHtml(s.mnemonico||'')}</span></td>
                 <td>${escapeHtml(s.zona)}</td>
                 <td><span style="background:${priorColor}20;color:${priorColor};padding:2px 7px;border-radius:10px;font-size:0.72rem;">${s.prioridadDisplay}</span></td>
                 <td>${escapeHtml(s.jefe)}</td>
+                <td style="text-align:center;">${respaldoBadge}</td>
+                <td style="font-size:0.7rem;color:#475569;">${escapeHtml(s.carrier1||'-')}</td>
+                <td style="font-size:0.7rem;color:#475569;">${escapeHtml(s.carrier2||'-')}</td>
                 <td>${escapeHtml(s.folio||'-')}</td>
                 <td style="font-size:0.72rem;">${s.iniciofalla ? fechaLocal(s.iniciofalla) : '-'}<br>
                     <span style="color:#dc2626;font-weight:600;font-size:0.68rem;">⏱ ${tiempoAfectado}</span></td>
-                <td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(s.comentario)}">${escapeHtml(s.comentario||'-')}</td>
+                <td style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(s.comentario)}">${escapeHtml(s.comentario||'-')}</td>
                 <td>${s.asignacion && s.asignacion!=='No asignado'
                     ? `<span style="background:#dbeafe;padding:2px 6px;border-radius:10px;font-size:0.72rem;">👤 ${escapeHtml(s.asignacion)}</span>`
                     : '<span style="color:#94a3b8;font-size:0.72rem;">Sin asignar</span>'}</td>
@@ -2672,6 +2857,105 @@
                 });
             }
         }
+    }
+
+
+    // ============================================================
+    // MAPA TELMEX
+    // ============================================================
+    var telmexMap = null;
+    var telmexMarkers = [];
+
+    function initTelmexMap() {
+        const el = document.getElementById('telmexMap');
+        if (!el || telmexMap) return;
+        telmexMap = L.map('telmexMap').setView([25.6866, -100.3161], 11.5);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OSM & CartoDB', maxZoom: 18
+        }).addTo(telmexMap);
+    }
+
+    function actualizarTelmexMap() {
+        if (!document.getElementById('telmexMap')) return;
+        initTelmexMap();
+        if (!telmexMap) return;
+
+        // Clear existing markers
+        telmexMarkers.forEach(m => telmexMap.removeLayer(m));
+        telmexMarkers = [];
+
+        const sitiosTelmex = sitiosData.filter(s =>
+            s.estadoOriginal === 'DOWN' &&
+            (s.tipoFalla || '').toUpperCase().includes('TELMEX') &&
+            s.latitud && s.longitud
+        );
+
+        const countEl = document.getElementById('telmexMapCount');
+        if (countEl) countEl.textContent = sitiosTelmex.length + ' sitio' + (sitiosTelmex.length !== 1 ? 's' : '');
+
+        const PRIO_COLOR = {
+            'FIFA CALIDAD': '#7c3aed',
+            'FIFA ALTA PRIORIDAD': '#ea580c',
+            'NORMAL': '#f59e0b'
+        };
+
+        sitiosTelmex.forEach(s => {
+            const color = PRIO_COLOR[s.prioridadOriginal] || '#dc2626';
+            const tiempoAfect = calcTiempoAfectado(s.iniciofalla);
+            const tieneRespaldo = (s.respaldoTx === 'SI');
+            const icon = L.divIcon({
+                html: '<div style="position:relative;width:22px;height:22px;">' +
+                    // Main circle
+                    '<div style="width:22px;height:22px;background:' + color + ';border:2.5px solid white;border-radius:50%;' +
+                    'box-shadow:0 0 0 2px ' + color + ',0 2px 8px rgba(0,0,0,0.45);' +
+                    'display:flex;align-items:center;justify-content:center;"></div>' +
+                    // R badge if respaldo = SI
+                    (tieneRespaldo
+                        ? '<div style="position:absolute;top:-5px;right:-5px;width:13px;height:13px;' +
+                          'background:#16a34a;border:1.5px solid white;border-radius:50%;' +
+                          'display:flex;align-items:center;justify-content:center;' +
+                          'font-size:7px;font-weight:900;color:white;line-height:1;">R</div>'
+                        : '<div style="position:absolute;top:-4px;right:-4px;width:9px;height:9px;' +
+                          'background:#dc2626;border:1px solid white;border-radius:50%;"></div>') +
+                    '</div>',
+                className: 'telmex-marker',
+                iconSize: [22, 22],
+                popupAnchor: [0, -11]
+            });
+
+            const marker = L.marker([s.latitud, s.longitud], { icon }).addTo(telmexMap);
+            marker.bindPopup(
+                '<div style="min-width:200px;font-size:0.8rem;">' +
+                '<b style="font-size:0.88rem;">📡 ' + escapeHtmlMap(s.nombre) + '</b><br>' +
+                '<span style="color:#475569;">📍 ' + escapeHtmlMap(s.zona) + '</span><br>' +
+                '<span style="color:' + color + ';font-weight:600;">' + s.prioridadDisplay + '</span><br>' +
+                (s.folio ? '<span>📋 Folio: ' + escapeHtmlMap(s.folio) + '</span><br>' : '') +
+                '<span style="color:' + (tieneRespaldo ? '#16a34a' : '#94a3b8') + ';font-size:0.72rem;">' +
+                (tieneRespaldo ? '🟢 Respaldo TX: SI' : '🔴 Sin respaldo TX') + '</span><br>' +
+                (s.carrier1 ? '<span style="font-size:0.7rem;color:#475569;">📡 ' + escapeHtmlMap(s.carrier1) + (s.carrier2 ? ' / ' + escapeHtmlMap(s.carrier2) : '') + '</span><br>' : '') +
+                (s.iniciofalla ? '<span style="color:#dc2626;">⏱ ' + tiempoAfect + ' afectado</span><br>' : '') +
+                (s.asignacion && s.asignacion !== 'No asignado'
+                    ? '<div style="margin-top:5px;background:#dbeafe;padding:3px 7px;border-radius:6px;">👤 ' + escapeHtmlMap(s.asignacion) + '</div>'
+                    : '<div style="margin-top:5px;color:#94a3b8;font-size:0.72rem;">Sin técnico asignado</div>') +
+                '</div>',
+                { maxWidth: 240 }
+            );
+            telmexMarkers.push(marker);
+        });
+
+        // Fit bounds if there are markers
+        if (telmexMarkers.length > 0) {
+            const group = L.featureGroup(telmexMarkers);
+            telmexMap.fitBounds(group.getBounds().pad(0.2));
+        }
+
+        // Invalidate size in case tab was not visible during init
+        setTimeout(() => { if (telmexMap) telmexMap.invalidateSize(); }, 100);
+    }
+
+    // Simple escapeHtml for map popups (avoids circular ref with main escapeHtml)
+    function escapeHtmlMap(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     // ============================================================
