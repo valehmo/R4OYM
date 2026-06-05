@@ -206,9 +206,70 @@
         .rol-operador { background: #10b981; color: white; }
         .rol-viewer   { background: #64748b; color: white; }
 
+
+
+
+        /* ── GAMEBAR FALLAS ── */
+        #fallaGamebar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 9500;
+            background: #0a2540;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+        }
+        #fallaGamebar.visible { display: flex; }
+        #fallaGamebarTop {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        #fallaGamebarStrip {
+            height: 6px;
+            display: flex;
+            overflow: hidden;
+        }
+        #fallaGamebarExpanded {
+            display: none;
+            padding: 8px 14px 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            flex-wrap: wrap;
+            gap: 8px 20px;
+        }
+        #fallaGamebarExpanded.open { display: flex; }
+        .gb-segment { height: 100%; transition: width 0.5s ease; }
+        .gb-pill {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 3px 10px;
+            white-space: nowrap;
+        }
+        .gb-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        /* Push app content down when gamebar is visible */
+        body.gamebar-visible .app-container { margin-top: 12px; }
     </style>
 </head>
 <body>
+<!-- ═══════════════ GAMEBAR FALLAS ═══════════════ -->
+<div id="fallaGamebar">
+    <div id="fallaGamebarTop" onclick="toggleGamebar()">
+        <span style="font-size:0.8rem;">🚨</span>
+        <span style="font-weight:700;letter-spacing:0.5px;">FALLAS ACTIVAS</span>
+        <span id="gbTotalBadge" style="background:#dc2626;color:white;font-weight:800;padding:1px 9px;border-radius:12px;font-size:0.78rem;">0</span>
+        <div id="gbQuickList" style="display:flex;gap:6px;flex:1;flex-wrap:wrap;"></div>
+        <span id="gbToggleIcon" style="margin-left:auto;opacity:0.7;font-size:0.65rem;">▼ ver detalle</span>
+    </div>
+    <div id="fallaGamebarStrip"></div>
+    <div id="fallaGamebarExpanded"></div>
+</div>
+
 
 <!-- ═══════════════════════════════ LOGIN OVERLAY ═══════════════════════════════ -->
 <div id="loginOverlay">
@@ -310,6 +371,7 @@
             <button class="tab-btn" data-tab="dispatch">🚨 Dispatch / Personal Técnico</button>
             <button class="tab-btn" data-tab="asignaciones">📋 Sitios Asignados</button>
             <button class="tab-btn" data-tab="plantas">⚡ Plantas de Emergencia</button>
+            <button class="tab-btn" data-tab="telmex">📡 TELMEX</button>
         </div>
 
         <!-- Contenido Monitoreo -->
@@ -322,7 +384,6 @@
                         <h3>📊 Distribución por Líder</h3>
                         <div style="font-size: 0.65rem; color: #64748b;">
                             💡 Haz clic en cualquier barra para filtrar por ese líder
-                            <span id="filtroActivoBadge" class="filtro-activo-badge" style="display: none;"></span>
                         </div>
                     </div>
                     <canvas id="liderChart" style="max-height: 220px; width: 100%;"></canvas>
@@ -339,6 +400,23 @@
                     <canvas id="prioridadChart" style="max-height: 220px; width: 100%;"></canvas>
                 </div>
                 
+                <div class="card">
+                    <div class="card-header"><h3>⏱️ Sitios Afectados por Hora</h3><div style="font-size:0.65rem;color:#64748b;">Basado en INICIO DE FALLA</div></div>
+                    <canvas id="horaFallaChart" style="max-height:220px; width:100%;"></canvas>
+                </div>
+
+
+                <div class="card full-width" id="fallas-gauge-card">
+                    <div class="card-header">
+                        <h3>🚨 Fallas Actuales — Distribución por Tipo</h3>
+                        <div id="fallasTotalBadge" style="font-size:0.7rem;background:#dc2626;color:white;padding:3px 10px;border-radius:12px;font-weight:700;">0 DOWN</div>
+                    </div>
+                    <div id="fallasGaugeContainer" style="padding:4px 0 8px;">
+                        <!-- Gauge bar rendered by JS -->
+                        <div style="color:#94a3b8;font-size:0.75rem;text-align:center;padding:12px 0;">Sin fallas activas</div>
+                    </div>
+                </div>
+
                 <div class="card full-width">
                     <div class="card-header"><h3>🗺️ Geolocalización Estratégica</h3><div class="icon">📍</div></div>
                     <div class="map-filter-bar">
@@ -366,7 +444,6 @@
                 <div class="filter-group"><label>🏆 Prioridad</label><select id="prioridadFilter"><option value="todos">Todas</option><option value="FIFA CALIDAD">FIFA CALIDAD</option><option value="FIFA ALTA PRIORIDAD">FIFA ALTA PRIORIDAD</option><option value="NORMAL">NORMAL</option></select></div>
                 <div><button id="refreshBtn" class="btn-exec">🔄 Actualizar</button></div>
                 <div><button id="resetFiltersBtn" class="btn-exec" style="background:#64748b;">🗑️ Limpiar</button></div>
-                <div><button id="limpiarFiltroLiderBtn" class="btn-exec" style="background:#e74c3c;">✖️ Quitar filtro líder</button></div>
             </div>
 
             <div class="table-container">
@@ -503,11 +580,142 @@
             </div>
         </div>
 
+
+        <!-- TELMEX -->
+        <div id="tab-telmex" class="tab-content">
+            <div id="telmexInfoBanner" class="info-banner">📡 Filtrando sitios DOWN con TX TELMEX...</div>
+            <div class="dispatch-stats">
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="telmexTotal">0</div><div class="dispatch-stat-label">Sitios Afectados</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="telmexCalidad">0</div><div class="dispatch-stat-label">🔴 FIFA CALIDAD</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="telmexAlta">0</div><div class="dispatch-stat-label">🟠 ALTA PRIORIDAD</div></div>
+                <div class="dispatch-stat-card"><div class="dispatch-stat-number" id="telmexNormal">0</div><div class="dispatch-stat-label">🟡 NORMAL</div></div>
+            </div>
+            <div class="filters-bar">
+                <div class="filter-group"><label>🔍 Buscar</label><input type="text" id="telmexSearch" placeholder="Sitio, zona, folio..."></div>
+                <div class="filter-group"><label>🏆 Prioridad</label>
+                    <select id="telmexPrioridadFilter">
+                        <option value="todos">Todas</option>
+                        <option value="FIFA CALIDAD">🔴 FIFA CALIDAD</option>
+                        <option value="FIFA ALTA PRIORIDAD">🟠 ALTA PRIORIDAD</option>
+                        <option value="NORMAL">🟡 NORMAL</option>
+                    </select>
+                </div>
+                <div><button id="refreshTelmexBtn" class="btn-exec">🔄 Actualizar</button></div>
+            </div>
+            <div class="table-container">
+                <div class="table-header"><h4>📡 Sitios DOWN · TX TELMEX</h4></div>
+                <div class="table-wrapper">
+                    <table id="telmexTable">
+                        <thead><tr>
+                            <th>Sitio</th><th>Zona</th><th>Prioridad</th><th>Líder</th>
+                            <th>Folio</th><th>Inicio Falla</th><th>Comentario</th><th>Asignación</th>
+                        </tr></thead>
+                        <tbody id="telmexBody">
+                            <tr><td colspan="8" class="loading"><div class="spinner"></div>Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">⚡ Datos en tiempo real · Actualización cada 60s · Notificaciones al asignar y liberar personal</div>
     </div>
 </div>
 
 <script>
+    // ═══════════════════════════════════════════════════════════════
+    // SISTEMA DE ACCESO CON ROLES
+    // ═══════════════════════════════════════════════════════════════
+    var _sesionRol = null; var _sesionUser = null; // sesión en memoria (compatible con file://)
+    var USUARIOS = {
+        // OPERADORES — pueden ver Y modificar
+        "oym":      { pass: "FIFA2026*",  rol: "OPERADOR" },
+        "dispatch": { pass: "OYM2026#",   rol: "OPERADOR" },
+        // VIEWERS — solo lectura
+        "viewer":   { pass: "Monitor26",  rol: "VIEWER"   },
+        "consulta": { pass: "consulta26", rol: "VIEWER"   }
+    };
+
+    let rolActual = null;
+
+    function intentarLogin() {
+        const user = (document.getElementById('loginUser').value || "").trim().toLowerCase();
+        const pass = (document.getElementById('loginPass').value || "").trim();
+        const err  = document.getElementById('loginError');
+
+        const cuenta = USUARIOS[user];
+        if (!cuenta || cuenta.pass !== pass) {
+            err.textContent = '❌ Usuario o contraseña incorrectos';
+            document.getElementById('loginPass').value = '';
+            return;
+        }
+
+        rolActual = cuenta.rol;
+        document.getElementById('loginOverlay').style.display = 'none';
+
+        // Aplicar modo viewer si corresponde
+        if (rolActual === 'VIEWER') {
+            document.body.classList.add('modo-viewer');
+        }
+
+        // Mostrar badge de rol en sidebar
+        const badge = document.getElementById('rolBadge');
+        if (badge) {
+            badge.textContent = rolActual === 'OPERADOR' ? '⚙️ Operador' : '👁 Solo lectura';
+            badge.className   = 'rol-' + rolActual.toLowerCase();
+        }
+
+        // Sesión guardada en memoria (_sesionRol/_sesionUser) — compatible con file://
+        _sesionRol = rolActual; _sesionUser = user;
+    }
+
+    function cerrarSesion() {
+        _sesionRol = null; _sesionUser = null;
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.body.classList.remove('modo-viewer');
+        rolActual = null;
+    }
+
+    // Proteger funciones de escritura — verificar rol antes de ejecutar
+    function requireOperador() {
+        if (rolActual !== 'OPERADOR') {
+            Swal.fire({ icon: 'warning', title: 'Acceso restringido',
+                text: 'Solo los operadores pueden realizar modificaciones.',
+                timer: 2500, showConfirmButton: false });
+            return false;
+        }
+        return true;
+    }
+
+    // Restaurar sesión si recarga la página
+    (function restaurarSesion() {
+        const rol = _sesionRol; const user = _sesionUser;
+        if (rol && user && USUARIOS[user] && USUARIOS[user].rol === rol) {
+            rolActual = rol;
+            document.getElementById('loginOverlay').style.display = 'none';
+            if (rol === 'VIEWER') document.body.classList.add('modo-viewer');
+            const badge = document.getElementById('rolBadge');
+            if (badge) {
+                badge.textContent = rol === 'OPERADOR' ? '⚙️ Operador' : '👁 Solo lectura';
+                badge.className   = 'rol-' + rol.toLowerCase();
+            }
+        }
+    })();
+
+    // Enter key en login
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') {
+            intentarLogin();
+        }
+    });
+
+    window.intentarLogin  = intentarLogin;
+    window.cerrarSesion   = cerrarSesion;
+    window.requireOperador= requireOperador;
+
     // ============================================================
     // CONFIGURACIÓN
     // ============================================================
@@ -644,10 +852,36 @@
         return `${mm}/${dd}/${yyyy} ${hh}:${min}:${ss}`;
     }
 
-    // Parseo seguro de fechas — nunca lanza excepción
+    // Parseo seguro de fechas — soporta ISO, MM/DD/YYYY HH:MM:SS y serial Excel/Sheets
     function parseFechaSafe(valor) {
         if (!valor || valor === "-" || valor === "" || valor === "undefined" || valor === "null") return null;
-        const d = new Date(valor);
+        const str = String(valor).trim();
+
+        // ── Serial numérico de Excel/AppSheet (ej. "46177.7930555556") ──────────
+        // AppSheet guarda DateTime como días desde 30/12/1899 (época Excel)
+        if (/^\d{4,6}(\.\d+)?$/.test(str)) {
+            const serial = parseFloat(str);
+            if (serial > 40000 && serial < 60000) { // rango razonable 2009–2064
+                const epoch = new Date(1899, 11, 30); // 30-dic-1899
+                const ms = epoch.getTime() + serial * 86400000;
+                const d = new Date(ms);
+                return isNaN(d.getTime()) ? null : d;
+            }
+        }
+
+        // ── Formato AppSheet texto: MM/DD/YYYY HH:MM:SS ó DD/MM/YYYY HH:MM:SS ──
+        const appsheet = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[\s T]+(\d{1,2}):(\d{2}):(\d{2}))?/);
+        if (appsheet) {
+            const [, p1, p2, yyyy, hh='0', min='0', ss='0'] = appsheet;
+            // Si el primer número > 12 es DD/MM, si no es MM/DD (AppSheet usa MM/DD)
+            const mm = +p1 > 12 ? +p2 : +p1;
+            const dd = +p1 > 12 ? +p1 : +p2;
+            const d = new Date(+yyyy, mm-1, dd, +hh, +min, +ss);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        // ── ISO y otros formatos estándar ─────────────────────────────────────
+        const d = new Date(str);
         return isNaN(d.getTime()) ? null : d;
     }
     function fechaLocal(valor) {
@@ -694,6 +928,17 @@
                     // Redraw charts — canvas may not have been visible before
                     setTimeout(() => actualizarGraficasAsignaciones(), 50);
                 }
+            } else if (tabId === 'telmex') {
+                if (dispatchStats) dispatchStats.style.display = 'none';
+                if (asignacionesStats) asignacionesStats.style.display = 'none';
+                if (plantasStats) plantasStats.style.display = 'none';
+                try {
+                    if (sitiosData.length === 0) {
+                        fetchSitiosFromAppSheet(false).then(() => renderTelmexTable());
+                    } else {
+                        renderTelmexTable();
+                    }
+                } catch(e) { console.error('renderTelmexTable error:', e); }
             } else if (tabId === 'plantas') {
                 if (dispatchStats) dispatchStats.style.display = 'none';
                 if (asignacionesStats) asignacionesStats.style.display = 'none';
@@ -1156,11 +1401,27 @@
                         longitud: parseFloat(row.Longitud) || null,
                         tipoFalla:    row["TIPO DE FALLA"] || "",
                         folio:        row["FOLIO"]         || "",
-                        iniciofalla:  row["INICIO DE FALLA"] || "",
+                        iniciofalla:  (row["INICIO DE FALLA"] || row["INICIO_DE_FALLA"] || row["InicioDeFalla"] || row["inicio de falla"] || row["Inicio de Falla"] || row["INICIOFALLA"] || ""),
                         comentario:   row["COMENTARIO"]    || "",
                         rawRow: row
                     };
                 });
+                // ── Diagnóstico INICIO DE FALLA ──
+                if (data.length > 0) {
+                    const sample = data[0];
+                    const allKeys = Object.keys(sample);
+                    console.log('🔍 FIFA26 todos los campos:', allKeys.join(' | '));
+                    // Find any field containing INICIO
+                    const inicioKeys = allKeys.filter(k => k.toUpperCase().includes('INICIO'));
+                    console.log('🔍 Campos con INICIO:', inicioKeys);
+                    inicioKeys.forEach(k => console.log('🔍 ', JSON.stringify(k), '=', JSON.stringify(sample[k])));
+                    console.log('🔍 INICIO DE FALLA valor raw:', JSON.stringify(sample["INICIO DE FALLA"]));
+                    console.log('🔍 TIPO DE FALLA valor raw:', JSON.stringify(sample["TIPO DE FALLA"]));
+                    // Muestra los primeros 5 registros con falla
+                    const conFalla = data.filter(r => r["INICIO DE FALLA"]);
+                    console.log('🔍 Registros con INICIO DE FALLA:', conFalla.length);
+                    if (conFalla.length > 0) console.log('🔍 Primer registro con falla:', JSON.stringify(conFalla[0]));
+                }
                 sitiosData.forEach(s => {
                     if (s.prioridadOriginal === "FIFA CALIDAD") { s.prioridadColor = "#dc2626"; s.prioridadDisplay = "🔴 FIFA CALIDAD"; }
                     else if (s.prioridadOriginal === "FIFA ALTA PRIORIDAD") { s.prioridadColor = "#ea580c"; s.prioridadDisplay = "🟠 FIFA ALTA PRIORIDAD"; }
@@ -1580,14 +1841,13 @@
         if (filtroLiderActivo && liderFiltroActual === liderNombre) {
             filtroLiderActivo = false;
             liderFiltroActual = null;
-            document.getElementById("filtroActivoBadge").style.display = "none";
+            const _badge = document.getElementById("filtroActivoBadge"); if (_badge) _badge.style.display = "none";
             Swal.fire({ icon: 'info', title: 'Filtro removido', text: 'Mostrando todos los líderes', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
         } else {
             filtroLiderActivo = true;
             liderFiltroActual = liderNombre;
             const badge = document.getElementById("filtroActivoBadge");
-            badge.style.display = "inline-block";
-            badge.innerHTML = `Filtrando por: ${liderNombre}`;
+            if (badge) { badge.style.display = "inline-block"; badge.innerHTML = `Filtrando por: ${liderNombre}`; }
             Swal.fire({ icon: 'success', title: 'Filtro aplicado', text: `Mostrando solo sitios del líder: ${liderNombre}`, timer: 2000, showConfirmButton: false, toast: true, position: 'top-end' });
         }
         actualizarTodoConFiltro();
@@ -1596,7 +1856,7 @@
     function limpiarFiltroLider() {
         filtroLiderActivo = false;
         liderFiltroActual = null;
-        document.getElementById("filtroActivoBadge").style.display = "none";
+        const _badge = document.getElementById("filtroActivoBadge"); if (_badge) _badge.style.display = "none";
         actualizarTodoConFiltro();
         Swal.fire({ icon: 'success', title: 'Filtro limpiado', text: 'Mostrando todos los líderes', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
     }
@@ -1608,6 +1868,9 @@
     }
     
     function actualizarGraficas() {
+        actualizarGraficaHora();
+        actualizarFallasGauge();
+        actualizarFallaScore();
         const datos = getDatosFiltrados();
         
         const liderCount = {};
@@ -1720,12 +1983,410 @@
         restoreMapPosition();
     }
     
-    function editarSitio(rowNumber) {
+    async function editarSitio(rowNumber) {
         if (!requireOperador()) return;
         const sitio = sitiosData.find(s => s.rowNumber == rowNumber);
-        Swal.fire({ title: 'Editar Sitio', html: `<p><strong>${sitio.nombre}</strong></p><p>Asignación actual: <strong>${sitio.asignacion}</strong></p><p>Use el selector de personal para modificar</p>`, icon: 'info' });
+        if (!sitio) return;
+
+        const { value: datos } = await Swal.fire({
+            title: `✏️ Editar: ${sitio.nombre}`,
+            width: '580px',
+            html: `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;font-size:0.8rem;">
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">Estado</label>
+                        <select id="es_estatus" class="swal2-select" style="width:100%;margin:0;font-size:0.8rem;">
+                            <option value="UP"           ${sitio.estadoOriginal==='UP'?'selected':''}>🟢 UP</option>
+                            <option value="DOWN"         ${sitio.estadoOriginal==='DOWN'?'selected':''}>🔴 DOWN</option>
+                            <option value="Mantenimiento"${sitio.estadoOriginal==='Mantenimiento'?'selected':''}>🟡 Mantenimiento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">⚡ Tipo de Falla</label>
+                        <select id="es_tipoFalla" class="swal2-select" style="width:100%;margin:0;font-size:0.8rem;">
+                            <option value="">Sin falla</option>
+                            <option value="TX TELMEX"             ${sitio.tipoFalla==='TX TELMEX'?'selected':''}>📡 TX TELMEX</option>
+                            <option value="Falla de energía"      ${sitio.tipoFalla==='Falla de energía'?'selected':''}>⚡ Falla de energía</option>
+                            <option value="Falla de conectividad" ${sitio.tipoFalla==='Falla de conectividad'?'selected':''}>📶 Falla de conectividad</option>
+                            <option value="Falla de hardware"     ${sitio.tipoFalla==='Falla de hardware'?'selected':''}>🖥️ Falla de hardware</option>
+                            <option value="Falla de software"     ${sitio.tipoFalla==='Falla de software'?'selected':''}>💻 Falla de software</option>
+                            <option value="Mantenimiento preventivo"${sitio.tipoFalla==='Mantenimiento preventivo'?'selected':''}>🔧 Mantenimiento preventivo</option>
+                            <option value="Otro"                  ${sitio.tipoFalla==='Otro'?'selected':''}>📝 Otro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">📋 Folio</label>
+                        <input id="es_folio" class="swal2-input" value="${escapeHtml(sitio.folio||'')}" placeholder="Número de folio" style="width:100%;margin:0;font-size:0.8rem;">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">🕐 Inicio de Falla</label>
+                        <input id="es_inicio" class="swal2-input" type="datetime-local"
+                            value="${sitio.iniciofalla ? (() => { const d=parseFechaSafe(sitio.iniciofalla); return d?d.toISOString().slice(0,16):''; })() : ''}"
+                            style="width:100%;margin:0;font-size:0.8rem;">
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <label style="font-weight:600;display:block;margin-bottom:3px;">💬 Comentario</label>
+                        <textarea id="es_comentario" class="swal2-textarea" style="width:100%;margin:0;font-size:0.8rem;height:60px;"
+                            placeholder="Observaciones...">${escapeHtml(sitio.comentario||'')}</textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: '💾 Guardar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0a2540',
+            preConfirm: () => ({
+                estatus:   document.getElementById('es_estatus').value,
+                tipoFalla: document.getElementById('es_tipoFalla').value,
+                folio:     document.getElementById('es_folio').value.trim(),
+                inicio:    document.getElementById('es_inicio').value,
+                comentario:document.getElementById('es_comentario').value.trim()
+            })
+        });
+        if (!datos) return;
+
+        Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            // Convert datetime-local value to AppSheet DateTime format
+            const inicioFmt = datos.inicio
+                ? toAppSheetDateTime(new Date(datos.inicio))
+                : (sitio.rawRow['INICIO DE FALLA'] || '');
+
+            const rowEdit = { ...sitio.rawRow,
+                'ESTATUS':         datos.estatus,
+                'TIPO DE FALLA':   datos.tipoFalla,
+                'FOLIO':           datos.folio,
+                'INICIO DE FALLA': inicioFmt,
+                'COMENTARIO':      datos.comentario
+            };
+            const resp = await fetch(
+                `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`,
+                { method:'POST', headers:{'ApplicationAccessKey':API_KEY,'Content-Type':'application/json'},
+                  body: JSON.stringify({"Action":"Edit","Properties":{"Locale":"es-MX"},"Rows":[rowEdit]}) }
+            );
+            const txt = await resp.text();
+            console.log('[editarSitio] Edit status='+resp.status, txt.substring(0,200));
+            if (!resp.ok) {
+                Swal.fire({ icon:'error', title:'Error AppSheet',
+                    html:`<pre style="text-align:left;font-size:0.65rem;overflow:auto;max-height:200px;">${escapeHtml(txt)}</pre>`, width:'500px' });
+                return;
+            }
+            await Swal.fire({ icon:'success', title:'¡Sitio actualizado!', timer:1800, showConfirmButton:false });
+            await fetchSitiosFromAppSheet(false);
+        } catch(e) {
+            console.error(e);
+            Swal.fire({ icon:'error', title:'Error', text:e.message });
+        }
     }
     
+
+
+    // ============================================================
+    // GRÁFICA SITIOS AFECTADOS POR HORA (INICIO DE FALLA)
+    // ============================================================
+    let horaFallaChart = null;
+
+    function actualizarGraficaHora() {
+        const ctx = document.getElementById('horaFallaChart');
+        if (!ctx) return;
+
+        // Contar sitios DOWN agrupados por hora de INICIO DE FALLA
+        const horaCount = {};
+        sitiosData.filter(s => s.estadoOriginal === 'DOWN' && s.iniciofalla).forEach(s => {
+            const d = parseFechaSafe(s.iniciofalla);
+            if (!d) return;
+            const hora = `${String(d.getHours()).padStart(2,'0')}:00`;
+            horaCount[hora] = (horaCount[hora] || 0) + 1;
+        });
+
+        // Mostrar las 24 horas del día ordenadas
+        const horas = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
+        const valores = horas.map(h => horaCount[h] || 0);
+        const maxVal = Math.max(...valores, 1);
+
+        if (horaFallaChart) {
+            horaFallaChart.data.labels = horas;
+            horaFallaChart.data.datasets[0].data = valores;
+            horaFallaChart.data.datasets[0].backgroundColor = valores.map(v =>
+                v === maxVal && v > 0 ? '#dc2626' : v > 0 ? '#ea580c' : '#e2e8f0'
+            );
+            horaFallaChart.update('none');
+        } else {
+            horaFallaChart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: horas,
+                    datasets: [{
+                        label: 'Sitios afectados',
+                        data: valores,
+                        backgroundColor: valores.map(v =>
+                            v === maxVal && v > 0 ? '#dc2626' : v > 0 ? '#ea580c' : '#e2e8f0'
+                        ),
+                        borderRadius: 4, barPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    animation: { duration: 400 },
+                    plugins: { legend: { display: false },
+                        tooltip: { callbacks: { title: ctx => `Hora: ${ctx[0].label}`, label: ctx => `${ctx.raw} sitio(s) afectado(s)` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } }, grid: { color: '#f1f5f9' } },
+                        x: { ticks: { font: { size: 8 }, maxRotation: 0 }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+    }
+
+    // ============================================================
+    // PESTAÑA TELMEX
+    // ============================================================
+    function calcTiempoAfectado(iniciofalla) {
+        const d = parseFechaSafe(iniciofalla);
+        if (!d) return '-';
+        const mins = Math.floor((new Date() - d) / 60000);
+        if (mins < 60) return mins + 'm';
+        const hrs = Math.floor(mins / 60);
+        const rm  = mins % 60;
+        return hrs + 'h ' + rm + 'm';
+    }
+
+    function renderTelmexTable() {
+        const tbody = document.getElementById('telmexBody');
+        if (!tbody) return;
+
+        const search    = (document.getElementById('telmexSearch')?.value || '').toLowerCase();
+        const prioridad = document.getElementById('telmexPrioridadFilter')?.value || 'todos';
+
+        // Filtrar: DOWN + tipo de falla contiene "TELMEX"
+        let datos = sitiosData.filter(s =>
+            s.estadoOriginal === 'DOWN' &&
+            (s.tipoFalla || '').toUpperCase().includes('TELMEX')
+        );
+
+        if (search) datos = datos.filter(s =>
+            s.nombre.toLowerCase().includes(search) ||
+            (s.zona || '').toLowerCase().includes(search) ||
+            (s.folio || '').toLowerCase().includes(search) ||
+            (s.comentario || '').toLowerCase().includes(search)
+        );
+        if (prioridad !== 'todos') datos = datos.filter(s => s.prioridadOriginal === prioridad);
+
+        // Update counters
+        const all = sitiosData.filter(s => s.estadoOriginal==='DOWN' && (s.tipoFalla||'').toUpperCase().includes('TELMEX'));
+        document.getElementById('telmexTotal').innerText   = all.length;
+        document.getElementById('telmexCalidad').innerText = all.filter(s => s.prioridadOriginal==='FIFA CALIDAD').length;
+        document.getElementById('telmexAlta').innerText    = all.filter(s => s.prioridadOriginal==='FIFA ALTA PRIORIDAD').length;
+        document.getElementById('telmexNormal').innerText  = all.filter(s => s.prioridadOriginal==='NORMAL').length;
+
+        // Update banner
+        const banner = document.getElementById('telmexInfoBanner');
+        if (banner) {
+            banner.innerHTML = all.length > 0
+                ? `⚠️ ${all.length} sitio(s) DOWN por TX TELMEX · Última actualización: ${new Date().toLocaleTimeString('es-MX')}`
+                : `✅ Sin sitios DOWN por TX TELMEX · ${new Date().toLocaleTimeString('es-MX')}`;
+            banner.className = all.length > 0 ? 'info-banner info-banner-warning' : 'info-banner';
+        }
+
+        if (datos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">✅ Sin sitios afectados por TX TELMEX en este momento</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = datos.map(s => {
+            const priorColor = s.prioridadColor || '#64748b';
+            const tiempoAfectado = calcTiempoAfectado(s.iniciofalla);
+            return `<tr style="${s.prioridadOriginal==='FIFA CALIDAD' ? 'background:#fff5f5;' : ''}">
+                <td><strong>${escapeHtml(s.nombre)}</strong><br><span style="font-size:0.65rem;color:#64748b;">${escapeHtml(s.mnemonico||'')}</span></td>
+                <td>${escapeHtml(s.zona)}</td>
+                <td><span style="background:${priorColor}20;color:${priorColor};padding:2px 7px;border-radius:10px;font-size:0.72rem;">${s.prioridadDisplay}</span></td>
+                <td>${escapeHtml(s.jefe)}</td>
+                <td>${escapeHtml(s.folio||'-')}</td>
+                <td style="font-size:0.72rem;">${s.iniciofalla ? fechaLocal(s.iniciofalla) : '-'}<br>
+                    <span style="color:#dc2626;font-weight:600;font-size:0.68rem;">⏱ ${tiempoAfectado}</span></td>
+                <td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(s.comentario)}">${escapeHtml(s.comentario||'-')}</td>
+                <td>${s.asignacion && s.asignacion!=='No asignado'
+                    ? `<span style="background:#dbeafe;padding:2px 6px;border-radius:10px;font-size:0.72rem;">👤 ${escapeHtml(s.asignacion)}</span>`
+                    : '<span style="color:#94a3b8;font-size:0.72rem;">Sin asignar</span>'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Listeners TELMEX ──────────────────────────────────────────
+    document.getElementById('refreshTelmexBtn')?.addEventListener('click', () => {
+        fetchSitiosFromAppSheet(true).then(() => renderTelmexTable());
+    });
+    document.getElementById('telmexSearch')?.addEventListener('input', renderTelmexTable);
+    document.getElementById('telmexPrioridadFilter')?.addEventListener('change', renderTelmexTable);
+
+
+    // ============================================================
+    // GAUGE BAR DE FALLAS POR TIPO
+    // ============================================================
+    function actualizarFallasGauge() {
+        const container = document.getElementById('fallasGaugeContainer');
+        const badge = document.getElementById('fallasTotalBadge');
+        if (!container) return;
+
+        // Solo sitios DOWN con tipo de falla
+        const sitiosDown = sitiosData.filter(s => s.estadoOriginal === 'DOWN');
+        const total = sitiosDown.length;
+
+        if (badge) {
+            badge.textContent = total + ' DOWN';
+            badge.style.background = total > 0 ? '#dc2626' : '#10b981';
+        }
+
+        if (total === 0) {
+            container.innerHTML = '<div style="color:#10b981;font-size:0.78rem;text-align:center;padding:14px 0;font-weight:600;">✅ Sin fallas activas en este momento</div>';
+            return;
+        }
+
+        // Agrupar por tipo de falla
+        const tipoCount = {};
+        sitiosDown.forEach(s => {
+            const tipo = (s.tipoFalla || 'Sin clasificar').trim() || 'Sin clasificar';
+            tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
+        });
+
+        // Ordenar por cantidad desc
+        const tipos = Object.entries(tipoCount).sort((a, b) => b[1] - a[1]);
+
+        const COLORES = {
+            'TX TELMEX':               '#7c3aed',
+            'Falla de energía':        '#dc2626',
+            'Falla de conectividad':   '#ea580c',
+            'Falla de hardware':       '#f59e0b',
+            'Falla de software':       '#0891b2',
+            'Mantenimiento preventivo':'#10b981',
+            'Sin clasificar':          '#94a3b8',
+            'Otro':                    '#64748b'
+        };
+        const getColor = (tipo) => COLORES[tipo] || '#6366f1';
+
+        // Render: stacked gauge bar + legend
+        const barSegments = tipos.map(([tipo, cnt]) => {
+            const pct = (cnt / total * 100).toFixed(1);
+            const color = getColor(tipo);
+            return '<div style="height:100%;width:' + pct + '%;background:' + color + ';display:inline-block;vertical-align:top;transition:width 0.4s;" title="' + tipo + ': ' + cnt + ' (' + pct + '%)"></div>';
+        }).join('');
+
+        const legendItems = tipos.map(([tipo, cnt]) => {
+            const pct = (cnt / total * 100).toFixed(1);
+            const color = getColor(tipo);
+            return '<div style="display:flex;align-items:center;gap:5px;font-size:0.72rem;white-space:nowrap;">' +
+                '<div style="width:12px;height:12px;border-radius:3px;background:' + color + ';flex-shrink:0;"></div>' +
+                '<span><strong>' + cnt + '</strong> ' + tipo + '</span>' +
+                '<span style="color:#94a3b8;font-size:0.65rem;">(' + pct + '%)</span>' +
+                '</div>';
+        }).join('');
+
+        container.innerHTML =
+            '<div style="height:28px;border-radius:8px;overflow:hidden;background:#f1f5f9;margin-bottom:12px;display:flex;">' +
+            barSegments + '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:10px 20px;">' + legendItems + '</div>';
+    }
+
+
+    // ============================================================
+    // GAMEBAR FALLAS — barra fija superior
+    // ============================================================
+    var _gamebarOpen = false;
+
+    function toggleGamebar() {
+        _gamebarOpen = !_gamebarOpen;
+        const exp  = document.getElementById('fallaGamebarExpanded');
+        const icon = document.getElementById('gbToggleIcon');
+        if (exp)  exp.classList.toggle('open', _gamebarOpen);
+        if (icon) icon.textContent = _gamebarOpen ? '▲ ocultar' : '▼ ver detalle';
+    }
+    window.toggleGamebar = toggleGamebar;
+
+    function actualizarFallaScore() {
+        const bar     = document.getElementById('fallaGamebarStrip');
+        const badge   = document.getElementById('gbTotalBadge');
+        const quick   = document.getElementById('gbQuickList');
+        const expanded= document.getElementById('fallaGamebarExpanded');
+        const gamebar = document.getElementById('fallaGamebar');
+        if (!gamebar) return;
+
+        const sitiosDown = sitiosData.filter(s => s.estadoOriginal === 'DOWN');
+        const total = sitiosDown.length;
+
+        if (total === 0) {
+            gamebar.classList.remove('visible');
+            document.body.classList.remove('gamebar-visible');
+            return;
+        }
+        gamebar.classList.add('visible');
+        document.body.classList.add('gamebar-visible');
+
+        // Badge total
+        if (badge) {
+            badge.textContent = total;
+            badge.style.background = total >= 10 ? '#7f1d1d' : total >= 5 ? '#b91c1c' : '#dc2626';
+        }
+
+        // Group by tipo
+        const tipoCount = {};
+        sitiosDown.forEach(s => {
+            const tipo = (s.tipoFalla || 'Sin clasificar').trim() || 'Sin clasificar';
+            tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
+        });
+        const tipos = Object.entries(tipoCount).sort((a, b) => b[1] - a[1]);
+
+        const COLORES = {
+            'TX TELMEX':               '#7c3aed',
+            'Falla de energía':        '#ef4444',
+            'Falla de conectividad':   '#f97316',
+            'Falla de hardware':       '#eab308',
+            'Falla de software':       '#06b6d4',
+            'Mantenimiento preventivo':'#22c55e',
+            'EN ANALISIS':             '#f59e0b',
+            'Sin clasificar':          '#94a3b8',
+            'Otro':                    '#64748b'
+        };
+        const getColor = t => COLORES[t] || '#6366f1';
+
+        // Strip bar
+        if (bar) {
+            bar.innerHTML = tipos.map(([tipo, cnt]) => {
+                const pct = (cnt / total * 100).toFixed(2);
+                return '<div class="gb-segment" style="width:' + pct + '%;background:' + getColor(tipo) + ';" title="' + tipo + ': ' + cnt + '"></div>';
+            }).join('');
+        }
+
+        // Quick pills (top bar)
+        if (quick) {
+            quick.innerHTML = tipos.map(([tipo, cnt]) =>
+                '<span class="gb-pill"><span class="gb-dot" style="background:' + getColor(tipo) + ';"></span>' +
+                '<span style="font-weight:600;">' + cnt + '</span>' +
+                '<span style="opacity:0.75;margin-left:2px;">' + tipo + '</span></span>'
+            ).join('');
+        }
+
+        // Expanded detail
+        if (expanded) {
+            const sinFalla = sitiosDown.filter(s => !s.tipoFalla || !s.tipoFalla.trim()).length;
+            expanded.innerHTML =
+                '<div style="width:100%;margin-bottom:6px;font-size:0.68rem;opacity:0.6;">Distribución por tipo · ' + total + ' sitios DOWN</div>' +
+                tipos.map(([tipo, cnt]) => {
+                    const pct = (cnt / total * 100).toFixed(0);
+                    const color = getColor(tipo);
+                    return '<div class="gb-pill" style="flex-direction:column;align-items:flex-start;gap:3px;padding:5px 10px;">' +
+                        '<div style="display:flex;align-items:center;gap:5px;">' +
+                        '<span class="gb-dot" style="background:' + color + ';"></span>' +
+                        '<span style="font-weight:700;font-size:0.78rem;">' + cnt + '</span>' +
+                        '<span>' + tipo + '</span>' +
+                        '<span style="opacity:0.55;font-size:0.65rem;">(' + pct + '%)</span></div>' +
+                        '<div style="width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden;">' +
+                        '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:2px;"></div></div>' +
+                        '</div>';
+                }).join('') +
+                (sinFalla > 0 ? '<div class="gb-pill" style="opacity:0.5;"><span class="gb-dot" style="background:#94a3b8;"></span><span>' + sinFalla + ' sin clasificar</span></div>' : '');
+        }
+    }
 
     // ============================================================
     // NUEVO SITIO
@@ -2204,7 +2865,7 @@
     }
     
     // Event Listeners
-    document.getElementById("limpiarFiltroLiderBtn").addEventListener("click", () => limpiarFiltroLider());
+    document.getElementById("limpiarFiltroLiderBtn")?.addEventListener("click", () => limpiarFiltroLider());
     
     document.querySelectorAll(".chart-filter-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -2222,26 +2883,28 @@
             actualizarGraficas();
         });
     });
-    document.getElementById("refreshBtn").addEventListener("click", () => fetchSitiosFromAppSheet(true));
-    document.getElementById("resetFiltersBtn").addEventListener("click", () => resetFiltersMonitoreo());
-    document.getElementById("searchInput").addEventListener("input", () => aplicarFiltrosMonitoreo());
-    document.getElementById("zonaFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
-    document.getElementById("estadoFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
-    document.getElementById("liderFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
-    document.getElementById("prioridadFilter").addEventListener("change", () => aplicarFiltrosMonitoreo());
-    
-    document.getElementById("refreshDispatchBtn").addEventListener("click", () => cargarDispatchData(true));
-    document.getElementById("resetDispatchFiltersBtn").addEventListener("click", () => resetFiltersDispatch());
-    document.getElementById("dispatchSearchInput").addEventListener("input", () => renderDispatchTable());
-    document.getElementById("dispatchZonaFilter").addEventListener("change", () => renderDispatchTable());
-    document.getElementById("dispatchEstatusFilter").addEventListener("change", () => renderDispatchTable());
-    
-    document.getElementById("refreshAsignacionesBtn").addEventListener("click", () => cargarAsignacionesData(true));
-    document.getElementById("resetAsignacionesFiltersBtn").addEventListener("click", () => resetFiltersAsignaciones());
-    document.getElementById("asignacionSearchInput").addEventListener("input", () => aplicarFiltrosAsignaciones());
-    document.getElementById("asignacionEstadoFilter").addEventListener("change", () => aplicarFiltrosAsignaciones());
-    document.getElementById("fechaDesdeFilter").addEventListener("change", () => aplicarFiltrosAsignaciones());
-    document.getElementById("fechaHastaFilter").addEventListener("change", () => aplicarFiltrosAsignaciones());
+    try {
+    document.getElementById("refreshBtn")?.addEventListener("click", () => fetchSitiosFromAppSheet(true));
+    document.getElementById("resetFiltersBtn")?.addEventListener("click", () => resetFiltersMonitoreo());
+    document.getElementById("searchInput")?.addEventListener("input", () => aplicarFiltrosMonitoreo());
+    document.getElementById("zonaFilter")?.addEventListener("change", () => aplicarFiltrosMonitoreo());
+    document.getElementById("estadoFilter")?.addEventListener("change", () => aplicarFiltrosMonitoreo());
+    document.getElementById("liderFilter")?.addEventListener("change", () => aplicarFiltrosMonitoreo());
+    document.getElementById("prioridadFilter")?.addEventListener("change", () => aplicarFiltrosMonitoreo());
+
+    document.getElementById("refreshDispatchBtn")?.addEventListener("click", () => cargarDispatchData(true));
+    document.getElementById("resetDispatchFiltersBtn")?.addEventListener("click", () => resetFiltersDispatch());
+    document.getElementById("dispatchSearchInput")?.addEventListener("input", () => renderDispatchTable());
+    document.getElementById("dispatchZonaFilter")?.addEventListener("change", () => renderDispatchTable());
+    document.getElementById("dispatchEstatusFilter")?.addEventListener("change", () => renderDispatchTable());
+
+    document.getElementById("refreshAsignacionesBtn")?.addEventListener("click", () => cargarAsignacionesData(true));
+    document.getElementById("resetAsignacionesFiltersBtn")?.addEventListener("click", () => resetFiltersAsignaciones());
+    document.getElementById("asignacionSearchInput")?.addEventListener("input", () => aplicarFiltrosAsignaciones());
+    document.getElementById("asignacionEstadoFilter")?.addEventListener("change", () => aplicarFiltrosAsignaciones());
+    document.getElementById("fechaDesdeFilter")?.addEventListener("change", () => aplicarFiltrosAsignaciones());
+    document.getElementById("fechaHastaFilter")?.addEventListener("change", () => aplicarFiltrosAsignaciones());
+    } catch(e) { console.error('addEventListener init error:', e); }
     
     window.editarSitio = editarSitio;
     window.mostrarAyudaEdicion = mostrarAyudaEdicion;
@@ -2252,7 +2915,7 @@
     window.debugTelegramConfig = debugTelegramConfig;
     window.finalizarAsignacionManual = finalizarAsignacionManual;
     
-    initMap();
+    try { initMap(); } catch(e) { console.error('initMap error:', e); }
     fetchSitiosFromAppSheet();
     cargarDispatchData();
     cargarAsignacionesData();
@@ -2261,6 +2924,7 @@
         if (document.querySelector('.tab-btn.active').dataset.tab === 'dispatch') cargarDispatchData(false);
         if (document.querySelector('.tab-btn.active').dataset.tab === 'asignaciones') cargarAsignacionesData(false);
         if (document.querySelector('.tab-btn.active').dataset.tab === 'plantas') cargarPlantasData(false);
+        if (document.querySelector('.tab-btn.active').dataset.tab === 'telmex') { try { renderTelmexTable(); } catch(e) { console.error(e); } }
     }, 60000);
 
 
@@ -2604,98 +3268,7 @@
     document.getElementById('plantasEstatusFilter')?.addEventListener('change', renderPlantasTable);
 
 
-    // ═══════════════════════════════════════════════════════════════
-    // SISTEMA DE ACCESO CON ROLES
-    // ═══════════════════════════════════════════════════════════════
-    var _sesionRol = null; var _sesionUser = null; // sesión en memoria (compatible con file://)
-    var USUARIOS = {
-        // OPERADORES — pueden ver Y modificar
-        "oym":      { pass: "FIFA2026*",  rol: "OPERADOR" },
-        "dispatch": { pass: "OYM2026#",   rol: "OPERADOR" },
-        // VIEWERS — solo lectura
-        "viewer":   { pass: "Monitor26",  rol: "VIEWER"   },
-        "consulta": { pass: "consulta26", rol: "VIEWER"   }
-    };
 
-    let rolActual = null;
-
-    function intentarLogin() {
-        const user = (document.getElementById('loginUser').value || "").trim().toLowerCase();
-        const pass = (document.getElementById('loginPass').value || "").trim();
-        const err  = document.getElementById('loginError');
-
-        const cuenta = USUARIOS[user];
-        if (!cuenta || cuenta.pass !== pass) {
-            err.textContent = '❌ Usuario o contraseña incorrectos';
-            document.getElementById('loginPass').value = '';
-            return;
-        }
-
-        rolActual = cuenta.rol;
-        document.getElementById('loginOverlay').style.display = 'none';
-
-        // Aplicar modo viewer si corresponde
-        if (rolActual === 'VIEWER') {
-            document.body.classList.add('modo-viewer');
-        }
-
-        // Mostrar badge de rol en sidebar
-        const badge = document.getElementById('rolBadge');
-        if (badge) {
-            badge.textContent = rolActual === 'OPERADOR' ? '⚙️ Operador' : '👁 Solo lectura';
-            badge.className   = 'rol-' + rolActual.toLowerCase();
-        }
-
-        // Sesión guardada en memoria (_sesionRol/_sesionUser) — compatible con file://
-        _sesionRol = rolActual; _sesionUser = user;
-    }
-
-    function cerrarSesion() {
-        _sesionRol = null; _sesionUser = null;
-        document.getElementById('loginUser').value = '';
-        document.getElementById('loginPass').value = '';
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('loginOverlay').style.display = 'flex';
-        document.body.classList.remove('modo-viewer');
-        rolActual = null;
-    }
-
-    // Proteger funciones de escritura — verificar rol antes de ejecutar
-    function requireOperador() {
-        if (rolActual !== 'OPERADOR') {
-            Swal.fire({ icon: 'warning', title: 'Acceso restringido',
-                text: 'Solo los operadores pueden realizar modificaciones.',
-                timer: 2500, showConfirmButton: false });
-            return false;
-        }
-        return true;
-    }
-
-    // Restaurar sesión si recarga la página
-    (function restaurarSesion() {
-        const rol = _sesionRol; const user = _sesionUser;
-        if (rol && user && USUARIOS[user] && USUARIOS[user].rol === rol) {
-            rolActual = rol;
-            document.getElementById('loginOverlay').style.display = 'none';
-            if (rol === 'VIEWER') document.body.classList.add('modo-viewer');
-            const badge = document.getElementById('rolBadge');
-            if (badge) {
-                badge.textContent = rol === 'OPERADOR' ? '⚙️ Operador' : '👁 Solo lectura';
-                badge.className   = 'rol-' + rol.toLowerCase();
-            }
-        }
-    })();
-
-    // Enter key en login
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') {
-            intentarLogin();
-        }
-    });
-
-    window.intentarLogin  = intentarLogin;
-    window.cerrarSesion   = cerrarSesion;
-    window.requireOperador= requireOperador;
 
 </script>
 </body>
