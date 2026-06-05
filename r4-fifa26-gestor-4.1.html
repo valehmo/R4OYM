@@ -2177,93 +2177,161 @@
         const ctx = document.getElementById('horaFallaChart');
         if (!ctx) return;
 
-        // ── Collect all sites with INICIO DE FALLA ────────────────
         const conFalla = sitiosData.filter(s => s.iniciofalla);
-
-        let labels = [], valores = [], picos = [];
+        let labels = [], valores = [], acumulado = [];
 
         if (_horaChartMode === 'hora') {
-            // ── Modo Hora: agrupa todas las fallas por franja horaria ──
+            // ── Modo Hora: 00:00 → hora actual, avanza en tiempo real ──
+            const horaActual = new Date().getHours();
             const horaCount = {};
             conFalla.forEach(s => {
                 const d = parseFechaSafe(s.iniciofalla);
                 if (!d) return;
-                const h = String(d.getHours()).padStart(2,'0') + ':00';
-                horaCount[h] = (horaCount[h] || 0) + 1;
+                horaCount[d.getHours()] = (horaCount[d.getHours()] || 0) + 1;
             });
-            labels = Array.from({length:24}, (_, i) => String(i).padStart(2,'0') + ':00');
-            valores = labels.map(h => horaCount[h] || 0);
+            let acum = 0;
+            for (let h = 0; h <= horaActual; h++) {
+                const cnt = horaCount[h] || 0;
+                acum += cnt;
+                labels.push(String(h).padStart(2,'0') + ':00');
+                valores.push(cnt);
+                acumulado.push(acum);
+            }
 
         } else {
-            // ── Modo Día: últimos 30 días con fallas ──────────────
+            // ── Modo Día: desde primer falla hasta hoy, acumulado progresivo ──
             const diaCount = {};
             conFalla.forEach(s => {
                 const d = parseFechaSafe(s.iniciofalla);
                 if (!d) return;
-                const key = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                const key = d.getFullYear() + '-' +
+                    String(d.getMonth()+1).padStart(2,'0') + '-' +
+                    String(d.getDate()).padStart(2,'0');
                 diaCount[key] = (diaCount[key] || 0) + 1;
             });
-            // Generar los 30 días más recientes
             const hoy = new Date();
-            for (let i = 29; i >= 0; i--) {
-                const d = new Date(hoy);
-                d.setDate(hoy.getDate() - i);
-                const key = d.toISOString().split('T')[0];
-                const label = d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' });
-                labels.push(label);
-                valores.push(diaCount[key] || 0);
+            const hoyKey = hoy.getFullYear() + '-' +
+                String(hoy.getMonth()+1).padStart(2,'0') + '-' +
+                String(hoy.getDate()).padStart(2,'0');
+            diaCount[hoyKey] = diaCount[hoyKey] || 0;
+            const claves = Object.keys(diaCount).sort();
+            if (claves.length > 0) {
+                const inicio = new Date(claves[0] + 'T12:00:00');
+                const fin    = new Date(hoyKey    + 'T12:00:00');
+                let acum = 0;
+                for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+                    const key = d.getFullYear() + '-' +
+                        String(d.getMonth()+1).padStart(2,'0') + '-' +
+                        String(d.getDate()).padStart(2,'0');
+                    const cnt = diaCount[key] || 0;
+                    acum += cnt;
+                    labels.push(d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }));
+                    valores.push(cnt);
+                    acumulado.push(acum);
+                }
             }
         }
 
         const maxVal = Math.max(...valores, 1);
-        const totalFallas = valores.reduce((a, b) => a + b, 0);
-        const picoLabel = labels[valores.indexOf(maxVal)];
 
         // Update stats label
+        const totalFallas = valores.reduce((a, b) => a + b, 0);
+        const maxVal2 = Math.max(...valores, 1);
+        const picoLabel = labels[valores.indexOf(maxVal2)];
+        const totalAcum = acumulado.length > 0 ? acumulado[acumulado.length - 1] : 0;
+
+        // Stats header
         const statsEl = document.getElementById('horaChartStats');
         if (statsEl) {
+            const modo = _horaChartMode === 'hora' ? 'horas' : 'días';
             statsEl.innerHTML = totalFallas > 0
-                ? '<span style="color:#dc2626;font-weight:700;">' + totalFallas + ' registros</span>' +
-                  ' · pico: <strong>' + picoLabel + '</strong> (' + maxVal + ')'
-                : 'Sin registros';
+                ? '<span style="color:#dc2626;font-weight:700;">' + totalFallas + ' fallas</span>' +
+                  ' en ' + labels.length + ' ' + modo +
+                  ' · pico: <strong>' + picoLabel + '</strong> (' + maxVal2 + ')' +
+                  ' · acum: <strong style="color:#7c3aed;">' + totalAcum + '</strong>'
+                : 'Sin registros en el período';
         }
 
-        // Colors: gradient from low (#3b82f6) → medium (#f59e0b) → peak (#dc2626)
+        // Bar colors: gradient by intensity
         const bgColors = valores.map(v => {
-            if (v === 0) return 'rgba(226,232,240,0.4)';
-            const ratio = v / maxVal;
-            if (ratio >= 0.8) return '#dc2626';
-            if (ratio >= 0.5) return '#f97316';
-            if (ratio >= 0.25) return '#f59e0b';
-            return '#3b82f6';
+            if (v === 0) return 'rgba(226,232,240,0.35)';
+            const r = v / maxVal2;
+            if (r >= 0.8) return 'rgba(220,38,38,0.85)';
+            if (r >= 0.5) return 'rgba(249,115,22,0.80)';
+            if (r >= 0.25) return 'rgba(234,179,8,0.75)';
+            return 'rgba(59,130,246,0.70)';
         });
-        const borderColors = bgColors.map(c => c === 'rgba(226,232,240,0.4)' ? 'transparent' : c);
+
+        // Dataset 1: bars (fallas por período)
+        const dsBarras = {
+            label: _horaChartMode === 'hora' ? 'Fallas por hora' : 'Fallas por día',
+            type: 'bar',
+            data: valores,
+            backgroundColor: bgColors,
+            borderColor: bgColors.map(c => c.replace(/[\d.]+\)$/, '1)')),
+            borderWidth: 1,
+            borderRadius: 4,
+            yAxisID: 'y',
+            order: 2
+        };
+
+        // Dataset 2: line (acumulado progresivo)
+        const dsAcum = {
+            label: 'Acumulado',
+            type: 'line',
+            data: acumulado,
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124,58,237,0.06)',
+            borderWidth: 2,
+            pointBackgroundColor: acumulado.map((v, i) => i === acumulado.length - 1 ? '#7c3aed' : 'rgba(124,58,237,0.5)'),
+            pointRadius: acumulado.map((v, i) => i === acumulado.length - 1 ? 6 : 3),
+            pointHoverRadius: 7,
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'y2',
+            order: 1
+        };
 
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: true,
-            animation: { duration: 500, easing: 'easeInOutQuart' },
+            animation: { duration: 400, easing: 'easeInOutQuart' },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: { font: { size: 10 }, color: '#475569', boxWidth: 12, padding: 12,
+                        usePointStyle: true, pointStyleWidth: 8 }
+                },
                 tooltip: {
                     backgroundColor: '#0a2540',
                     titleColor: '#94a3b8',
                     bodyColor: '#ffffff',
                     padding: 10,
                     callbacks: {
-                        title: items => _horaChartMode === 'hora'
-                            ? 'Hora: ' + items[0].label
-                            : 'Fecha: ' + items[0].label,
-                        label: item => ' ' + item.raw + ' falla' + (item.raw !== 1 ? 's' : '') + ' registrada' + (item.raw !== 1 ? 's' : '')
+                        title: items => (_horaChartMode === 'hora' ? '🕐 ' : '📅 ') + items[0].label,
+                        label: item => item.dataset.label + ': ' + item.raw
                     }
                 }
             },
             scales: {
                 y: {
+                    type: 'linear', position: 'left',
                     beginAtZero: true,
                     ticks: { stepSize: 1, font: { size: 9 }, color: '#94a3b8' },
-                    grid: { color: 'rgba(241,245,249,0.8)', drawBorder: false },
-                    border: { display: false }
+                    grid: { color: 'rgba(241,245,249,0.9)', drawBorder: false },
+                    border: { display: false },
+                    title: { display: true, text: 'Fallas', font: { size: 9 }, color: '#94a3b8' }
+                },
+                y2: {
+                    type: 'linear', position: 'right',
+                    beginAtZero: true,
+                    ticks: { font: { size: 9 }, color: '#7c3aed' },
+                    grid: { drawOnChartArea: false },
+                    border: { display: false },
+                    title: { display: true, text: 'Acumulado', font: { size: 9 }, color: '#7c3aed' }
                 },
                 x: {
                     ticks: {
@@ -2279,38 +2347,15 @@
         };
 
         if (horaFallaChart) {
-            // Smooth update
-            horaFallaChart.config.type = 'line';
             horaFallaChart.data.labels = labels;
-            horaFallaChart.data.datasets[0].data = valores;
-            horaFallaChart.data.datasets[0].backgroundColor = 'rgba(220,38,38,0.08)';
-            horaFallaChart.data.datasets[0].borderColor = '#dc2626';
-            horaFallaChart.data.datasets[0].pointBackgroundColor = bgColors;
-            horaFallaChart.data.datasets[0].pointRadius = valores.map(v => v > 0 ? 5 : 2);
-            horaFallaChart.data.datasets[0].pointHoverRadius = 8;
+            horaFallaChart.data.datasets[0] = dsBarras;
+            horaFallaChart.data.datasets[1] = dsAcum;
             horaFallaChart.options = commonOptions;
-            horaFallaChart.update();
+            horaFallaChart.update('active');
         } else {
             horaFallaChart = new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Fallas',
-                        data: valores,
-                        borderColor: '#dc2626',
-                        backgroundColor: 'rgba(220,38,38,0.08)',
-                        borderWidth: 2.5,
-                        pointBackgroundColor: bgColors,
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 1.5,
-                        pointRadius: valores.map(v => v > 0 ? 5 : 2),
-                        pointHoverRadius: 8,
-                        fill: true,
-                        tension: 0.35,
-                        spanGaps: true
-                    }]
-                },
+                type: 'bar',
+                data: { labels, datasets: [dsBarras, dsAcum] },
                 options: commonOptions
             });
         }
