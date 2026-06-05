@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Fast Track | FIFA 2026 Monterrey - Fallas Activas</title>
-    <!-- Favicon: balón de soccer -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='white' stroke='black' stroke-width='3'/%3E%3Cpath d='M50 5 L50 95 M5 50 L95 50 M17 17 L83 83 M17 83 L83 17' stroke='black' stroke-width='2'/%3E%3Cpolygon points='50,50 35,25 65,25' fill='black'/%3E%3Cpolygon points='50,50 75,35 65,65' fill='black'/%3E%3Cpolygon points='50,50 35,75 25,35' fill='black'/%3E%3C/svg%3E">
     
-    <!-- Librerías -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Google Fonts + Font Awesome -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
@@ -31,7 +27,6 @@
             padding: 24px 24px 40px 24px;
         }
         
-        /* GAME SCORE - responsive */
         .game-score-sticky {
             position: sticky;
             top: 0;
@@ -51,31 +46,14 @@
             gap: 16px;
             flex-wrap: wrap;
         }
-        .game-score-sticky.collapsed .game-score-inner {
-            padding: 4px 20px;
-        }
+        .game-score-sticky.collapsed .game-score-inner { padding: 4px 20px; }
         .game-score-sticky.collapsed .score-card,
         .game-score-sticky.collapsed .leader-stats,
         .game-score-sticky.collapsed .score-divider,
         .game-score-sticky.collapsed .refresh-indicator,
-        .game-score-sticky.collapsed .falla-stats {
-            display: none;
-        }
-        .game-score-sticky.collapsed .mini-indicator {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            width: 100%;
-            justify-content: space-between;
-            font-size: 0.75rem;
-        }
-        .mini-indicator {
-            display: none;
-            background: transparent;
-            color: #eef2ff;
-            font-weight: 500;
-            padding: 0 8px;
-        }
+        .game-score-sticky.collapsed .falla-stats { display: none; }
+        .game-score-sticky.collapsed .mini-indicator { display: flex; align-items: center; gap: 16px; width: 100%; justify-content: space-between; font-size: 0.75rem; }
+        .mini-indicator { display: none; background: transparent; color: #eef2ff; font-weight: 500; padding: 0 8px; }
         .toggle-score-btn {
             background: rgba(255,255,255,0.1);
             border: none;
@@ -101,12 +79,7 @@
         .score-card .score-value { font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: white; letter-spacing: -0.3px; }
         .score-card .score-label { font-size: 0.6rem; text-transform: uppercase; font-weight: 500; letter-spacing: 0.5px; color: #9ab3cf; margin-top: 2px; }
         .score-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.15); }
-        .falla-stats {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .falla-stats { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .falla-badge {
             background: rgba(255,255,255,0.06);
             border-radius: 32px;
@@ -120,12 +93,7 @@
             white-space: nowrap;
         }
         .falla-badge .tipo-num { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 0px 6px; font-weight: 700; }
-        .leader-stats {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .leader-stats { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
         .leader-badge {
             background: rgba(255,255,255,0.06);
             border-radius: 32px;
@@ -168,7 +136,7 @@
             100% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(220,38,38,0);}
         }
         .last-update { font-size: 0.6rem; color: #9ab3cf; margin-left: 8px; }
-        .test-sound-btn {
+        .test-sound-btn, .mute-btn, .excel-btn {
             background: rgba(255,255,255,0.15);
             border: none;
             color: #ffd966;
@@ -181,9 +149,11 @@
             gap: 6px;
             transition: 0.2s;
         }
-        .test-sound-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.02); }
+        .test-sound-btn:hover, .mute-btn:hover, .excel-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.02); }
+        .mute-btn, .excel-btn { color: #cbd5e6; }
+        .excel-btn i { color: #10b981; }
+        .mute-btn.active { color: #ffd966; }
         
-        /* Móvil */
         @media (max-width: 768px) {
             .dashboard { padding: 16px 12px 30px 12px; }
             .game-score-inner { padding: 6px 12px; gap: 8px; }
@@ -193,7 +163,7 @@
             .falla-badge, .leader-badge { padding: 2px 8px; font-size: 0.6rem; white-space: normal; }
             .falla-badge .tipo-num { font-size: 0.6rem; padding: 0px 4px; }
             .refresh-indicator { padding: 2px 8px; font-size: 0.6rem; gap: 4px; }
-            .test-sound-btn { padding: 2px 6px; font-size: 0.6rem; }
+            .test-sound-btn, .mute-btn, .excel-btn { padding: 2px 6px; font-size: 0.6rem; }
             .live-badge { font-size: 0.55rem; padding: 1px 6px; }
             .toggle-score-btn { width: 28px; height: 28px; font-size: 0.7rem; }
             .leader-badge span:first-child { display: none; }
@@ -211,7 +181,6 @@
             .leader-badge span:first-child { display: inline-block; font-size: 0.55rem; }
         }
         
-        /* Header */
         .header { margin-bottom: 28px; }
         .header h1 { font-size: 1.6rem; font-weight: 700; color: #0a2540; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .stats-grid {
@@ -249,8 +218,54 @@
             margin-bottom: 16px;
             border-bottom: 2px solid #f0f5fc;
             padding-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .card-header h3 { font-size: 0.85rem; font-weight: 700; color: #1e3a5f; }
+        .view-selector {
+            display: flex;
+            gap: 8px;
+            background: #f1f5f9;
+            border-radius: 32px;
+            padding: 3px;
+        }
+        .view-btn {
+            background: transparent;
+            border: none;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #475569;
+        }
+        .view-btn.active {
+            background: #0a2540;
+            color: white;
+        }
+        .total-badge {
+            background: #e2e8f0;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .filter-buttons { display: flex; gap: 8px; }
+        .filter-chip {
+            background: #f1f5f9;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .filter-chip.active {
+            background: #0a2540;
+            color: white;
+        }
         .full-width { grid-column: span 2; }
         #map {
             height: 380px;
@@ -291,6 +306,28 @@
             flex-wrap: wrap;
             gap: 12px;
         }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        .filter-group label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #475569;
+        }
+        .filter-group select, .filter-group input {
+            border: none;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+        }
         .table-header input {
             padding: 6px 16px;
             border: 1px solid #dce5f0;
@@ -321,6 +358,19 @@
         td {
             padding: 10px 10px;
             border-bottom: 1px solid #f0f5fb;
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .sortable:hover {
+            background: #eef2f9;
+        }
+        .sort-icon {
+            margin-left: 5px;
+            font-size: 0.65rem;
+            opacity: 0.6;
         }
         .prioridad-badge {
             display: inline-block;
@@ -374,16 +424,16 @@
             .full-width { grid-column: span 1; }
             .dashboard { padding: 16px; }
             .header h1 { font-size: 1.3rem; }
-            th, td { font-size: 0.65rem; }
+            .table-header { flex-direction: column; align-items: stretch; }
+            .card-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
 
-<!-- GAME SCORE -->
 <div class="game-score-sticky" id="gameScoreSticky">
     <div class="game-score-inner">
-        <div class="score-card"><div class="score-value" id="gameTotalDown">0</div><div class="score-label">SITIOS DOWN</div></div>
+        <div class="score-card"><div class="score-value" id="gameTotalDown">0</div><div class="score-label">SITIOS DOWN AHORA</div></div>
         <div class="score-divider"></div>
         <div class="falla-stats" id="fallaStatsContainer">
             <div class="falla-badge"><span>1️⃣</span> <span id="tipo1_nombre">-</span> <span class="tipo-num" id="tipo1_cnt">0</span></div>
@@ -399,14 +449,15 @@
             <div class="live-badge"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> LIVE</div>
             <i class="fas fa-sync-alt fa-fw" id="refreshIcon"></i> <span>60s</span>
             <button id="refreshBtnSticky" style="background:rgba(255,255,255,0.15); padding:4px 12px;">Actualizar</button>
-            <button id="testWhistleBtn" class="test-sound-btn" title="Probar sonido de silbato (real)"><i class="fas fa-whistle"></i> Silbato</button>
+            <button id="testWhistleBtn" class="test-sound-btn"><i class="fas fa-whistle"></i> Silbato</button>
+            <button id="muteSoundBtn" class="mute-btn"><i class="fas fa-volume-up"></i> Silenciar</button>
             <span id="lastUpdateTime" class="last-update">--:--:--</span>
         </div>
-        <button class="toggle-score-btn" id="toggleScoreBtn" title="Ocultar/Mostrar"><i class="fas fa-chevron-up"></i></button>
+        <button class="toggle-score-btn" id="toggleScoreBtn"><i class="fas fa-chevron-up"></i></button>
     </div>
     <div class="mini-indicator" id="miniIndicator">
-        <div><i class="fas fa-chart-simple"></i> <span id="miniDownCount">0</span> sitios · <span id="miniTopTipo">-</span> <span class="live-badge" style="font-size:0.6rem; padding:2px 6px;"><i class="fas fa-circle"></i> LIVE</span></div>
-        <button class="toggle-score-btn" id="toggleScoreBtnMini" style="background:rgba(255,255,255,0.15);"><i class="fas fa-chevron-down"></i></button>
+        <div><i class="fas fa-chart-simple"></i> <span id="miniDownCount">0</span> sitios · <span id="miniTopTipo">-</span> <span class="live-badge"><i class="fas fa-circle"></i> LIVE</span></div>
+        <button class="toggle-score-btn" id="toggleScoreBtnMini"><i class="fas fa-chevron-down"></i></button>
     </div>
 </div>
 
@@ -417,33 +468,42 @@
         </h1>
         <div style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
             <span class="info-banner" id="statusBanner"><i class="fas fa-database"></i> Conectando a AppSheet...</span>
-            <span class="info-banner"><i class="fas fa-clock"></i> Horas de afectación calculadas en tiempo real</span>
+            <span class="info-banner"><i class="fas fa-chart-line"></i> Gráfica por hora: acumulado de fallas activas en cada momento</span>
         </div>
     </div>
 
-    <!-- Tarjetas -->
     <div class="stats-grid">
-        <div class="stat-card"><div class="value" id="totalDown">0</div><div class="label">TOTAL DOWN</div></div>
+        <div class="stat-card"><div class="value" id="totalDown">0</div><div class="label">TOTAL DOWN AHORA</div></div>
         <div class="stat-card"><div class="value" id="fifaCalidadCount">0</div><div class="label"><i class="fas fa-fire"></i> FIFA CALIDAD</div></div>
         <div class="stat-card"><div class="value" id="fifaAltaCount">0</div><div class="label"><i class="fas fa-exclamation-triangle"></i> ALTA PRIORIDAD</div></div>
         <div class="stat-card"><div class="value" id="normalCount">0</div><div class="label"><i class="fas fa-chart-simple"></i> NORMAL / BAJA</div></div>
     </div>
 
-    <!-- Gráficas -->
     <div class="charts-row">
         <div class="card">
-            <div class="card-header"><h3><i class="fas fa-chart-bar"></i> Distribución por Tipo de Falla</h3></div>
-            <canvas id="tipoFallaChart" style="max-height: 250px; width:100%;"></canvas>
+            <div class="card-header">
+                <h3><i class="fas fa-chart-bar"></i> Distribución por Tipo de Falla (click para filtrar)</h3>
+                <button id="clearChartFilterBtn" class="filter-chip" style="background:#e2e8f0; color:#1e293b;">🗑️ Limpiar filtro</button>
+            </div>
+            <canvas id="tipoFallaChart" style="max-height: 250px; width:100%; cursor: pointer;"></canvas>
         </div>
         <div class="card">
-            <div class="card-header"><h3><i class="fas fa-chart-line"></i> Tendencia diaria (según INICIO DE FALLA)</h3></div>
-            <canvas id="lineaTrendChart" style="max-height: 250px; width:100%;"></canvas>
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line"></i> Acumulación de Fallas Activas 
+                    <span id="trendTotalLabel" class="total-badge">Total acumulado: 0</span>
+                    <span id="activeNowLabel" class="total-badge" style="background:#dc2626; color:white;">Activas ahora: 0</span>
+                </h3>
+                <div class="view-selector">
+                    <button id="viewHourBtn" class="view-btn active">📊 Por Hora (acumulado)</button>
+                    <button id="viewDayBtn" class="view-btn">📅 Por Día (14d)</button>
+                </div>
+            </div>
+            <canvas id="trendChart" style="max-height: 250px; width:100%;"></canvas>
         </div>
     </div>
 
-    <!-- Mapa -->
     <div class="card full-width">
-        <div class="card-header"><h3><i class="fas fa-map-marked-alt"></i> Localización de Incidentes Activos</h3></div>
+        <div class="card-header"><h3><i class="fas fa-map-marked-alt"></i> Localización de Incidentes Activos (filtrados)</h3></div>
         <div id="map"></div>
         <div class="map-legend">
             <div class="legend-item"><div class="legend-dot" style="background: #dc2626;"></div><span>FIFA CALIDAD</span></div>
@@ -453,24 +513,36 @@
         </div>
     </div>
 
-    <!-- Tabla detallada con columna Horas Afectación -->
     <div class="card full-width" style="margin-top: 6px;">
         <div class="card-header">
-            <h3><i class="fas fa-table-list"></i> Sitios con Falla Activa (DOWN) - <i class="fas fa-clock"></i> Horas de afectación</h3>
-            <input type="text" id="tablaSearch" placeholder="🔍 Buscar sitio, zona, folio...">
+            <h3><i class="fas fa-table-list"></i> Sitios con Falla Activa (DOWN) - <i class="fas fa-hourglass-half"></i> Horas de afectación (ordenable)</h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div class="filter-group">
+                    <label><i class="fas fa-filter"></i> Tipo falla:</label>
+                    <select id="tipoFallaFilterTabla">
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+                <input type="text" id="tablaSearch" placeholder="🔍 Buscar sitio, zona, folio...">
+                <button id="exportExcelBtn" class="excel-btn"><i class="fas fa-file-excel"></i> Exportar Excel</button>
+            </div>
         </div>
         <div class="table-container">
             <div class="table-wrapper">
                 <table id="downTable">
                     <thead>
-                        <tr><th>Sitio</th><th>Zona</th><th>Prioridad</th><th>Tipo de Falla</th><th><i class="fas fa-clock"></i> Inicio Falla</th><th><i class="fas fa-hourglass-half"></i> Horas Afectación</th><th>Folio</th><th>Líder</th><th>Comentario</th></tr>
+                        <tr>
+                            <th>Sitio</th><th>Zona</th><th>Prioridad</th><th>Tipo de Falla</th><th><i class="fas fa-clock"></i> Inicio Falla</th>
+                            <th id="sortHorasHeader" class="sortable"><i class="fas fa-hourglass-half"></i> Horas Afectación <span id="sortIcon" class="sort-icon">⬇️</span></th>
+                            <th>Folio</th><th>Líder</th><th>Comentario</th>
+                        </tr>
                     </thead>
                     <tbody id="tablaBody"><tr><td colspan="9" class="no-data">Cargando datos...<\/td></tr></tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="footer">⚡ Datos en tiempo real desde AppSheet · Actualización CADA 60 SEGUNDOS · Horas de afectación calculadas al momento</div>
+    <div class="footer">⚡ Datos en tiempo real · Actualización cada 60s · La vista por hora muestra el total acumulado de fallas activas en cada momento (coincide con la vista diaria) · Exporta los datos filtrados a Excel.</div>
 </div>
 
 <script>
@@ -485,60 +557,72 @@
     let downSitios = [];
     let previousDownCount = 0;
     let tipoFallaChart = null;
-    let lineaTrendChart = null;
+    let trendChart = null;
+    let currentView = "hour";
     let map = null;
     let markersLayer = null;
     let lastMapCenter = null;
     let lastMapZoom = null;
     let autoRefreshTimer = null;
 
-    // Sonido real desde freesound
+    // Control de sonido (mute)
+    let soundEnabled = true;
     const WHISTLE_SOUND_URL = "https://cdn.freesound.org/previews/90/90743_1476665-lq.mp3";
     function playWhistleSound() {
+        if (!soundEnabled) return;
         try {
             const audio = new Audio(WHISTLE_SOUND_URL);
             audio.volume = 0.7;
             audio.play().catch(e => console.warn("Audio no permitido", e));
         } catch(e) { console.warn(e); }
     }
-
     function testWhistle() {
         playWhistleSound();
         const banner = document.getElementById('statusBanner');
         if (banner) {
-            const originalText = banner.innerHTML;
-            const originalBg = banner.style.background;
-            banner.innerHTML = '<i class="fas fa-whistle"></i> ¡Silbato REAL! Sonido activado.';
+            const original = banner.innerHTML;
+            banner.innerHTML = soundEnabled ? '<i class="fas fa-whistle"></i> ¡Silbato REAL!' : '<i class="fas fa-volume-mute"></i> Sonido silenciado';
             banner.style.background = "#fed7aa";
-            setTimeout(() => {
-                if (banner) {
-                    banner.innerHTML = originalText;
-                    banner.style.background = originalBg;
-                }
-            }, 1800);
+            setTimeout(() => { if (banner) banner.innerHTML = original; }, 1800);
         }
     }
+    function toggleMute() {
+        soundEnabled = !soundEnabled;
+        const muteBtn = document.getElementById('muteSoundBtn');
+        if (muteBtn) {
+            muteBtn.innerHTML = soundEnabled ? '<i class="fas fa-volume-up"></i> Silenciar' : '<i class="fas fa-volume-mute"></i> Activar';
+            muteBtn.classList.toggle('active', !soundEnabled);
+        }
+        localStorage.setItem('whistleMuted', (!soundEnabled).toString());
+    }
 
-    // ========== CONVERSIÓN DE FECHA (número de serie Excel) ==========
+    // Cargar preferencia de mute
+    const savedMute = localStorage.getItem('whistleMuted');
+    if (savedMute === 'true') { soundEnabled = false; }
+    window.addEventListener('DOMContentLoaded', () => {
+        const muteBtn = document.getElementById('muteSoundBtn');
+        if (muteBtn) {
+            muteBtn.innerHTML = soundEnabled ? '<i class="fas fa-volume-up"></i> Silenciar' : '<i class="fas fa-volume-mute"></i> Activar';
+            muteBtn.classList.toggle('active', !soundEnabled);
+        }
+    });
+
+    // Conversión de fecha (número de serie Excel)
     function excelSerialToDate(serial) {
         if (typeof serial === 'number') {
             const excelEpoch = new Date(1899, 11, 30);
             const days = Math.floor(serial);
             const fraction = serial - days;
             const date = new Date(excelEpoch.getTime() + days * 86400000);
-            const secondsInDay = fraction * 86400;
-            date.setSeconds(date.getSeconds() + secondsInDay);
+            date.setSeconds(date.getSeconds() + fraction * 86400);
             return date;
         }
         return null;
     }
-
     function parseFechaSafe(val) {
         if (!val || val === "-" || val === "" || val === "undefined" || val === "null") return null;
         const asNumber = parseFloat(val);
-        if (!isNaN(asNumber) && isFinite(asNumber) && asNumber > 40000) {
-            return excelSerialToDate(asNumber);
-        }
+        if (!isNaN(asNumber) && isFinite(asNumber) && asNumber > 40000) return excelSerialToDate(asNumber);
         const appMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}):(\d{2}))?/);
         if (appMatch) {
             let [, mm, dd, yyyy, hh = '0', min = '0', ss = '0'] = appMatch;
@@ -547,29 +631,37 @@
         let d = new Date(val);
         return isNaN(d.getTime()) ? null : d;
     }
-
-    function fechaISO(val) { let d = parseFechaSafe(val); return d ? d.toISOString().split('T')[0] : null; }
     function formatLocal(val) {
         let d = parseFechaSafe(val);
-        if (!d) return "-";
-        return d.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return d ? d.toLocaleString('es-MX', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : "-";
     }
-
-    // Calcular horas de afectación (horas y minutos)
+    
     function getHorasAfectacion(fechaInicioRaw) {
         const fechaInicio = parseFechaSafe(fechaInicioRaw);
         if (!fechaInicio) return "-";
         const ahora = new Date();
         const diffMs = ahora - fechaInicio;
         if (diffMs < 0) return "0m";
-        const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const diffHoras = Math.floor(diffMs / (1000*3600));
+        const diffMinutos = Math.floor((diffMs % (1000*3600)) / (1000*60));
         if (diffHoras >= 24) {
             const dias = Math.floor(diffHoras / 24);
             const horasRest = diffHoras % 24;
             return `${dias}d ${horasRest}h`;
         }
         return `${diffHoras}h ${diffMinutos}m`;
+    }
+
+    function horasAfectacionToMinutes(horasStr) {
+        if (!horasStr || horasStr === "-") return -1;
+        let total = 0;
+        const daysMatch = horasStr.match(/(\d+)d/);
+        const hoursMatch = horasStr.match(/(\d+)h/);
+        const minutesMatch = horasStr.match(/(\d+)m/);
+        if (daysMatch) total += parseInt(daysMatch[1]) * 1440;
+        if (hoursMatch) total += parseInt(hoursMatch[1]) * 60;
+        if (minutesMatch) total += parseInt(minutesMatch[1]);
+        return total;
     }
 
     function getTipoSymbol(tipoRaw) {
@@ -586,89 +678,339 @@
         if (tipo === "" || tipo === "-" || tipo === "null" || tipo === "undefined") return "Sin clasificar";
         return tipo;
     }
-    function escapeHtml(str) { if (!str) return ""; return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m]); }
-
+    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' })[m]); }
     function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
 
-    function updateTitleAndBadge() {
-        let total = downSitios.length;
-        document.title = total > 0 ? `(${total}) Fast Track | FIFA 2026` : `Fast Track | FIFA 2026`;
-        safeSetText('liveCounterBadge', total);
-        safeSetText('miniDownCount', total);
+    // ========== FILTRADO Y ORDENAMIENTO ==========
+    let currentTipoFilter = "todos";
+    let sortOrder = "desc";
+    function getFilteredDownSitiosByType() {
+        if (currentTipoFilter === "todos") return downSitios;
+        return downSitios.filter(s => getTipoNormalizado(s.tipoFalla) === currentTipoFilter);
     }
-    function updateLastUpdateTime() {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        safeSetText('lastUpdateTime', timeStr);
-    }
-    function updateGameScore() {
-        let total = downSitios.length;
-        safeSetText('gameTotalDown', total);
-        let tipoMap = new Map();
-        downSitios.forEach(s => {
-            let tipo = getTipoNormalizado(s.tipoFalla);
-            tipoMap.set(tipo, (tipoMap.get(tipo) || 0) + 1);
-        });
-        let sortedTipos = Array.from(tipoMap.entries()).sort((a, b) => b[1] - a[1]);
-        const tipoNames = ['tipo1_nombre', 'tipo2_nombre', 'tipo3_nombre'];
-        const tipoCounts = ['tipo1_cnt', 'tipo2_cnt', 'tipo3_cnt'];
-        for (let i = 0; i < 3; i++) {
-            if (sortedTipos[i]) {
-                safeSetText(tipoNames[i], sortedTipos[i][0]);
-                safeSetText(tipoCounts[i], sortedTipos[i][1]);
-            } else {
-                safeSetText(tipoNames[i], "-");
-                safeSetText(tipoCounts[i], "0");
-            }
+    function getFilteredDownSitios() {
+        const search = (document.getElementById('tablaSearch')?.value || "").toLowerCase();
+        let filtered = downSitios;
+        if (currentTipoFilter !== "todos") {
+            filtered = filtered.filter(s => getTipoNormalizado(s.tipoFalla) === currentTipoFilter);
         }
-        const miniTop = document.getElementById('miniTopTipo');
-        if (miniTop) miniTop.innerText = sortedTipos[0]?.[0] || "-";
-        
-        let leaderMap = new Map();
-        downSitios.forEach(s => {
-            let lider = (s.jefe && s.jefe !== "No asignado" && s.jefe !== "") ? s.jefe : "Sin líder";
-            leaderMap.set(lider, (leaderMap.get(lider) || 0) + 1);
+        if (search) {
+            filtered = filtered.filter(s => s.nombre.toLowerCase().includes(search) || s.zona.toLowerCase().includes(search) || (s.folio && s.folio.toLowerCase().includes(search)));
+        }
+        filtered = [...filtered];
+        filtered.sort((a,b) => {
+            const aMin = horasAfectacionToMinutes(getHorasAfectacion(a.inicioFallaRaw));
+            const bMin = horasAfectacionToMinutes(getHorasAfectacion(b.inicioFallaRaw));
+            if (aMin === -1 && bMin === -1) return 0;
+            if (aMin === -1) return 1;
+            if (bMin === -1) return -1;
+            return sortOrder === "asc" ? aMin - bMin : bMin - aMin;
         });
-        let sortedLeaders = Array.from(leaderMap.entries()).sort((a, b) => b[1] - a[1]);
-        let topLeader = sortedLeaders[0] || ["---", 0];
-        let secondLeader = sortedLeaders[1] || ["---", 0];
-        safeSetText('topLeaderName', topLeader[0]);
-        safeSetText('topLeaderCount', topLeader[1]);
-        safeSetText('secondLeaderName', secondLeader[0]);
-        safeSetText('secondLeaderCount', secondLeader[1]);
+        return filtered;
+    }
+    function updateFilteredDisplay() { renderTable(); updateMapMarkers(); }
+    function setTipoFilter(tipo) {
+        currentTipoFilter = tipo;
+        const select = document.getElementById('tipoFallaFilterTabla');
+        if (select) select.value = tipo;
+        updateFilteredDisplay();
+        updateTrendChart();
+    }
+    function clearFilters() {
+        setTipoFilter("todos");
+        const searchInput = document.getElementById('tablaSearch');
+        if (searchInput) searchInput.value = "";
+        updateFilteredDisplay();
+    }
+    function toggleSortOrder() {
+        sortOrder = sortOrder === "asc" ? "desc" : "asc";
+        const icon = document.getElementById('sortIcon');
+        if (icon) icon.innerHTML = sortOrder === "asc" ? "⬆️" : "⬇️";
+        updateFilteredDisplay();
     }
 
-    function initToggleScore() {
-        const sticky = document.getElementById('gameScoreSticky');
-        const toggleUp = document.getElementById('toggleScoreBtn');
-        const toggleDown = document.getElementById('toggleScoreBtnMini');
-        const isCollapsed = localStorage.getItem('gameScoreCollapsed') === 'true';
-        if (sticky && isCollapsed) sticky.classList.add('collapsed');
-        function setCollapsed(state) {
-            if (sticky) {
-                if (state) {
-                    sticky.classList.add('collapsed');
-                    localStorage.setItem('gameScoreCollapsed', 'true');
-                } else {
-                    sticky.classList.remove('collapsed');
-                    localStorage.setItem('gameScoreCollapsed', 'false');
+    // ========== GRÁFICA DE TENDENCIA (ACUMULADA) ==========
+    function updateTrendChart() {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        const filteredSites = getFilteredDownSitiosByType();
+        let totalActiveNow = filteredSites.length;
+        
+        if (currentView === "hour") {
+            // Obtener timestamps de inicio de falla (en milisegundos)
+            const now = new Date().getTime();
+            const startTimes = filteredSites.map(s => {
+                const d = parseFechaSafe(s.inicioFallaRaw);
+                return d ? d.getTime() : null;
+            }).filter(t => t !== null);
+            if (startTimes.length === 0) {
+                // No hay fallas activas
+                if (trendChart) {
+                    trendChart.data.labels = ["Ahora"];
+                    trendChart.data.datasets[0].data = [0];
+                    trendChart.update();
+                }
+                document.getElementById('trendTotalLabel').innerHTML = `Total acumulado: 0`;
+                return;
+            }
+            const minTime = Math.min(...startTimes);
+            const maxHours = Math.ceil((now - minTime) / (3600000));
+            const maxBuckets = Math.min(maxHours, 72); // máximo 72 horas para no saturar
+            // Para cada hora desde la más antigua hasta ahora, calcular cuántas fallas empezaron en o antes de ese momento
+            const cumulative = [];
+            const labels = [];
+            for (let i = maxBuckets-1; i >= 0; i--) {
+                const boundaryTime = now - i * 3600000;
+                const count = startTimes.filter(t => t <= boundaryTime).length;
+                cumulative.push(count);
+                if (i === 0) labels.push("Ahora");
+                else if (i < 24) labels.push(`-${i}h`);
+                else {
+                    const dias = Math.floor(i / 24);
+                    const horas = i % 24;
+                    if (horas === 0) labels.push(`-${dias}d`);
+                    else labels.push(`-${dias}d ${horas}h`);
                 }
             }
+            const finalCumulative = cumulative[cumulative.length-1];
+            document.getElementById('trendTotalLabel').innerHTML = `Total acumulado: ${finalCumulative}`;
+            if (trendChart) {
+                trendChart.data.labels = labels;
+                trendChart.data.datasets[0].data = cumulative;
+                trendChart.options.scales.x.title.text = "Horas previas";
+                trendChart.update();
+            } else {
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Total acumulado de fallas activas', data: cumulative, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.05)', borderWidth: 2.5, pointBackgroundColor: '#b91c1c', pointRadius: 3, fill: true, tension: 0.3 }] },
+                    options: {
+                        responsive: true, animation: { duration: 400 },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, title: { display: true, text: 'Cantidad acumulada' } },
+                            x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 12 }, title: { display: true, text: 'Horas previas' } }
+                        },
+                        plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw} falla(s) activa(s) acumuladas hasta este momento` } } }
+                    }
+                });
+            }
+        } else {
+            // Vista por día: últimos 14 días (acumulado diario)
+            const daily = new Map();
+            filteredSites.forEach(s => {
+                if (!s.inicioFallaRaw) return;
+                const fecha = parseFechaSafe(s.inicioFallaRaw);
+                if (fecha) {
+                    const iso = fecha.toISOString().split('T')[0];
+                    daily.set(iso, (daily.get(iso) || 0) + 1);
+                }
+            });
+            const hoy = new Date();
+            const dailyCounts = [];
+            const dayLabels = [];
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date(hoy);
+                d.setDate(hoy.getDate() - i);
+                const iso = d.toISOString().split('T')[0];
+                dayLabels.push(d.toLocaleDateString('es-MX', { day:'numeric', month:'short' }));
+                dailyCounts.push(daily.get(iso) || 0);
+            }
+            let acum = 0;
+            const cumulative = [];
+            for (let i = 0; i < dailyCounts.length; i++) {
+                acum += dailyCounts[i];
+                cumulative.push(acum);
+            }
+            document.getElementById('trendTotalLabel').innerHTML = `Total acumulado: ${acum}`;
+            if (trendChart) {
+                trendChart.data.labels = dayLabels;
+                trendChart.data.datasets[0].data = cumulative;
+                trendChart.options.scales.x.title.text = "Día";
+                trendChart.update();
+            } else {
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: dayLabels, datasets: [{ label: 'Total acumulado de fallas activas', data: cumulative, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.05)', borderWidth: 2.5, pointBackgroundColor: '#b91c1c', pointRadius: 3, fill: true, tension: 0.3 }] },
+                    options: {
+                        responsive: true, animation: { duration: 400 },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, title: { display: true, text: 'Cantidad acumulada' } },
+                            x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 10 }, title: { display: true, text: 'Día' } }
+                        },
+                        plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw} falla(s) activa(s) acumuladas hasta este día` } } }
+                    }
+                });
+            }
         }
-        if (toggleUp) toggleUp.addEventListener('click', () => setCollapsed(true));
-        if (toggleDown) toggleDown.addEventListener('click', () => setCollapsed(false));
+        const activeLabel = document.getElementById('activeNowLabel');
+        if (activeLabel) activeLabel.innerHTML = `Activas ahora: ${totalActiveNow}`;
     }
 
+    function setView(view) {
+        currentView = view;
+        document.getElementById('viewHourBtn').classList.toggle('active', view === 'hour');
+        document.getElementById('viewDayBtn').classList.toggle('active', view === 'day');
+        updateTrendChart();
+    }
+
+    // ========== GRÁFICA DE TIPO DE FALLA ==========
+    function updateTipoFallaChart() {
+        const ctx = document.getElementById('tipoFallaChart').getContext('2d');
+        let tipoCount = new Map();
+        downSitios.forEach(s => {
+            let tipo = getTipoNormalizado(s.tipoFalla);
+            tipoCount.set(tipo, (tipoCount.get(tipo) || 0) + 1);
+        });
+        let labels = Array.from(tipoCount.keys());
+        let values = Array.from(tipoCount.values());
+        if (labels.length === 0) { labels = ["Sin datos"]; values = [0]; }
+        const palette = ['#dc2626','#ea580c','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec489a','#06b6d4','#84cc16','#a855f7'];
+        let bgColors = labels.map((_,i) => palette[i % palette.length]);
+        if (tipoFallaChart) {
+            tipoFallaChart.data.labels = labels;
+            tipoFallaChart.data.datasets[0].data = values;
+            tipoFallaChart.data.datasets[0].backgroundColor = bgColors;
+            tipoFallaChart.update();
+        } else {
+            tipoFallaChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Cantidad', data: values, backgroundColor: bgColors, borderRadius: 8, barPercentage: 0.7 }] },
+                options: {
+                    responsive: true, animation: { duration: 400 },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw} sitio(s)` } } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { maxRotation: 35 } } },
+                    onClick: (event, activeEls) => {
+                        if (activeEls.length) {
+                            const tipo = labels[activeEls[0].index];
+                            setTipoFilter(tipo);
+                            const banner = document.getElementById('statusBanner');
+                            if (banner) {
+                                banner.innerHTML = `<i class="fas fa-filter"></i> Filtrado por: ${tipo}`;
+                                banner.style.background = "#fed7aa";
+                                setTimeout(() => { if (banner && banner.innerText.includes("Filtrado")) banner.innerHTML = '<i class="fas fa-database"></i> Conectado · Auto-refresh 60s'; }, 2000);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // ========== TABLA ==========
+    function renderTable() {
+        const filtered = getFilteredDownSitios();
+        const tbody = document.getElementById('tablaBody');
+        if (!tbody) return;
+        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="no-data">📭 No hay sitios DOWN con estos filtros<\/td></td>'; return; }
+        tbody.innerHTML = filtered.map(s => {
+            let badgeStyle = s.prioridadRaw === "FIFA CALIDAD" ? "background:#fee2e2; color:#b91c1c;" : (s.prioridadRaw === "FIFA ALTA PRIORIDAD" ? "background:#ffedea; color:#c2410c;" : "background:#fef9e3; color:#b45309;");
+            let fechaInicio = s.inicioFallaRaw ? formatLocal(s.inicioFallaRaw) : "-";
+            let horasAfectacion = s.inicioFallaRaw ? getHorasAfectacion(s.inicioFallaRaw) : "-";
+            return `<tr>
+                <td><strong>${escapeHtml(s.nombre)}</strong></td>
+                <td>${escapeHtml(s.zona)}</span></td>
+                <td><span class="prioridad-badge" style="${badgeStyle}">${s.prioridadDisplay}</span></td>
+                <td>${escapeHtml(getTipoNormalizado(s.tipoFalla))}</span></td>
+                <td style="font-size:0.68rem;">${fechaInicio}</span></td>
+                <td><span class="horas-afectacion">${horasAfectacion}</span></span></td>
+                <td>${escapeHtml(s.folio || "-")}</span></td>
+                <td>${escapeHtml(s.jefe || "-")}</span></td>
+                <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(s.comentario)}">${escapeHtml(s.comentario || "-")}</span></td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Exportar a Excel (CSV)
+    function exportToExcel() {
+        const filtered = getFilteredDownSitios();
+        if (filtered.length === 0) {
+            alert("No hay datos para exportar.");
+            return;
+        }
+        // Cabeceras
+        const headers = ["Sitio", "Zona", "Prioridad", "Tipo de Falla", "Inicio Falla", "Horas Afectación", "Folio", "Líder", "Comentario"];
+        const rows = filtered.map(s => [
+            s.nombre,
+            s.zona,
+            s.prioridadDisplay,
+            getTipoNormalizado(s.tipoFalla),
+            s.inicioFallaRaw ? formatLocal(s.inicioFallaRaw) : "-",
+            s.inicioFallaRaw ? getHorasAfectacion(s.inicioFallaRaw) : "-",
+            s.folio || "-",
+            s.jefe || "-",
+            s.comentario || "-"
+        ]);
+        const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute("download", "fallas_activas.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // ========== MAPA ==========
+    function updateMapMarkers() {
+        if (!markersLayer) return;
+        markersLayer.clearLayers();
+        const filteredSitios = getFilteredDownSitiosByType();
+        const withCoords = filteredSitios.filter(s => s.latitud && s.longitud && !isNaN(s.latitud));
+        withCoords.forEach(site => {
+            const bgColor = site.prioridadColor;
+            const symbol = getTipoSymbol(site.tipoFalla);
+            const html = `<div style="background-color:${bgColor}; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:9px; color:white; border:1.5px solid white; font-family:monospace;">${symbol}</div>`;
+            const icon = L.divIcon({ html: html, iconSize: [16,16], className: 'custom-marker', popupAnchor: [0,-8] });
+            const marker = L.marker([site.latitud, site.longitud], { icon }).addTo(markersLayer);
+            let horasAfectacion = site.inicioFallaRaw ? getHorasAfectacion(site.inicioFallaRaw) : "-";
+            const popupHtml = `<div style="font-size:0.7rem; min-width:220px;">
+                <div style="font-weight:800; border-bottom:1px solid #ccc; margin-bottom:6px;">🏢 ${escapeHtml(site.nombre)}</div>
+                <div><i class="fas fa-location-dot"></i> <strong>Zona:</strong> ${escapeHtml(site.zona)}</div>
+                <div><i class="fas fa-user-tie"></i> <strong>Líder:</strong> ${escapeHtml(site.jefe || "No asignado")}</div>
+                <div><i class="fas fa-flag-checkered"></i> <strong>Prioridad:</strong> <span style="color:${site.prioridadColor}">${site.prioridadDisplay}</span></div>
+                <div><i class="fas fa-bug"></i> <strong>Tipo falla:</strong> ${escapeHtml(getTipoNormalizado(site.tipoFalla))}</div>
+                <div><i class="fas fa-clock"></i> <strong>Inicio falla:</strong> ${site.inicioFallaRaw ? formatLocal(site.inicioFallaRaw) : "-"}</div>
+                <div><i class="fas fa-hourglass-half"></i> <strong>Horas afectación:</strong> ${horasAfectacion}</div>
+                <div><i class="fas fa-hashtag"></i> <strong>Folio:</strong> ${escapeHtml(site.folio || "-")}</div>
+                <div><i class="fas fa-comment"></i> <strong>Comentario:</strong> ${escapeHtml(site.comentario || "-")}</div>
+            </div>`;
+            marker.bindPopup(popupHtml);
+        });
+        if (lastMapCenter && lastMapZoom && !isNaN(lastMapZoom)) map.setView(lastMapCenter, lastMapZoom, { animate: false });
+        else if (withCoords.length > 0 && markersLayer.getLayers().length) {
+            const group = L.featureGroup(markersLayer.getLayers());
+            map.fitBounds(group.getBounds().pad(0.1));
+            lastMapCenter = map.getCenter(); lastMapZoom = map.getZoom();
+        }
+    }
+
+    function initMap() {
+        map = L.map('map').setView([25.6866, -100.3161], 11.2);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 18 }).addTo(map);
+        map.on('moveend', () => { if (map) { lastMapCenter = map.getCenter(); lastMapZoom = map.getZoom(); } });
+        markersLayer = L.layerGroup().addTo(map);
+        updateMapMarkers();
+    }
+
+    function updateTipoFallaFilterOptions() {
+        const select = document.getElementById('tipoFallaFilterTabla');
+        if (!select) return;
+        const tiposSet = new Set();
+        downSitios.forEach(s => tiposSet.add(getTipoNormalizado(s.tipoFalla)));
+        const tiposArray = Array.from(tiposSet).sort();
+        select.innerHTML = '<option value="todos">📋 Todos</option>';
+        tiposArray.forEach(tipo => { select.innerHTML += `<option value="${escapeHtml(tipo)}">${escapeHtml(tipo)}</option>`; });
+        select.value = currentTipoFilter;
+    }
+
+    // ========== CARGA DE DATOS ==========
     async function fetchSitios(showMessage = false) {
         const refreshIcon = document.getElementById('refreshIcon');
         if (refreshIcon) refreshIcon.classList.add('fa-spin');
         try {
             if (showMessage) {
                 const banner = document.getElementById('statusBanner');
-                if (banner) {
-                    banner.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Conectando a AppSheet...';
-                    banner.style.background = "#fff0db";
-                }
+                if (banner) { banner.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Conectando a AppSheet...'; banner.style.background = "#fff0db"; }
             }
             const response = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
                 method: 'POST',
@@ -707,29 +1049,24 @@
             
             updateStatsCards();
             updateTipoFallaChart();
-            updateLineChart();
+            updateTrendChart();
             updateGameScore();
-            renderTable();
-            updateMapMarkers();
+            updateTipoFallaFilterOptions();
+            updateFilteredDisplay();
             updateTitleAndBadge();
             updateLastUpdateTime();
             if (showMessage) {
                 const banner = document.getElementById('statusBanner');
                 if (banner) {
-                    banner.innerHTML = `<i class="fas fa-check-circle"></i> ${new Date().toLocaleTimeString()} · ${downSitios.length} afectados · Horas de afectación actualizadas`;
+                    banner.innerHTML = `<i class="fas fa-check-circle"></i> ${new Date().toLocaleTimeString()} · ${downSitios.length} activas ahora · Acumulado: ${document.getElementById('trendTotalLabel').innerText}`;
                     banner.style.background = "#e8f3e8";
-                    setTimeout(() => {
-                        if (banner && banner.innerText.includes("✓")) banner.innerHTML = '<i class="fas fa-database"></i> Conectado · Auto-refresh 60s';
-                    }, 3000);
+                    setTimeout(() => { if (banner && banner.innerText.includes("✓")) banner.innerHTML = '<i class="fas fa-database"></i> Conectado · Auto-refresh 60s'; }, 3000);
                 }
             }
         } catch (error) {
             console.error(error);
             const banner = document.getElementById('statusBanner');
-            if (banner) {
-                banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}. Reintentando en 60s...`;
-                banner.style.background = "#fee9e6";
-            }
+            if (banner) { banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}. Reintentando en 60s...`; banner.style.background = "#fee9e6"; }
         } finally {
             if (refreshIcon) refreshIcon.classList.remove('fa-spin');
         }
@@ -740,86 +1077,81 @@
         safeSetText('totalDown', total); safeSetText('fifaCalidadCount', calidad);
         safeSetText('fifaAltaCount', alta); safeSetText('normalCount', normal);
     }
-    function updateTipoFallaChart() {
-        const ctx = document.getElementById('tipoFallaChart');
-        if (!ctx) return;
-        const context = ctx.getContext('2d');
-        let tipoCount = new Map();
-        downSitios.forEach(s => { let tipo = getTipoNormalizado(s.tipoFalla); tipoCount.set(tipo, (tipoCount.get(tipo) || 0) + 1); });
-        let labels = Array.from(tipoCount.keys()), values = Array.from(tipoCount.values());
-        if (labels.length === 0) { labels = ["Sin datos"]; values = [0]; }
-        const palette = ['#dc2626', '#ea580c', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec489a', '#06b6d4', '#84cc16', '#a855f7'];
-        let bgColors = labels.map((_, idx) => palette[idx % palette.length]);
-        if (tipoFallaChart) {
-            tipoFallaChart.data.labels = labels;
-            tipoFallaChart.data.datasets[0].data = values;
-            tipoFallaChart.data.datasets[0].backgroundColor = bgColors;
-            tipoFallaChart.update();
-        } else {
-            tipoFallaChart = new Chart(context, { type: 'bar', data: { labels, datasets: [{ label: 'Cantidad', data: values, backgroundColor: bgColors, borderRadius: 8, barPercentage: 0.7 }] }, options: { responsive: true, animation: { duration: 400 }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { maxRotation: 35 } } } } });
-        }
+    function updateTitleAndBadge() {
+        let total = downSitios.length;
+        document.title = total > 0 ? `(${total}) Fast Track | FIFA 2026` : `Fast Track | FIFA 2026`;
+        safeSetText('liveCounterBadge', total);
+        safeSetText('miniDownCount', total);
     }
-    function updateLineChart() {
-        const ctx = document.getElementById('lineaTrendChart');
-        if (!ctx) return;
-        const context = ctx.getContext('2d');
-        let daily = new Map();
-        downSitios.forEach(s => {
-            if (s.inicioFallaRaw) {
-                let fecha = parseFechaSafe(s.inicioFallaRaw);
-                if (fecha) {
-                    let iso = fecha.toISOString().split('T')[0];
-                    daily.set(iso, (daily.get(iso) || 0) + 1);
-                }
+    function updateLastUpdateTime() {
+        safeSetText('lastUpdateTime', new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
+    }
+    function updateGameScore() {
+        let total = downSitios.length;
+        safeSetText('gameTotalDown', total);
+        let tipoMap = new Map();
+        downSitios.forEach(s => { let tipo = getTipoNormalizado(s.tipoFalla); tipoMap.set(tipo, (tipoMap.get(tipo)||0)+1); });
+        let sortedTipos = Array.from(tipoMap.entries()).sort((a,b)=>b[1]-a[1]);
+        for (let i=0; i<3; i++) {
+            if (sortedTipos[i]) {
+                safeSetText(`tipo${i+1}_nombre`, sortedTipos[i][0]);
+                safeSetText(`tipo${i+1}_cnt`, sortedTipos[i][1]);
+            } else {
+                safeSetText(`tipo${i+1}_nombre`, "-");
+                safeSetText(`tipo${i+1}_cnt`, "0");
             }
-        });
-        let hoy = new Date();
-        let labels = [], dataPoints = [];
-        for (let i = 13; i >= 0; i--) {
-            let d = new Date(hoy);
-            d.setDate(hoy.getDate() - i);
-            labels.push(d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }));
-            dataPoints.push(daily.get(d.toISOString().split('T')[0]) || 0);
         }
-        if (lineaTrendChart) {
-            lineaTrendChart.data.labels = labels;
-            lineaTrendChart.data.datasets[0].data = dataPoints;
-            lineaTrendChart.update();
-        } else {
-            lineaTrendChart = new Chart(context, { type: 'line', data: { labels, datasets: [{ label: 'Sitios afectados (por inicio de falla)', data: dataPoints, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.05)', borderWidth: 2, pointBackgroundColor: '#b91c1c', pointRadius: 3, fill: true, tension: 0.3 }] }, options: { responsive: true, animation: { duration: 400 }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
-        }
+        const miniTop = document.getElementById('miniTopTipo');
+        if (miniTop) miniTop.innerText = sortedTipos[0]?.[0] || "-";
+        let leaderMap = new Map();
+        downSitios.forEach(s => { let lider = (s.jefe && s.jefe !== "No asignado" && s.jefe !== "") ? s.jefe : "Sin líder"; leaderMap.set(lider, (leaderMap.get(lider)||0)+1); });
+        let sortedLeaders = Array.from(leaderMap.entries()).sort((a,b)=>b[1]-a[1]);
+        let topLeader = sortedLeaders[0] || ["---",0];
+        let secondLeader = sortedLeaders[1] || ["---",0];
+        safeSetText('topLeaderName', topLeader[0]);
+        safeSetText('topLeaderCount', topLeader[1]);
+        safeSetText('secondLeaderName', secondLeader[0]);
+        safeSetText('secondLeaderCount', secondLeader[1]);
     }
-    function renderTable() {
-        let search = (document.getElementById('tablaSearch')?.value || "").toLowerCase();
-        let filtered = downSitios.filter(s => s.nombre.toLowerCase().includes(search) || s.zona.toLowerCase().includes(search) || (s.folio && s.folio.toLowerCase().includes(search)) || (s.tipoFalla && s.tipoFalla.toLowerCase().includes(search)));
-        let tbody = document.getElementById('tablaBody');
-        if (!tbody) return;
-        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="no-data">📭 No hay sitios DOWN coincidentes<\/td></tr>'; return; }
-        tbody.innerHTML = filtered.map(s => {
-            let badgeStyle = s.prioridadRaw === "FIFA CALIDAD" ? "background:#fee2e2; color:#b91c1c;" : (s.prioridadRaw === "FIFA ALTA PRIORIDAD" ? "background:#ffedea; color:#c2410c;" : "background:#fef9e3; color:#b45309;");
-            let fechaInicio = s.inicioFallaRaw ? formatLocal(s.inicioFallaRaw) : "-";
-            let horasAfectacion = s.inicioFallaRaw ? getHorasAfectacion(s.inicioFallaRaw) : "-";
-            return `<tr>
-                <td><strong>${escapeHtml(s.nombre)}</strong></td>
-                <td>${escapeHtml(s.zona)}</td>
-                <td><span class="prioridad-badge" style="${badgeStyle}">${s.prioridadDisplay}</span></td>
-                <td>${escapeHtml(getTipoNormalizado(s.tipoFalla))}</td>
-                <td style="font-size:0.68rem;">${fechaInicio}</td>
-                <td><span class="horas-afectacion">${horasAfectacion}</span></td>
-                <td>${escapeHtml(s.folio || "-")}</td>
-                <td>${escapeHtml(s.jefe || "-")}</td>
-                <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(s.comentario)}">${escapeHtml(s.comentario || "-")}</td>
-            </tr>`;
-        }).join('');
-    }
-    function initMap() { map = L.map('map').setView([25.6866, -100.3161], 11.2); L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 18 }).addTo(map); map.on('moveend', () => { if (map) { lastMapCenter = map.getCenter(); lastMapZoom = map.getZoom(); } }); markersLayer = L.layerGroup().addTo(map); updateMapMarkers(); }
-    function updateMapMarkers() { if (!markersLayer) return; markersLayer.clearLayers(); let withCoords = downSitios.filter(s => s.latitud && s.longitud && !isNaN(s.latitud)); withCoords.forEach(site => { const bgColor = site.prioridadColor; const symbol = getTipoSymbol(site.tipoFalla); const html = `<div style="background-color:${bgColor}; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:9px; color:white; border:1.5px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3); font-family:monospace;">${symbol}</div>`; const icon = L.divIcon({ html: html, iconSize: [16, 16], className: 'custom-marker-16', popupAnchor: [0, -8] }); const marker = L.marker([site.latitud, site.longitud], { icon: icon }).addTo(markersLayer); let horasAfectacion = site.inicioFallaRaw ? getHorasAfectacion(site.inicioFallaRaw) : "-"; const popupHtml = `<div style="font-size:0.7rem; min-width:220px;"><div style="font-weight:800; border-bottom:1px solid #ccc; margin-bottom:6px;">🏢 ${escapeHtml(site.nombre)}</div><div><i class="fas fa-location-dot"></i> <strong>Zona:</strong> ${escapeHtml(site.zona)}</div><div><i class="fas fa-user-tie"></i> <strong>Líder:</strong> ${escapeHtml(site.jefe || "No asignado")}</div><div><i class="fas fa-flag-checkered"></i> <strong>Prioridad:</strong> <span style="color:${site.prioridadColor}">${site.prioridadDisplay}</span></div><div><i class="fas fa-bug"></i> <strong>Tipo falla:</strong> ${escapeHtml(getTipoNormalizado(site.tipoFalla))}</div><div><i class="fas fa-clock"></i> <strong>Inicio falla:</strong> ${site.inicioFallaRaw ? formatLocal(site.inicioFallaRaw) : "-"}</div><div><i class="fas fa-hourglass-half"></i> <strong>Horas afectación:</strong> ${horasAfectacion}</div><div><i class="fas fa-hashtag"></i> <strong>Folio:</strong> ${escapeHtml(site.folio || "-")}</div><div><i class="fas fa-comment"></i> <strong>Comentario:</strong> ${escapeHtml(site.comentario || "-")}</div></div>`; marker.bindPopup(popupHtml); }); if (lastMapCenter && lastMapZoom && !isNaN(lastMapZoom)) map.setView(lastMapCenter, lastMapZoom, { animate: false }); else if (withCoords.length > 0 && markersLayer.getLayers().length > 0) { let group = L.featureGroup(markersLayer.getLayers()); map.fitBounds(group.getBounds().pad(0.1)); lastMapCenter = map.getCenter(); lastMapZoom = map.getZoom(); } }
-    function startAutoRefresh() { if (autoRefreshTimer) clearInterval(autoRefreshTimer); autoRefreshTimer = setInterval(() => { fetchSitios(false); }, 60000); }
 
-    document.getElementById('tablaSearch')?.addEventListener('input', renderTable);
+    function initToggleScore() {
+        const sticky = document.getElementById('gameScoreSticky');
+        const up = document.getElementById('toggleScoreBtn');
+        const down = document.getElementById('toggleScoreBtnMini');
+        const collapsed = localStorage.getItem('gameScoreCollapsed') === 'true';
+        if (sticky && collapsed) sticky.classList.add('collapsed');
+        function setCollapsed(state) {
+            if (sticky) {
+                if (state) sticky.classList.add('collapsed');
+                else sticky.classList.remove('collapsed');
+                localStorage.setItem('gameScoreCollapsed', state);
+            }
+        }
+        if (up) up.addEventListener('click', () => setCollapsed(true));
+        if (down) down.addEventListener('click', () => setCollapsed(false));
+    }
+
+    function startAutoRefresh() {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        autoRefreshTimer = setInterval(() => fetchSitios(false), 60000);
+    }
+
+    document.getElementById('tablaSearch')?.addEventListener('input', () => updateFilteredDisplay());
+    document.getElementById('tipoFallaFilterTabla')?.addEventListener('change', (e) => setTipoFilter(e.target.value));
     document.getElementById('refreshBtnSticky')?.addEventListener('click', () => fetchSitios(true));
     document.getElementById('testWhistleBtn')?.addEventListener('click', testWhistle);
-    initToggleScore(); initMap(); fetchSitios(true); startAutoRefresh();
+    document.getElementById('muteSoundBtn')?.addEventListener('click', toggleMute);
+    document.getElementById('clearChartFilterBtn')?.addEventListener('click', clearFilters);
+    document.getElementById('viewHourBtn')?.addEventListener('click', () => setView('hour'));
+    document.getElementById('viewDayBtn')?.addEventListener('click', () => setView('day'));
+    document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
+    const sortHeader = document.getElementById('sortHorasHeader');
+    if (sortHeader) sortHeader.addEventListener('click', toggleSortOrder);
+
+    initToggleScore();
+    initMap();
+    fetchSitios(true);
+    startAutoRefresh();
 </script>
 </body>
 </html>
