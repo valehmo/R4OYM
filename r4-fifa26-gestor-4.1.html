@@ -699,7 +699,7 @@
 
             <!-- Header -->
             <div id="bbvaInfoBanner" class="info-banner">
-                🏟️ Estadio BBVA Monterrey · Infraestructura FIFA 2026 · 22 Nodos Monitoreados
+                🏟️ Estadio BBVA Monterrey · FIFA 2026 · <span id="bbvaSyncTime" style="font-size:0.8rem;">22 nodos · sincronizando...</span>
             </div>
 
             <!-- Stats cards -->
@@ -756,24 +756,8 @@
             <div class="table-container">
                 <div class="table-header">
                     <h4>📡 Nodos BBVA Estadio MTY — FIFA 2026</h4>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <input type="text" id="bbvaSearch" placeholder="🔍 Buscar nodo, área, TX..." style="padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.75rem;width:190px;">
-                        <select id="bbvaLiderFilter" style="padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.75rem;min-width:130px;">
-                            <option value="">👤 Todos los líderes</option>
-                        <option value="Charly">Charly</option>
-                        <option value="Edgar Gzz">Edgar Gzz</option>
-                        <option value="Edgar M">Edgar M</option>
-                        <option value="Edgardo">Edgardo</option>
-                        <option value="Emmanuel">Emmanuel</option>
-                        <option value="Fernando">Fernando</option>
-                        <option value="Gonzalo">Gonzalo</option>
-                        <option value="Ivan">Ivan</option>
-                        <option value="JC Ley">JC Ley</option>
-                        <option value="Jorge">Jorge</option>
-                        <option value="Marco">Marco</option>
-                        <option value="Montalvo">Montalvo</option>
-                        </select>
-                        <button onclick="resetBbvaFiltros()" style="padding:4px 10px;background:#64748b;color:white;border:none;border-radius:6px;font-size:0.72rem;cursor:pointer;">🗑️ Limpiar</button>
+                    <div style="display:flex;gap:6px;">
+                        <input type="text" id="bbvaSearch" placeholder="🔍 Buscar nodo, área, TX..." style="padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.75rem;width:200px;">
                     </div>
                 </div>
                 <div class="table-wrapper">
@@ -781,10 +765,10 @@
                         <thead><tr>
                             <th>Nodo</th><th>ID</th><th>Nombre</th><th>IDF</th>
                             <th>SISA TX</th><th>Área</th><th>Solución</th><th>Sects</th>
-                            <th>PTO U1900</th><th>PTO 4G/5G</th><th>IP U1900</th><th>IP 4G/5G</th><th>Líder</th><th>Estatus</th>
+                            <th>PTO U1900</th><th>PTO 4G/5G</th><th>IP U1900</th><th>IP 4G/5G</th><th>Estatus</th>
                         </tr></thead>
                         <tbody id="bbvaBody">
-                            <tr><td colspan="14" class="loading"><div class="spinner"></div>Cargando...</td></tr>
+                            <tr><td colspan="13" class="loading"><div class="spinner"></div>Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1136,6 +1120,7 @@
                 if (dispatchStats) dispatchStats.style.display = 'none';
                 if (asignacionesStats) asignacionesStats.style.display = 'none';
                 if (plantasStats) plantasStats.style.display = 'none';
+                sincronizarBbvaStatus();
                 initBbvaTab();
             } else if (tabId === 'plantas') {
                 if (dispatchStats) dispatchStats.style.display = 'none';
@@ -1633,6 +1618,7 @@
                 renderTable();
                 actualizarEstadisticas();
                 actualizarGraficas();
+                sincronizarBbvaStatus();
                 actualizarMapa();
                 if (showMessage) {
                     document.getElementById("infoBanner").innerHTML = "✅ Datos actualizados";
@@ -2748,33 +2734,155 @@
 
     // ── Nodos estáticos del estadio ───────────────────────────────
     var BBVA_NODOS = [
-        {id:1,  propId:"191971",nombre:"MCI ESTADIO DE FUTBOL MTY 1", idf:"5A",              sisaTx:"C1G-2510-0158",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"1/19",pto4g5g:"1/18", ipU1900:"10.45.203.180",ip4g5g:"10.113.116.44", lider:"Edgar Gzz", nivel:"gradas_altas"},
-        {id:2,  propId:"191972",nombre:"MCI ESTADIO DE FUTBOL MTY 2", idf:"5A",              sisaTx:"C1G-2510-0164",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"20",    ipU1900:"10.45.203.188",ip4g5g:"10.113.116.52", lider:"Edgardo", nivel:"gradas_altas"},
-        {id:3,  propId:"191973",nombre:"MCI ESTADIO DE FUTBOL MTY 3", idf:"5A",              sisaTx:"C1G-2510-0172",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"23",   pto4g5g:"25",    ipU1900:"10.45.203.196",ip4g5g:"10.113.50.124",  lider:"Marco",  nivel:"gradas_altas"},
-        {id:4,  propId:"191974",nombre:"MCI ESTADIO DE FUTBOL MTY 4", idf:"Cuarto Carriers", sisaTx:"G2B-2510-0018",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.203.204",ip4g5g:"10.113.123.116",lider:"JC Ley",nivel:"gradas_altas"},
-        {id:5,  propId:"191975",nombre:"MCI ESTADIO DE FUTBOL MTY 5", idf:"Cuarto Carriers", sisaTx:"G2B-2510-0017",area:"Gradas Altas / Oficinas",               solucion:"High Power / Low Power",        sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.203.212",ip4g5g:"10.113.123.124",lider:"Charly",nivel:"gradas_altas"},
-        {id:6,  propId:"191976",nombre:"MCI ESTADIO DE FUTBOL MTY 6", idf:"2",               sisaTx:"G2B-2510-0009",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.92", ip4g5g:"10.113.115.252",lider:"Montalvo",nivel:"gradas_bajas"},
-        {id:7,  propId:"191977",nombre:"MCI ESTADIO DE FUTBOL MTY 7", idf:"2",               sisaTx:"G2B-2510-0009",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.205.100",ip4g5g:"10.113.116.4",  lider:"Ivan",  nivel:"gradas_bajas"},
-        {id:8,  propId:"191978",nombre:"MCI ESTADIO DE FUTBOL MTY 8", idf:"3",               sisaTx:"G2B-2510-0010",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.199.236",ip4g5g:"10.113.116.12", lider:"Emmanuel", nivel:"gradas_bajas"},
-        {id:9,  propId:"191979",nombre:"MCI ESTADIO DE FUTBOL MTY 9", idf:"3",               sisaTx:"G2B-2510-0010",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"23",    ipU1900:"10.45.199.244",ip4g5g:"10.113.116.20", lider:"Edgar M", nivel:"gradas_bajas"},
-        {id:10, propId:"191980",nombre:"MCI ESTADIO DE FUTBOL MTY 10",idf:"7",               sisaTx:"G2B-2510-0011",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"19",   pto4g5g:"22",    ipU1900:"10.45.199.252",ip4g5g:"10.113.116.28", lider:"Gonzalo", nivel:"gradas_bajas"},
-        {id:11, propId:"191981",nombre:"MCI ESTADIO DE FUTBOL MTY 11",idf:"7",               sisaTx:"G2B-2510-0011",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:2,ptoU1900:"23",   pto4g5g:"24",    ipU1900:"10.45.203.220",ip4g5g:"10.113.118.244",lider:"Edgar Gzz",nivel:"gradas_bajas"},
-        {id:12, propId:"194483",nombre:"MCI ESTADIO DE FUTBOL MTY 12",idf:"10",              sisaTx:"C1G-2506-0081",area:"Sala de Prensa / Area Lounge / Vestidores",solucion:"Low power / Infraestructura existente",sectores:3,ptoU1900:"1/19",pto4g5g:"1/20",ipU1900:"10.45.205.108",ip4g5g:"10.113.123.156",lider:"Edgardo",nivel:"prensa"},
-        {id:13, propId:"194486",nombre:"MCI ESTADIO DE FUTBOL MTY 13",idf:"Cuarto Carriers", sisaTx:"G2B-2510-0018",area:"Pasillos",                             solucion:"Low Power",                     sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.116",ip4g5g:"10.113.123.140",lider:"Marco",nivel:"pasillos"},
-        {id:14, propId:"194489",nombre:"MCI ESTADIO DE FUTBOL MTY 14",idf:"Cuarto Carriers", sisaTx:"G2B-2510-0017",area:"Pasillos",                             solucion:"Low Power",                     sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.124",ip4g5g:"10.113.123.148",lider:"JC Ley",nivel:"pasillos"},
-        {id:15, propId:"194492",nombre:"MCI ESTADIO DE FUTBOL MTY 15",idf:"4",               sisaTx:"C1G-2506-0079",area:"Accesos",                              solucion:"Low Power",                     sectores:4,ptoU1900:"1/17", pto4g5g:"1/18",  ipU1900:"10.45.205.132",ip4g5g:"10.113.123.164",lider:"Charly",nivel:"accesos"},
-        {id:16, propId:"194495",nombre:"MCI ESTADIO DE FUTBOL MTY 16",idf:"6",               sisaTx:"C1G-2510-0157",area:"Accesos",                              solucion:"Low Power",                     sectores:4,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.140",ip4g5g:"10.113.123.172",lider:"Montalvo",nivel:"accesos"},
-        {id:17, propId:"194498",nombre:"MCI ESTADIO DE FUTBOL MTY 17",idf:"8",               sisaTx:"C1G-2506-0085",area:"Accesos",                              solucion:"Low Power",                     sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.148",ip4g5g:"10.113.123.180",lider:"Ivan",nivel:"accesos"},
-        {id:18, propId:"194501",nombre:"MCI ESTADIO DE FUTBOL MTY 18",idf:"8",               sisaTx:"C1G-2506-0085",area:"Accesos / Estacionamientos Outdoor",    solucion:"Low Power / High Power",        sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.205.158",ip4g5g:"10.113.123.188",lider:"Emmanuel",nivel:"accesos"},
-        {id:19, propId:"194504",nombre:"MCI ESTADIO DE FUTBOL MTY 19",idf:"3",               sisaTx:"C1G-2506-0082",area:"Suites 1 / Suites 2",                  solucion:"Low Power",                     sectores:4,ptoU1900:"1/17", pto4g5g:"1/18",  ipU1900:"10.45.205.164",ip4g5g:"10.113.123.196",lider:"Edgar M",nivel:"suites"},
-        {id:20, propId:"194507",nombre:"MCI ESTADIO DE FUTBOL MTY 20",idf:"7",               sisaTx:"C1G-2510-0157",area:"Suites 1 / Suites 2",                  solucion:"Low Power",                     sectores:4,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.205.172",ip4g5g:"10.113.123.204",lider:"Gonzalo",nivel:"suites"},
-        {id:21, propId:"194510",nombre:"MCI ESTADIO DE FUTBOL MTY 21",idf:"3",               sisaTx:"C1G-2506-0082",area:"Estacionamientos Outdoor",             solucion:"High Power",                    sectores:2,ptoU1900:"1/19", pto4g5g:"1/20",  ipU1900:"10.45.205.180",ip4g5g:"10.113.123.212",lider:"Jorge",nivel:"exterior"},
-        {id:22, propId:"194513",nombre:"MCI ESTADIO DE FUTBOL MTY 22",idf:"5A",              sisaTx:"C1G-2510-0172",area:"Estacionamientos Outdoor",             solucion:"High Power",                    sectores:2,ptoU1900:"1/17", pto4g5g:"1/20",  ipU1900:"10.45.205.188",ip4g5g:"10.113.123.220",lider:"Fernando",nivel:"exterior"}
+        {id:1,  propId:"191971",nombre:"MCI ESTADIO DE FUTBOL MTY 1", idf:"5A",              sisaTx:"C1G-2510-0158",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"1/19",pto4g5g:"1/18", ipU1900:"10.45.203.180",ip4g5g:"10.113.116.44", nivel:"gradas_altas"},
+        {id:2,  propId:"191972",nombre:"MCI ESTADIO DE FUTBOL MTY 2", idf:"5A",              sisaTx:"C1G-2510-0164",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"20",    ipU1900:"10.45.203.188",ip4g5g:"10.113.116.52", nivel:"gradas_altas"},
+        {id:3,  propId:"191973",nombre:"MCI ESTADIO DE FUTBOL MTY 3", idf:"5A",              sisaTx:"C1G-2510-0172",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"23",   pto4g5g:"25",    ipU1900:"10.45.203.196",ip4g5g:"10.113.50.124",  nivel:"gradas_altas"},
+        {id:4,  propId:"191974",nombre:"MCI ESTADIO DE FUTBOL MTY 4", idf:"Cuarto Carriers", sisaTx:"G2B-2510-0018",area:"Gradas Altas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.203.204",ip4g5g:"10.113.123.116",nivel:"gradas_altas"},
+        {id:5,  propId:"191975",nombre:"MCI ESTADIO DE FUTBOL MTY 5", idf:"Cuarto Carriers", sisaTx:"G2B-2510-0017",area:"Gradas Altas / Oficinas",               solucion:"High Power / Low Power",        sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.203.212",ip4g5g:"10.113.123.124",nivel:"gradas_altas"},
+        {id:6,  propId:"191976",nombre:"MCI ESTADIO DE FUTBOL MTY 6", idf:"2",               sisaTx:"G2B-2510-0009",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.92", ip4g5g:"10.113.115.252",nivel:"gradas_bajas"},
+        {id:7,  propId:"191977",nombre:"MCI ESTADIO DE FUTBOL MTY 7", idf:"2",               sisaTx:"G2B-2510-0009",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.205.100",ip4g5g:"10.113.116.4",  nivel:"gradas_bajas"},
+        {id:8,  propId:"191978",nombre:"MCI ESTADIO DE FUTBOL MTY 8", idf:"3",               sisaTx:"G2B-2510-0010",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.199.236",ip4g5g:"10.113.116.12", nivel:"gradas_bajas"},
+        {id:9,  propId:"191979",nombre:"MCI ESTADIO DE FUTBOL MTY 9", idf:"3",               sisaTx:"G2B-2510-0010",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"21",   pto4g5g:"23",    ipU1900:"10.45.199.244",ip4g5g:"10.113.116.20", nivel:"gradas_bajas"},
+        {id:10, propId:"191980",nombre:"MCI ESTADIO DE FUTBOL MTY 10",idf:"7",               sisaTx:"G2B-2510-0011",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:3,ptoU1900:"19",   pto4g5g:"22",    ipU1900:"10.45.199.252",ip4g5g:"10.113.116.28", nivel:"gradas_bajas"},
+        {id:11, propId:"191981",nombre:"MCI ESTADIO DE FUTBOL MTY 11",idf:"7",               sisaTx:"G2B-2510-0011",area:"Gradas Bajas",                         solucion:"High Power",                    sectores:2,ptoU1900:"23",   pto4g5g:"24",    ipU1900:"10.45.203.220",ip4g5g:"10.113.118.244",nivel:"gradas_bajas"},
+        {id:12, propId:"194483",nombre:"MCI ESTADIO DE FUTBOL MTY 12",idf:"10",              sisaTx:"C1G-2506-0081",area:"Sala de Prensa / Area Lounge / Vestidores",solucion:"Low power / Infraestructura existente",sectores:3,ptoU1900:"1/19",pto4g5g:"1/20",ipU1900:"10.45.205.108",ip4g5g:"10.113.123.156",nivel:"prensa"},
+        {id:13, propId:"194486",nombre:"MCI ESTADIO DE FUTBOL MTY 13",idf:"Cuarto Carriers", sisaTx:"G2B-2510-0018",area:"Pasillos",                             solucion:"Low Power",                     sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.116",ip4g5g:"10.113.123.140",nivel:"pasillos"},
+        {id:14, propId:"194489",nombre:"MCI ESTADIO DE FUTBOL MTY 14",idf:"Cuarto Carriers", sisaTx:"G2B-2510-0017",area:"Pasillos",                             solucion:"Low Power",                     sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.124",ip4g5g:"10.113.123.148",nivel:"pasillos"},
+        {id:15, propId:"194492",nombre:"MCI ESTADIO DE FUTBOL MTY 15",idf:"4",               sisaTx:"C1G-2506-0079",area:"Accesos",                              solucion:"Low Power",                     sectores:4,ptoU1900:"1/17", pto4g5g:"1/18",  ipU1900:"10.45.205.132",ip4g5g:"10.113.123.164",nivel:"accesos"},
+        {id:16, propId:"194495",nombre:"MCI ESTADIO DE FUTBOL MTY 16",idf:"6",               sisaTx:"C1G-2510-0157",area:"Accesos",                              solucion:"Low Power",                     sectores:4,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.140",ip4g5g:"10.113.123.172",nivel:"accesos"},
+        {id:17, propId:"194498",nombre:"MCI ESTADIO DE FUTBOL MTY 17",idf:"8",               sisaTx:"C1G-2506-0085",area:"Accesos",                              solucion:"Low Power",                     sectores:3,ptoU1900:"19",   pto4g5g:"20",    ipU1900:"10.45.205.148",ip4g5g:"10.113.123.180",nivel:"accesos"},
+        {id:18, propId:"194501",nombre:"MCI ESTADIO DE FUTBOL MTY 18",idf:"8",               sisaTx:"C1G-2506-0085",area:"Accesos / Estacionamientos Outdoor",    solucion:"Low Power / High Power",        sectores:3,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.205.158",ip4g5g:"10.113.123.188",nivel:"accesos"},
+        {id:19, propId:"194504",nombre:"MCI ESTADIO DE FUTBOL MTY 19",idf:"3",               sisaTx:"C1G-2506-0082",area:"Suites 1 / Suites 2",                  solucion:"Low Power",                     sectores:4,ptoU1900:"1/17", pto4g5g:"1/18",  ipU1900:"10.45.205.164",ip4g5g:"10.113.123.196",nivel:"suites"},
+        {id:20, propId:"194507",nombre:"MCI ESTADIO DE FUTBOL MTY 20",idf:"7",               sisaTx:"C1G-2510-0157",area:"Suites 1 / Suites 2",                  solucion:"Low Power",                     sectores:4,ptoU1900:"21",   pto4g5g:"22",    ipU1900:"10.45.205.172",ip4g5g:"10.113.123.204",nivel:"suites"},
+        {id:21, propId:"194510",nombre:"MCI ESTADIO DE FUTBOL MTY 21",idf:"3",               sisaTx:"C1G-2506-0082",area:"Estacionamientos Outdoor",             solucion:"High Power",                    sectores:2,ptoU1900:"1/19", pto4g5g:"1/20",  ipU1900:"10.45.205.180",ip4g5g:"10.113.123.212",nivel:"exterior"},
+        {id:22, propId:"194513",nombre:"MCI ESTADIO DE FUTBOL MTY 22",idf:"5A",              sisaTx:"C1G-2510-0172",area:"Estacionamientos Outdoor",             solucion:"High Power",                    sectores:2,ptoU1900:"1/17", pto4g5g:"1/20",  ipU1900:"10.45.205.188",ip4g5g:"10.113.123.220",nivel:"exterior"}
     ];
 
-    // Simulated status (in real deployment would come from AppSheet or ping)
+    // bbvaStatus: synced from sitiosData (FIFA26 table) via SISA TX match
     var bbvaStatus = {};
     BBVA_NODOS.forEach(n => { bbvaStatus[n.id] = 'online'; });
+
+    function sincronizarBbvaStatus() {
+        if (!sitiosData || sitiosData.length === 0) return;
+
+        // Build index of sitiosData by nombre (uppercase, trimmed) for fast lookup
+        var sitioPorNombre = {};
+        var sitioPorMnemonico = {};
+        var sitioPorCarrier = {};
+        sitiosData.forEach(function(s) {
+            var nom = (s.nombre || '').toUpperCase().trim();
+            if (nom) sitioPorNombre[nom] = s;
+            var mn  = (s.mnemonico || '').toUpperCase().trim();
+            if (mn) sitioPorMnemonico[mn] = s;
+            var c1 = (s.carrier1 || '').toUpperCase().trim();
+            var c2 = (s.carrier2 || '').toUpperCase().trim();
+            if (c1) sitioPorCarrier[c1] = s;
+            if (c2) sitioPorCarrier[c2] = s;
+            // Also index rawRow fields
+            if (s.rawRow) {
+                ['SISA TX','TX','CARRIER1','CARRIER2'].forEach(function(f) {
+                    var v = (s.rawRow[f]||'').toUpperCase().trim();
+                    if (v) sitioPorCarrier[v] = s;
+                });
+            }
+        });
+
+        var cambiados = 0;
+        var matchLog = [];
+
+        BBVA_NODOS.forEach(function(n) {
+            var sitio = null;
+            var via = '';
+
+            // 1. Exact name match: "MCI ESTADIO DE FUTBOL MTY N" or "MCI ESTADIO MTY N"
+            var nameVariants = [
+                n.nombre.toUpperCase().trim(),
+                ('MCI ESTADIO DE FUTBOL MTY ' + n.id),
+                ('MCI ESTADIO MTY ' + n.id),
+                ('ESTADIO BBVA ' + n.id),
+                ('ESTADIO MTY ' + n.id)
+            ];
+            for (var vi = 0; vi < nameVariants.length && !sitio; vi++) {
+                if (sitioPorNombre[nameVariants[vi]]) {
+                    sitio = sitioPorNombre[nameVariants[vi]];
+                    via = 'nombre:' + nameVariants[vi];
+                }
+            }
+
+            // 2. Mnemonico match (some AppSheet configs store short code)
+            if (!sitio) {
+                var mnVariants = ['NL' + String(n.propId), n.propId];
+                for (var mi = 0; mi < mnVariants.length && !sitio; mi++) {
+                    if (sitioPorMnemonico[mnVariants[mi]]) {
+                        sitio = sitioPorMnemonico[mnVariants[mi]];
+                        via = 'mnemonico:' + mnVariants[mi];
+                    }
+                }
+            }
+
+            // 3. SISA TX / carrier match
+            if (!sitio) {
+                var sisaTxUp = n.sisaTx.toUpperCase().trim();
+                if (sitioPorCarrier[sisaTxUp]) {
+                    sitio = sitioPorCarrier[sisaTxUp];
+                    via = 'sisaTx:' + sisaTxUp;
+                }
+            }
+
+            // 4. Partial nombre match: sitio nombre contains "MTY" + nodo id
+            if (!sitio) {
+                var numStr = 'MTY ' + n.id;
+                sitio = sitiosData.find(function(s) {
+                    return (s.nombre || '').toUpperCase().includes(numStr);
+                });
+                if (sitio) via = 'partial-nombre:' + numStr;
+            }
+
+            // 5. Fallback: any site with ESTADIO/BBVA in name — share same status
+            //    (for when all BBVA nodos are in the same AppSheet entry)
+            if (!sitio) {
+                sitio = sitiosData.find(function(s) {
+                    var nom = (s.nombre || '').toUpperCase();
+                    return nom.includes('ESTADIO') || nom.includes('BBVA');
+                });
+                if (sitio) via = 'fallback-estadio';
+            }
+
+            if (sitio) {
+                var prev = bbvaStatus[n.id];
+                var estatus = (sitio.estadoOriginal || 'UP').toUpperCase();
+                bbvaStatus[n.id] = estatus === 'DOWN' ? 'offline'
+                    : (estatus === 'MANTENIMIENTO' || estatus === 'WARNING') ? 'warning'
+                    : 'online';
+                if (bbvaStatus[n.id] !== prev) {
+                    cambiados++;
+                    matchLog.push('N' + n.id + ':' + bbvaStatus[n.id] + ' [' + via + ']');
+                }
+            }
+        });
+
+        if (matchLog.length) console.log('[BBVA] Cambios:', matchLog.join(' | '));
+
+        // Update sync badge
+        var tsEl = document.getElementById('bbvaSyncTime');
+        if (tsEl) {
+            var ts = new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            var online  = BBVA_NODOS.filter(function(n){ return (bbvaStatus[n.id]||'online')==='online'; }).length;
+            var offline = BBVA_NODOS.filter(function(n){ return (bbvaStatus[n.id]||'online')==='offline'; }).length;
+            var warn    = BBVA_NODOS.filter(function(n){ return bbvaStatus[n.id]==='warning'; }).length;
+            tsEl.innerHTML =
+                '<span style="color:#10b981;font-weight:700;">' + online + ' 🟢</span> ' +
+                (offline > 0 ? '<span style="color:#dc2626;font-weight:700;">' + offline + ' 🔴</span> ' : '') +
+                (warn > 0 ? '<span style="color:#f59e0b;font-weight:700;">' + warn + ' 🟡</span> ' : '') +
+                '<span style="color:#94a3b8;font-size:0.65rem;">sync ' + ts + '</span>';
+        }
+
+        // Redraw BBVA if tab active
+        if (document.querySelector('.tab-btn.active')?.dataset.tab === 'bbva') {
+            renderBbvaDiagram(_bbvaNivel);
+            renderBbvaTable();
+        }
+    }
 
     var _bbvaNivel = 'gradas_altas';
 
@@ -2832,22 +2940,94 @@
             bg: 'exterior'
         },
         all: {
-            title: '🔢 Todos los Nodos — Vista Global',
-            desc: '22 nodos · Cobertura completa Estadio BBVA',
+            title: '🔢 Todos los Nodos — Vista Global por IDF',
+            desc: '22 nodos · Agrupados por IDF · Estadio BBVA Monterrey',
             nodes: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22],
             positions: {
-                1:[90,55],  2:[185,40], 3:[280,40], 4:[375,40], 5:[470,55],
-                6:[530,130],7:[540,190],8:[530,250],9:[480,320],10:[390,355],
-                11:[295,365],12:[200,355],13:[120,320],14:[70,250],
-                15:[60,190],16:[70,130],17:[130,75],
-                18:[215,50],19:[310,50],20:[405,70],
-                21:[130,295],22:[465,295]
+                1:[246,104],
+                2:[320,82],
+                3:[400,75],
+                4:[480,82],
+                5:[554,104],
+                6:[615,139],
+                7:[659,183],
+                8:[682,234],
+                9:[682,286],
+                10:[659,337],
+                11:[615,381],
+                12:[554,416],
+                13:[480,438],
+                14:[400,445],
+                15:[320,438],
+                16:[246,416],
+                17:[185,381],
+                18:[141,337],
+                19:[118,286],
+                20:[118,234],
+                21:[141,183],
+                22:[185,139]
             },
             bg: 'all'
         }
     };
 
     // ── Stadium SVG background shapes per level ────────────────────
+    function buildAllBg(cx, cy) {
+        var idfGroups = {
+            '5A':[1,2,3,22], 'CC':[4,5,13,14], '23':[6,7,8,9],
+            '7':[10,11], '10':[12], '468':[15,16,17,18,19,20], 'ext':[21]
+        };
+        var idfColors2 = {
+            '5A':'rgba(99,102,241,0.13)', 'CC':'rgba(249,115,22,0.13)',
+            '23':'rgba(6,182,212,0.11)', '7':'rgba(234,179,8,0.11)',
+            '10':'rgba(16,185,129,0.11)', '468':'rgba(124,58,237,0.10)', 'ext':'rgba(245,158,11,0.09)'
+        };
+        var idfLabelMap = {
+            '5A':'IDF 5A', 'CC':'IDF CC', '23':'IDF 2/3', '7':'IDF 7',
+            '10':'IDF 10', '468':'IDF 4/6/8', 'ext':'Ext.'
+        };
+        var nodePos = {1:[246,104],2:[320,82],3:[400,75],4:[480,82],5:[554,104],6:[615,139],7:[659,183],8:[682,234],9:[682,286],10:[659,337],11:[615,381],12:[554,416],13:[480,438],14:[400,445],15:[320,438],16:[246,416],17:[185,381],18:[141,337],19:[118,286],20:[118,234],21:[141,183],22:[185,139]};
+        var zoneSvg = '';
+        var idfKeys = Object.keys(idfGroups);
+        for (var gi = 0; gi < idfKeys.length; gi++) {
+            var idf = idfKeys[gi];
+            var ids = idfGroups[idf];
+            if (ids.length < 2) continue;
+            var pts = ids.map(function(id){ return nodePos[id]; });
+            var mcx = pts.reduce(function(s,p){return s+p[0];},0)/pts.length;
+            var mcy = pts.reduce(function(s,p){return s+p[1];},0)/pts.length;
+            var expanded = pts.map(function(p){
+                var dx=p[0]-mcx, dy=p[1]-mcy, len=Math.sqrt(dx*dx+dy*dy)||1;
+                return [p[0]+dx/len*32, p[1]+dy/len*32];
+            });
+            expanded.sort(function(a,b){ return Math.atan2(a[1]-mcy,a[0]-mcx)-Math.atan2(b[1]-mcy,b[0]-mcx); });
+            var d = 'M '+expanded.map(function(p){return p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' L ')+' Z';
+            var col = idfColors2[idf];
+            var lbl = idfLabelMap[idf];
+            zoneSvg += '<path d="'+d+'" fill="'+col+'" stroke="'+col.replace(/[\d.]+\)$/,'0.4)')+'" stroke-width="1.5" stroke-dasharray="5,3"/>';
+            zoneSvg += '<text x="'+mcx+'" y="'+(mcy-34)+'" text-anchor="middle" font-size="9" font-weight="800" stroke="white" stroke-width="3" paint-order="stroke" fill="#374151">'+lbl+'</text>';
+            zoneSvg += '<text x="'+mcx+'" y="'+(mcy-34)+'" text-anchor="middle" font-size="9" font-weight="800" fill="#374151">'+lbl+'</text>';
+        }
+        var out = '';
+        out += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="340" ry="220" fill="rgba(241,245,249,0.5)" stroke="#cbd5e1" stroke-width="1.5"/>';
+        out += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="275" ry="175" fill="rgba(248,250,252,0.6)" stroke="#e2e8f0" stroke-width="1"/>';
+        out += zoneSvg;
+        out += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+(cx*0.21)+'" ry="'+(cy*0.17)+'" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>';
+        out += '<line x1="'+(cx-cx*0.19)+'" y1="'+cy+'" x2="'+(cx+cx*0.19)+'" y2="'+cy+'" stroke="#86efac" stroke-width="0.8"/>';
+        out += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+(cx*0.055)+'" ry="'+(cy*0.048)+'" fill="none" stroke="#86efac" stroke-width="0.8"/>';
+        out += '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="10" fill="#22c55e" font-style="italic" font-weight="600">Campo</text>';
+        // Legend
+        out += '<rect x="8" y="8" width="152" height="102" rx="7" fill="white" opacity="0.94" stroke="#e2e8f0" stroke-width="1"/>';
+        out += '<text x="15" y="24" font-size="9" font-weight="800" fill="#0a2540">AGRUPACIÓN POR IDF</text>';
+        var leg=[['rgba(99,102,241,0.5)','5A · Gradas Altas'],['rgba(249,115,22,0.5)','CC · Carriers'],['rgba(6,182,212,0.5)','2/3 · Gradas Bajas'],['rgba(234,179,8,0.5)','7 · Gradas Bajas'],['rgba(16,185,129,0.5)','10 · Prensa'],['rgba(124,58,237,0.5)','4/6/8 · Accesos']];
+        for (var li=0; li<leg.length; li++) {
+            var ly=35+li*13;
+            out+='<rect x="15" y="'+(ly-1)+'" width="10" height="10" rx="2" fill="'+leg[li][0]+'"/>';
+            out+='<text x="30" y="'+(ly+8)+'" font-size="8" fill="#374151">'+leg[li][1]+'</text>';
+        }
+        return out;
+    }
+
     function getBgSvg(bgType, w, h) {
         const cx = w/2, cy = h/2;
         const shapes = {
@@ -2884,11 +3064,7 @@
                 <rect x="140" y="100" width="60" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
                 <text x="90" y="125" text-anchor="middle" font-size="9" fill="#166534">Auto</text>
                 <text x="170" y="125" text-anchor="middle" font-size="9" fill="#166534">Auto</text>`,
-            all: `
-                <ellipse cx="${cx}" cy="${cy+10}" rx="${cx-25}" ry="${cy-30}" fill="none" stroke="#e2e8f0" stroke-width="2"/>
-                <ellipse cx="${cx}" cy="${cy+10}" rx="${cx-65}" ry="${cy-70}" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6,3"/>
-                <ellipse cx="${cx}" cy="${cy+10}" rx="${cx*0.28}" ry="${cy*0.22}" fill="#e8f5e9" stroke="#c8e6c9" stroke-width="1.5"/>
-                <text x="${cx}" y="${cy+15}" text-anchor="middle" font-size="10" fill="#94a3b8" font-style="italic">Campo</text>`
+            all: buildAllBg(cx, cy)
         };
         return shapes[bgType] || shapes.all;
     }
@@ -2902,7 +3078,7 @@
         if (!container) return;
         if (titleEl) titleEl.textContent = layout.title;
 
-        const W = 600, H = 380;
+        const W = (nivel==='all') ? 800 : 600, H = (nivel==='all') ? 520 : 380;
         const nodeMap = {};
         BBVA_NODOS.forEach(n => { nodeMap[n.id] = n; });
 
@@ -2922,21 +3098,21 @@
             const status = bbvaStatus[id] || 'online';
             const color = status === 'online' ? '#10b981' : status === 'offline' ? '#dc2626' : '#f59e0b';
             const glow  = status === 'online' ? 'rgba(16,185,129,0.25)' : status === 'offline' ? 'rgba(220,38,38,0.25)' : 'rgba(245,158,11,0.25)';
-            const r = nivel === 'all' ? 16 : 20;
+            const r = nivel === 'all' ? 19 : 20;
 
             nodesSvg += `
                 <g class="bbva-node-circle" onclick="showBbvaNodeDetail(${id})" data-id="${id}">
                     <circle cx="${cx}" cy="${cy}" r="${r+6}" fill="${glow}"/>
                     <circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" stroke="white" stroke-width="2.5"
-                        style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));"
-                        title="Nodo ${n.id} · ${n.nombre} · Líder: ${n.lider||'-'}"/>
+                        style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));"/>
                     <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle"
-                        font-size="${nivel==='all'?10:12}" font-weight="800" fill="white">${n.id}</text>
+                        font-size="${nivel==='all'?11:12}" font-weight="900" fill="white"
+                        style="text-shadow:0 1px 2px rgba(0,0,0,0.5);">${n.id}</text>
                     ${status==='offline' ? `<circle cx="${cx+r-4}" cy="${cy-r+4}" r="5" fill="#dc2626" stroke="white" stroke-width="1.5"/>` : ''}
                     <text x="${cx}" y="${cy+r+13}" text-anchor="middle" font-size="9" fill="#475569" font-weight="600">
                         ${nivel==='all' ? 'N'+n.id : 'IDF '+n.idf}
                     </text>
-                    ${nivel !== 'all' ? `<text x="${cx}" y="${cy+r+24}" text-anchor="middle" font-size="8" fill="#94a3b8">${n.sectores}s</text><text x="${cx}" y="${cy+r+35}" text-anchor="middle" font-size="8" font-weight="600" fill="#0a2540">${n.lider||''}</text>` : ''}
+                    ${nivel !== 'all' ? `<text x="${cx}" y="${cy+r+24}" text-anchor="middle" font-size="8" fill="#94a3b8">${n.sectores}s</text>` : ''}
                 </g>`;
 
             // Draw TX link lines for "all" view (from node to center)
@@ -2959,7 +3135,7 @@
 
         container.innerHTML = `
             <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
-                style="width:100%;max-height:360px;">
+                style="width:100%;max-height:420px;">
                 <defs>
                     <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
                         <stop offset="0%" stop-color="#f8fafc"/>
@@ -3018,7 +3194,6 @@
                 ['🔑 ID Propiedad',       n.propId,     null],
                 ['📦 IDF',               n.idf,        null],
                 ['🔗 SISA TX',            n.sisaTx,     null],
-            ['👤 Líder OYM',          n.lider||'-', null],
             ].map(([label, val, col]) =>
                 '<div class="bbva-detail-card"' + (col ? ' style="grid-column:' + col + ';"' : '') + '>' +
                 '<div class="bbva-detail-label">' + label + '</div>' +
@@ -3044,16 +3219,13 @@
         const tbody = document.getElementById('bbvaBody');
         if (!tbody) return;
         const search = (document.getElementById('bbvaSearch')?.value || '').toLowerCase();
-        const liderFil = document.getElementById('bbvaLiderFilter')?.value || '';
         let datos = BBVA_NODOS;
         if (search) datos = datos.filter(n =>
             n.nombre.toLowerCase().includes(search) ||
-            n.area.toLowerCase().includes(search)   ||
+            n.area.toLowerCase().includes(search) ||
             n.sisaTx.toLowerCase().includes(search) ||
-            n.idf.toLowerCase().includes(search)    ||
-            (n.lider||'').toLowerCase().includes(search)
+            n.idf.toLowerCase().includes(search)
         );
-        if (liderFil) datos = datos.filter(n => (n.lider||'').trim() === liderFil);
         const online  = BBVA_NODOS.filter(n => (bbvaStatus[n.id]||'online')==='online').length;
         const offline = BBVA_NODOS.filter(n => (bbvaStatus[n.id]||'online')==='offline').length;
         const sectoresTotal = BBVA_NODOS.reduce((a,n) => a + n.sectores, 0);
@@ -3087,7 +3259,6 @@
                 <td style="font-size:0.7rem;font-family:monospace;">${n.pto4g5g}</td>
                 <td style="font-size:0.68rem;font-family:monospace;color:#0369a1;">${n.ipU1900}</td>
                 <td style="font-size:0.68rem;font-family:monospace;color:#0369a1;">${n.ip4g5g}</td>
-                <td><span style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:10px;font-size:0.72rem;">${n.lider||"-"}</span></td>
                 <td><span style="color:${stColor};font-size:0.75rem;font-weight:700;">${stLabel}</span></td>
             </tr>`;
         }).join('');
@@ -3101,15 +3272,6 @@
 
     // Search listener
     document.getElementById('bbvaSearch')?.addEventListener('input', renderBbvaTable);
-    document.getElementById('bbvaLiderFilter')?.addEventListener('change', renderBbvaTable);
-
-    window.resetBbvaFiltros = function() {
-        const s = document.getElementById('bbvaSearch');
-        const l = document.getElementById('bbvaLiderFilter');
-        if (s) s.value = '';
-        if (l) l.value = '';
-        renderBbvaTable();
-    };
 
     // ============================================================
     // NUEVO SITIO
@@ -3747,7 +3909,13 @@
         if (document.querySelector('.tab-btn.active').dataset.tab === 'asignaciones') cargarAsignacionesData(false);
         if (document.querySelector('.tab-btn.active').dataset.tab === 'plantas') cargarPlantasData(false);
         if (document.querySelector('.tab-btn.active').dataset.tab === 'telmex') { try { renderTelmexTable(); } catch(e) { console.error(e); } }
+        if (document.querySelector('.tab-btn.active')?.dataset.tab === 'bbva') { sincronizarBbvaStatus(); }
     }, 60000);
+
+    // ── BBVA dedicated 30s refresh (faster during match) ──────────
+    setInterval(function() {
+        sincronizarBbvaStatus();
+    }, 30000);
 
 
     // ============================================================
