@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskFlow - Gestión de Tareas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- MSAL.js para autenticación con Microsoft 365 -->
+    <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+    <style>
+        /* ===== RESET & VARIABLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #e8f0fe;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.25s ease;
+            --sidebar-width: 240px;
+            --header-height: 64px;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ===== SCROLL ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* ===== LOGIN ===== */
+        #login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #e8f0fe 0%, #d4e2fc 100%);
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 48px 40px;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            width: 420px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .login-card h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-card p {
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .login-card .btn-microsoft {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px;
+            background: #2f2f2f;
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 16px;
+        }
+
+        .login-card .btn-microsoft:hover {
+            background: #1a1a1a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-card .btn-microsoft i {
+            font-size: 22px;
+        }
+
+        .login-card .btn-microsoft:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-card .dev-login {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+
+        .login-card .dev-login a {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .login-card .error-msg {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
+        }
+
+        /* ===== MAIN APP ===== */
+        #app {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            background: var(--bg);
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .sidebar-brand {
+            padding: 0 20px 28px 20px;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-brand i {
+            font-size: 26px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px 0 12px;
+            overflow-y: auto;
+        }
+
+        .sidebar-nav .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .sidebar-nav .nav-item i {
+            width: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .sidebar-nav .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .sidebar-nav .nav-item.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-footer .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .sidebar-footer .user-info {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+
+        .sidebar-footer .user-info .name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .sidebar-footer .user-info .role {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .sidebar-footer .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 6px;
+        }
+
+        .sidebar-footer .logout-btn:hover {
+            color: #dc2626;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== HEADER ===== */
+        .top-header {
+            height: var(--header-height);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .top-header .page-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .top-header .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .top-header .header-actions .badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ===== PAGE CONTENT ===== */
+        .page-content {
+            flex: 1;
+            padding: 28px 32px;
+            overflow-y: auto;
+        }
+
+        /* ===== VIEWS ===== */
+        .view {
+            display: none;
+            animation: fadeUp 0.3s ease;
+        }
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== DASHBOARD ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px 22px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card .stat-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 6px;
+            color: var(--text);
+        }
+
+        .stat-card .stat-icon {
+            float: right;
+            font-size: 28px;
+            color: var(--primary);
+            opacity: 0.6;
+        }
+
+        .task-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 28px 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .task-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .task-item .task-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .task-item .task-info .task-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .task-item .task-info .task-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .task-item .task-info .task-meta i {
+            margin-right: 4px;
+            width: 16px;
+        }
+
+        .task-item .task-status {
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .task-status.pendiente {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .task-status.en-progreso {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .task-status.completado {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .task-item .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .task-item .task-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .task-item .task-actions button:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* ===== TABLA COLABORADORES ===== */
+        .table-wrap {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: auto;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 14px 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .score-bar {
+            display: inline-block;
+            width: 80px;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .score-bar .fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+
+        /* ===== FORMULARIO TAREA ===== */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            background: #fafbfc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+            background: #fff;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(26, 115, 232, 0.25);
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 32px 36px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            animation: fadeUp 0.25s ease;
+        }
+
+        .modal-box .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-box .modal-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .modal-box .modal-header .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .modal-box .modal-header .close-modal:hover {
+            color: #dc2626;
+        }
+
+        .file-attach {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .file-attach input[type="file"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            background: #fafbfc;
+        }
+
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .file-tag {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 0px;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                width: 260px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .top-header {
+                padding: 0 16px;
+            }
+            .page-content {
+                padding: 16px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .login-card {
+                padding: 32px 24px;
+            }
+            .modal-box {
+                padding: 24px 20px;
+            }
+            .task-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .task-item .task-actions {
+                justify-content: flex-end;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== UTILITY ===== */
+        .text-center {
+            text-align: center;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-24 {
+            margin-top: 24px;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .flex {
+            display: flex;
+        }
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .justify-between {
+            justify-content: space-between;
+        }
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* ===== BOTÓN HAMBURGUESA ===== */
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN ===== -->
+    <div id="login-container">
+        <div class="login-card">
+            <h1><i class="fas fa-tasks"></i> TaskFlow</h1>
+            <p>Inicia sesión con tu cuenta de Microsoft 365</p>
+            <button id="microsoft-login-btn" class="btn-microsoft">
+                <i class="fab fa-microsoft"></i> Iniciar sesión con Microsoft
+            </button>
+            <div id="login-error" class="error-msg"></div>
+            <!-- Opción de desarrollo (login simulado) -->
+            <div class="dev-login">
+                <span>Modo desarrollo: </span>
+                <a id="dev-login-link">usar login simulado</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== APP ===== -->
+    <div id="app">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <i class="fas fa-tasks"></i> TaskFlow
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <div class="nav-item active" data-view="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+                <div class="nav-item" data-view="mis-tareas"><i class="fas fa-list-check"></i> Mis Tareas</div>
+                <div class="nav-item" data-view="asignar" id="nav-asignar" style="display:none;"><i class="fas fa-plus-circle"></i> Asignar Tarea</div>
+                <div class="nav-item" data-view="colaboradores"><i class="fas fa-users"></i> Colaboradores</div>
+                <div class="nav-item" data-view="desempeno"><i class="fas fa-star"></i> Desempeño</div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-avatar" id="avatar-letter">U</div>
+                <div class="user-info">
+                    <div class="name" id="sidebar-username">Usuario</div>
+                    <div class="role" id="sidebar-role">Rol</div>
+                </div>
+                <button class="logout-btn" id="logout-btn" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- HEADER -->
+            <header class="top-header">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="hamburger" id="hamburger-btn"><i class="fas fa-bars"></i></button>
+                    <span class="page-title" id="page-title">Dashboard</span>
+                </div>
+                <div class="header-actions">
+                    <span class="badge" id="header-role-badge">Analista</span>
+                </div>
+            </header>
+
+            <!-- PAGE CONTENT -->
+            <div class="page-content">
+
+                <!-- ===== VIEW: DASHBOARD ===== -->
+                <div class="view active" id="view-dashboard">
+                    <div class="stats-grid" id="stats-grid">
+                        <!-- se llena con JS -->
+                    </div>
+                    <div class="task-section-title"><i class="fas fa-clock"></i> Tareas Recientes</div>
+                    <div class="task-list" id="recent-tasks"></div>
+                </div>
+
+                <!-- ===== VIEW: MIS TAREAS ===== -->
+                <div class="view" id="view-mis-tareas">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+                        <h2 style="font-size:20px;font-weight:600;">Mis Tareas</h2>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <select id="filter-status" style="padding:8px 14px;border-radius:30px;border:1px solid var(--border);background:#fff;font-size:13px;">
+                                <option value="all">Todos los estados</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en-progreso">En progreso</option>
+                                <option value="completado">Completado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="task-list" id="mis-tareas-list"></div>
+                </div>
+
+                <!-- ===== VIEW: ASIGNAR TAREA ===== -->
+                <div class="view" id="view-asignar">
+                    <h2 style="font-size:20px;font-weight:600;margin-bottom:20px;"><i class="fas fa-plus-circle"></i> Asignar Nueva Tarea</h2>
+                    <form id="task-form" style="background:var(--card-bg);padding:24px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);">
+                        <div class="form-group">
+                            <label for="task-title">Título *</label>
+                            <input type="text" id="task-title" placeholder="Nombre de la tarea" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="task-desc">Descripción</label>
+                            <textarea id="task-desc" placeholder="Detalles de la tarea..."></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="task-deadline">Fecha límite</label>
+                                <input type="date" id="task-deadline" />
+                            </div>
+                            <div class="form-group">
+                                <label for="task-priority">Prioridad</label>
+                                <select id="task-priority">
+                                    <option value="baja">Baja</option>
+                                    <option value="media" selected>Media</option>
+                                    <option value="alta">Alta</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Asignar a (selección múltiple)</label>
+                            <select id="task-assignees" multiple style="height:120px;"></select>
+                            <small style="color:var(--text-secondary);">Mantén presionado Ctrl (Cmd) para seleccionar varios</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Archivos adjuntos</label>
+                            <div class="file-attach">
+                                <input type="file" id="task-files" multiple />
+                            </div>
+                            <div class="file-list" id="file-list-preview"></div>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-top:8px;">
+                            <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Asignar Tarea</button>
+                            <button type="reset" class="btn-secondary">Limpiar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ===== VIEW: COLABORADORES ===== -->
+                <div class="view" id="view-colaboradores">
+                    <h2 style="font-size:20px;font-weight:600;margin-bottom:16px;"><i class="fas fa-users"></i> Colaboradores</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>#</th><th>Nombre</th><th>Puesto</th><th>Zona</th><th>Jefe Inmediato</th></tr>
+                            </thead>
+                            <tbody id="colaboradores-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ===== VIEW: DESEMPEÑO ===== -->
+                <div class="view" id="view-desempeno">
+                    <h2 style="font-size:20px;font-weight:600;margin-bottom:16px;"><i class="fas fa-star"></i> Score de Desempeño</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>Colaborador</th><th>Puesto</th><th>Tareas Asignadas</th><th>Completadas</th><th>Score</th></tr>
+                            </thead>
+                            <tbody id="desempeno-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /page-content -->
+        </div><!-- /main-content -->
+    </div><!-- /app -->
+
+    <!-- ===== MODAL DETALLE TAREA ===== -->
+    <div class="modal-overlay" id="task-detail-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="detail-title">Detalle de Tarea</h2>
+                <button class="close-modal" id="close-detail-modal">&times;</button>
+            </div>
+            <div id="detail-content"></div>
+        </div>
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script>
+        // ============================================================
+        // 0. CONFIGURACIÓN DE MICROSOFT 365 (Azure AD)
+        // ============================================================
+        // ⚠️ DEBES REEMPLAZAR ESTOS VALORES CON LOS DE TU APLICACIÓN REGISTRADA EN AZURE
+        // Ve a Azure Portal -> Azure Active Directory -> Registros de aplicaciones -> Nueva registro
+        // Configura: 
+        //   - Nombre: TaskFlow
+        //   - Tipos de cuenta: Solo cuentas en este directorio organizativo (o cualquier)
+        //   - URI de redireccionamiento: tipo "Single-page application (SPA)" con la URL de tu página (ej. http://localhost:5500)
+        // Luego copia el Id. de aplicación (clientId) y el Id. de directorio (tenantId)
+        // ============================================================
+        const MSAL_CONFIG = {
+            auth: {
+                clientId: "TU_CLIENT_ID_AQUI",          // Reemplazar con el Client ID de tu app
+                authority: "https://login.microsoftonline.com/TU_TENANT_ID_AQUI", // Reemplazar con tu Tenant ID o "common"
+                redirectUri: window.location.origin + window.location.pathname,   // Ej: "http://localhost:5500"
+            },
+            cache: {
+                cacheLocation: "localStorage",
+                storeAuthStateInCookie: false,
+            }
+        };
+
+        // Inicializar MSAL
+        const msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+
+        // ============================================================
+        // 1. DATOS DE EMPLEADOS (desde el Excel)
+        // ============================================================
+        const EMPLEADOS = [
+            { num: 10077, nombre: "MAURICIO MUÑOZ LOPEZ", email: "mauricio.munoz@telcel.com", celular: "8183620020",
+                puesto: "ANALISTA", zona: "VOZ Y DATOS", jefe: "MARCO MARQUEZ GUTIERREZ",
+                gerente: "VALENTIN VALENCIA", chat: "498322337" },
+            { num: 9316, nombre: "JACINTO EDUARDO VENEGAS OVALLE", email: "eduardo.venegas@telcel.com",
+                celular: "8182530009", puesto: "ANALISTA", zona: "GUADALUPE", jefe: "MARCO MARQUEZ GUTIERREZ",
+                gerente: "VALENTIN VALENCIA", chat: "378994410" },
+            { num: 5630, nombre: "JOSE ANTONIO VIZCARDO PERCA", email: "jose.vizcardo@telcel.com", celular: "8183620015",
+                puesto: "ANALISTA", zona: "CCR 1", jefe: "SERGIO GUILLERMO MONTALVO",
+                gerente: "VALENTIN VALENCIA", chat: "614393597" },
+            { num: 8716, nombre: "LUIS RUBEN GARCIA ACOSTA", email: "luis.garcia@telcel.com", celular: "8181620009",
+                puesto: "ANALISTA", zona: "CCR 1", jefe: "EDGAR EDUARDO MALDONADO MARTINEZ",
+                gerente: "VALENTIN VALENCIA", chat: "564153930" },
+            { num: 6850, nombre: "GREGORIO MARTINEZ RIVERA", email: "GREGORIO.MARTINEZ@TELCEL.COM",
+                celular: "8183090022", puesto: "ANALISTA", zona: "SAN PEDRO",
+                jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS", gerente: "VALENTIN VALENCIA", chat: "444511504" },
+            { num: 7695, nombre: "CARLOS ENRIQUE LOZANO RETA", email: "carlos.lozano@telcel.com", celular: "8444270002",
+                puesto: "ANALISTA", zona: "SAN PEDRO", jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS",
+                gerente: "VALENTIN VALENCIA", chat: "930530059" },
+            { num: 8054, nombre: "JUAN CARLOS MARTINEZ LEAL", email: "jmartile@mail.telcel.com", celular: "8444270001",
+                puesto: "ANALISTA", zona: "SAN PEDRO", jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS",
+                gerente: "VALENTIN VALENCIA", chat: "954279167" },
+            { num: 8704, nombre: "EDUARDO VARGAS PALOMARES", email: "eduardo.vargas@telcel.com", celular: "8181620008",
+                puesto: "ANALISTA", zona: "CCR 1", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "469030624" },
+            { num: 10079, nombre: "FRANCISCO RUIZ EGUIA", email: "franruiz@telcel.com", celular: "8182800008",
+                puesto: "ANALISTA", zona: "ANAHUAC", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "485695122" },
+            { num: 13315, nombre: "LUIS ENRIQUE CALZADA RAMIREZ", email: "luis.calzada@telcel.com",
+                celular: "8182520020", puesto: "ANALISTA", zona: "SAN PEDRO",
+                jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS", gerente: "VALENTIN VALENCIA", chat: "368404399" },
+            { num: 17067, nombre: "MIGUEL ANGEL GARCIA MUZA", email: "miguel.muza@telcel.com", celular: "8441600002",
+                puesto: "ANALISTA", zona: "SAN PEDRO", jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS",
+                gerente: "VALENTIN VALENCIA", chat: "983622309" },
+            { num: 65053, nombre: "BENJAMIN ISAIAS CASTILLO CRUZ", email: "benjamin.cruz@telcel.com",
+                celular: "8999360013", puesto: "ANALISTA", zona: "REYNOSA 1", jefe: "JORGE SAENZ REYNA",
+                gerente: "VALENTIN VALENCIA", chat: "1012201254" },
+            { num: 26983, nombre: "IOD ROSAS GOMEZ", email: "iod.rosas@telcel.com", celular: "8998710012",
+                puesto: "ANALISTA", zona: "REYNOSA 2", jefe: "FERNANDO TEJEDA LOYA",
+                gerente: "VALENTIN VALENCIA", chat: "390297138" },
+            { num: 7396, nombre: "LUIS ALBERTO BAEZA TREVIÑO", email: "luis.trevino@telcel.com", celular: "8998710050",
+                puesto: "ANALISTA", zona: "REYNOSA 1", jefe: "JORGE LUIS SAENZ REYNA",
+                gerente: "VALENTIN VALENCIA", chat: "838242621" },
+            { num: 11660, nombre: "NORBERTO HERNANDEZ CASANOVA", email: "norberto.hernandez@telcel.com",
+                celular: "8999360012", puesto: "ANALISTA", zona: "REYNOSA 2", jefe: "FERNANDO TEJEDA LOYA",
+                gerente: "VALENTIN VALENCIA", chat: "486167041" },
+            { num: 17816, nombre: "JORGE ENRIQUE CEJA TEJEDA", email: "jorge.cejat@telcel.com", celular: "8998710013",
+                puesto: "ANALISTA", zona: "REYNOSA 1", jefe: "JORGE LUIS SAENZ REYNA",
+                gerente: "VALENTIN VALENCIA", chat: "446947864" },
+            { num: 7640, nombre: "SALVADOR ANDRADE FERNANDEZ", email: "salvador.andrade@telcel.com",
+                celular: "8181620002", puesto: "ANALISTA", zona: "PROYECTOS 1",
+                jefe: "CARLOS EDUARDO MENDEZ GONZALEZ", gerente: "VALENTIN VALENCIA", chat: "766095471" },
+            { num: 7948, nombre: "LORENA HERMINIA GARCIA IRUEGAS", email: "lorena.garcia@telcel.com", celular: "NA",
+                puesto: "ANALISTA", zona: "CCR 2", jefe: "JUAN CARLOS LEY DIAZ",
+                gerente: "VALENTIN VALENCIA", chat: "1149723628" },
+            { num: 8334, nombre: "MONICA CECILIA PEREZ ARREDONDO", email: "monica.perez@telcel.com", celular: "NA",
+                puesto: "ANALISTA", zona: "CCR 1", jefe: "SERGIO MONTALVO PEREZ",
+                gerente: "VALENTIN VALENCIA", chat: "5862104906" },
+            { num: 8620, nombre: "ALEJANDRA VERONICA RODRIGUEZ ALARCON", email: "alejandrav.rodriguez@telcel.com",
+                celular: "NA", puesto: "ANALISTA", zona: "CCR 2", jefe: "JUAN CARLOS LEY DIAZ",
+                gerente: "VALENTIN VALENCIA", chat: "7261040791" },
+            { num: 8633, nombre: "SOCORRO ELIZABETH ARELLANO KUHNERT", email: "elizabeth.arellano@telcel.com",
+                celular: "8180200117", puesto: "ANALISTA", zona: "CCR 2", jefe: "JUAN CARLOS LEY DIAZ",
+                gerente: "VALENTIN VALENCIA", chat: "701629876" },
+            { num: 10260, nombre: "JESSICA LORENA JASSO MARTINEZ", email: "jjasso@telcel.com", celular: "8115007707",
+                puesto: "ANALISTA", zona: "CCR 1", jefe: "SERGIO MONTALVO PEREZ",
+                gerente: "VALENTIN VALENCIA", chat: "820086858" },
+            { num: 11103, nombre: "JUAN CARLOS RODRIGUEZ LEIJA", email: "juanc.rodriguez@telcel.com",
+                celular: "8181620004", puesto: "ANALISTA", zona: "PROYECTOS 1",
+                jefe: "CARLOS EDUARDO MENDEZ GONZALEZ", gerente: "VALENTIN VALENCIA", chat: "7986059496" },
+            { num: 4334, nombre: "JUAN IGNACIO MORENO REYES", email: "juan.moreno@telcel.com", celular: "8183620018",
+                puesto: "ANALISTA", zona: "ANAHUAC", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "883833344" },
+            { num: 8801, nombre: "ROBERTO VALDEZ RODRIGUEZ", email: "roberto.valdez@telcel.com", celular: "8183960020",
+                puesto: "ANALISTA", zona: "GUADALUPE", jefe: "MARCO MARQUEZ GUTIERREZ",
+                gerente: "VALENTIN VALENCIA", chat: "621954686" },
+            { num: 9226, nombre: "HECTOR IVAN LEYVA ESPINOZA", email: "ivan.leyva@telcel.com", celular: "8183620007",
+                puesto: "ANALISTA", zona: "PROYECTOS 1", jefe: "CARLOS EDUARDO MENDEZ GONZALEZ",
+                gerente: "VALENTIN VALENCIA", chat: "502526656" },
+            { num: 9775, nombre: "LUIS ENRIQUE RAMIREZ VAZQUEZ", email: "luis.ramirez@telcel.com",
+                celular: "8181620019", puesto: "ANALISTA", zona: "GUADALUPE", jefe: "MARCO MARQUEZ GUTIERREZ",
+                gerente: "VALENTIN VALENCIA", chat: "528065934" },
+            { num: 10911, nombre: "SERGIO GUILLERMO MONTALVO PEREZ", email: "guillermo.montalvo@telcel.com",
+                celular: "8183660016", puesto: "JEFE", zona: "CCR 1", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "5465348775" },
+            { num: 19617, nombre: "ISRAEL PALAU CORTES", email: "israel.palau@telcel.com", celular: "8183090017",
+                puesto: "ANALISTA", zona: "ANAHUAC", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "505807483" },
+            { num: 9369, nombre: "MARTIN RODRIGUEZ SILVA", email: "martin.rodriguez@telcel.com", celular: "8183660009",
+                puesto: "ANALISTA", zona: "ANAHUAC", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "597882288" },
+            { num: 7357, nombre: "ANDRES MEDARDO GONZALEZ SALINAS", email: "andres.salinas@telcel.com",
+                celular: "8183660007", puesto: "ANALISTA", zona: "CARRANZA",
+                jefe: "IVAN FERNANDO MARTIN SALAS", gerente: "VALENTIN VALENCIA", chat: "586236491" },
+            { num: 8198, nombre: "JOSE HUMBERTO DIAZ JUAREZ", email: "jose.diazj@telcel.com", celular: "8181620018",
+                puesto: "ANALISTA", zona: "PROYECTOS 2", jefe: "EDGAR EDUARDO MALDONADO MARTINEZ",
+                gerente: "VALENTIN VALENCIA", chat: "655699131" },
+            { num: 8800, nombre: "ALFREDO HERNANDEZ PRIETO", email: "alfredo.hernandezp@telcel.com",
+                celular: "8183660004", puesto: "ANALISTA", zona: "GUADALUPE",
+                jefe: "SERGIO RAFAEL SANTOY ROSAS", gerente: "VALENTIN VALENCIA", chat: "558832464" },
+            { num: 10928, nombre: "BRUNO GAMBOA SAENZ", email: "bruno.gamboa@telcel.com", celular: "8183090012",
+                puesto: "ANALISTA", zona: "CARRANZA", jefe: "IVAN FERNANDO MARTIN SALAS",
+                gerente: "VALENTIN VALENCIA", chat: "600435578" },
+            { num: 10849, nombre: "OSCAR ALBERTO CUELLAR SANCHEZ", email: "oscar.cuellar@telcel.com",
+                celular: "8781220010", puesto: "ANALISTA", zona: "NUEVO LAREDO",
+                jefe: "GONZALO LARES FLORES", gerente: "VALENTIN VALENCIA", chat: "504157177" },
+            { num: 12043, nombre: "JOSE ZAVALA RAMIREZ", email: "jose.zavala@telcel.com", celular: "8677350009",
+                puesto: "ANALISTA", zona: "NUEVO LAREDO", jefe: "GONZALO LARES FLORES",
+                gerente: "VALENTIN VALENCIA", chat: "580816324" },
+            { num: 13416, nombre: "GONZALO LARES FLORES", email: "gonzalo.lares@telcel.com", celular: "8677350017",
+                puesto: "JEFE", zona: "NUEVO LAREDO", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "1852592456" },
+            { num: 15359, nombre: "RICARDO DE JESUS RODRIGUEZ COLUNGA", email: "ricardo.rodriguez@telcel.com",
+                celular: "8661070010", puesto: "ANALISTA", zona: "NUEVO LAREDO",
+                jefe: "GONZALO LARES FLORES", gerente: "VALENTIN VALENCIA", chat: "562887959" },
+            { num: 61764, nombre: "GABRIEL GUTIERREZ VALLADARES", email: "gabriel.valladares@telcel.com",
+                celular: "8333072282", puesto: "ANALISTA", zona: "PROYECTOS 2",
+                jefe: "SERGIO MONTALVO PEREZ", gerente: "VALENTIN VALENCIA", chat: "1058627768" },
+            { num: 2656, nombre: "DAVID MARTINEZ GOMEZ", email: "david.martinez@telcel.com", celular: "8183090025",
+                puesto: "ANALISTA", zona: "SAN PEDRO", jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS",
+                gerente: "VALENTIN VALENCIA", chat: "782767358" },
+            { num: 10929, nombre: "JOSE MARTIN VAZQUEZ GARCIA", email: "martin.vazquez@telcel.com",
+                celular: "8183620009", puesto: "ANALISTA", zona: "CARRANZA",
+                jefe: "IVAN FERNANDO MARTIN SALAS", gerente: "VALENTIN VALENCIA", chat: "613551390" },
+            { num: 17066, nombre: "CARLOS EDUARDO MENDEZ GONZALEZ", email: "carlos.mendezg@telcel.com",
+                celular: "8183090005", puesto: "JEFE", zona: "PROYECTOS 1", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "588566080" },
+            { num: 24678, nombre: "ANDRES MATA GARCILAZO", email: "andres.mata@telcel.com", celular: "8183090004",
+                puesto: "ANALISTA", zona: "SAN PEDRO", jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS",
+                gerente: "VALENTIN VALENCIA", chat: "486910535" },
+            { num: 8161, nombre: "DANIELA TREVIÑO GARCIA", email: "daniela.trevino@telcel.com", celular: "8180200190",
+                puesto: "ANALISTA", zona: "LOGISTICA", jefe: "JUAN EDGARDO VILLANUEVA",
+                gerente: "VALENTIN VALENCIA", chat: "906932590" },
+            { num: 8702, nombre: "JUAN CARLOS MARROQUIN", email: "juan.marroquin@telcel.com", celular: "8182530001",
+                puesto: "ANALISTA", zona: "LOGISTICA", jefe: "JUAN EDGARDO VILLANUEVA",
+                gerente: "VALENTIN VALENCIA", chat: "2045490048" },
+            { num: 8952, nombre: "ROBERTO MOLINA ORTIZ", email: "robmolor@mail.telcel.com", celular: "8183660003",
+                puesto: "ANALISTA", zona: "LOGISTICA", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "1297185549" },
+            { num: 59454, nombre: "JESUS ANGEL SOLIS SANCHEZ", email: "jesus.solis@telcel.com", celular: "8331400020",
+                puesto: "ANALISTA", zona: "TAMPICO", jefe: "JOSE DE JESUS AGUIRRE MARES",
+                gerente: "VALENTIN VALENCIA", chat: "500299150" },
+            { num: 6760, nombre: "JULIAN JAVIER HERNANDEZ GONZALEZ", email: "julhergo@mail.telcel.com",
+                celular: "8332180018", puesto: "ANALISTA", zona: "TAMPICO",
+                jefe: "JOSE DE JESUS AGUIRRE MARES", gerente: "VALENTIN VALENCIA", chat: "487888564" },
+            { num: 36084, nombre: "ARTURO GONZALEZ NAVA", email: "arturo.nava@telcel.com", celular: "8331880053",
+                puesto: "ANALISTA", zona: "TAMPICO", jefe: "JOSE DE JESUS AGUIRRE MARES",
+                gerente: "VALENTIN VALENCIA", chat: "548096801" },
+            { num: 66112, nombre: "VICTOR BENJAMIN MONTOYA PECINA", email: "victor.montoya@telcel.com",
+                celular: "8343110018", puesto: "ANALISTA", zona: "TAMPICO",
+                jefe: "JOSE DE JESUS AGUIRRE MARES", gerente: "VALENTIN VALENCIA", chat: "5613043878" },
+            { num: 5664, nombre: "JOSE DE JESUS AGUIRRE MARES", email: "jesus.mares@telcel.com", celular: "8332180014",
+                puesto: "JEFE", zona: "TAMPICO", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "404240223" },
+            { num: 4246, nombre: "JUAN EDGARDO VILLANUEVA", email: "edgardo.villanueva@telcel.com",
+                celular: "8183620002", puesto: "JEFE", zona: "LOGISTICA", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "562349002" },
+            { num: 8551, nombre: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS", email: "edgar.gonzalez@telcel.com",
+                celular: "8183660014", puesto: "JEFE", zona: "SAN PEDRO", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "534085768" },
+            { num: 5757, nombre: "EDGAR EDUARDO MALDONADO MARTINEZ", email: "eduardo.maldonado@telcel.com",
+                celular: "8183620017", puesto: "JEFE", zona: "PROYECTOS 2",
+                jefe: "VALENTIN VALENCIA GARCIA", gerente: "VALENTIN VALENCIA", chat: "584652721" },
+            { num: 6777, nombre: "EMMANUEL MENDEZ ARIAS", email: "emmanuel.mendez@telcel.com", celular: "8183620004",
+                puesto: "JEFE", zona: "ANAHUAC", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "494239959" },
+            { num: 3943, nombre: "MARCO MARQUEZ GUTIERREZ", email: "marco.marquez@telcel.com", celular: "8183660005",
+                puesto: "JEFE", zona: "GUADALUPE", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "226284653" },
+            { num: 5849, nombre: "FERNANDO TEJEDA LOYA", email: "fernando.tejeda@telcel.com", celular: "8999360011",
+                puesto: "JEFE", zona: "REYNOSA 2", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "296272919" },
+            { num: 4212, nombre: "JORGE LUIS SAENZ REYNA", email: "jorge.saenz@telcel.com", celular: "8999360015",
+                puesto: "JEFE", zona: "REYNOSA 1", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "242414273" },
+            { num: 4993, nombre: "JUAN CARLOS LEY DIAZ", email: "carlos.ley@telcel.com", celular: "8183620012",
+                puesto: "JEFE", zona: "CCR 2", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "563879093" },
+            { num: 63359, nombre: "ROMAN MARTINEZ MORALES", email: "roman.morales@telcel.com", celular: "8332180016",
+                puesto: "ANALISTA", zona: "TAMPICO", jefe: "JOSE DE JESUS AGUIRRE MARES",
+                gerente: "VALENTIN VALENCIA", chat: "682331651" },
+            { num: 61297, nombre: "ARMANDO JAVIER ROSALES SALINAS", email: "armando.rosales@telcel.com",
+                celular: "8183090008", puesto: "ANALISTA", zona: "PROYECTOS 2",
+                jefe: "EDGAR EDUARDO MALDONADO MARTINEZ", gerente: "VALENTIN VALENCIA", chat: "734799012" },
+            { num: 5022, nombre: "NORMA NELLY GUTIERREZ GOMEZ", email: "norma.gutierrez@telcel.com", celular: "",
+                puesto: "SECRETARIA", zona: "MONTERREY", jefe: "VALENTIN VALENCIA",
+                gerente: "VALENTIN VALENCIA", chat: "8482868439" },
+            { num: 9372, nombre: "RAUL ALMANZA MUÑOZ", email: "raulalmu@mail.telcel.com", celular: "8183090021",
+                puesto: "ANALISTA", zona: "ANAHUAC", jefe: "EMMANUEL MENDEZ ARIAS",
+                gerente: "VALENTIN VALENCIA", chat: "455007518" },
+            { num: 11519, nombre: "VALENTIN VALENCIA GARCIA", email: "valehmo76@gmail.com", celular: "8183660013",
+                puesto: "GERENTE", zona: "GERENTE", jefe: "SALVADOR SALAZAR", gerente: "S.S.",
+                chat: "176789650" },
+            { num: 67246, nombre: "EMMANUEL DE LEÓN GALVAN", email: "emmanuel.deleon@telcel.com",
+                celular: "867-905-0002", puesto: "ANALISTA", zona: "NUEVO LAREDO",
+                jefe: "GONZALO LARES FLORES", gerente: "VALENTIN VALENCIA", chat: "461375123" },
+            { num: 68781, nombre: "CARLOS ALVARADO CARRIZALES", email: "carlos.carrizales@telcel.com",
+                celular: "867-905-0010", puesto: "ANALISTA", zona: "NUEVO LAREDO",
+                jefe: "GONZALO LARES FLORES", gerente: "VALENTIN VALENCIA", chat: "515019963" },
+            { num: 46907, nombre: "ARTURO RODOLFO MENDOZA ACOSTA", email: "arturo.mendoza@telcel.com",
+                celular: "8343110001", puesto: "ANALISTA", zona: "TAMPICO",
+                jefe: "JOSE DE JESUS AGUIRRE MARES", gerente: "VALENTIN VALENCIA", chat: "500299150" },
+            { num: 71100, nombre: "EFRAIN RODRIGUEZ CORREA", email: "efrain.correa@telcel.com",
+                celular: "8998710016", puesto: "ANALISTA", zona: "REYNOSA 2",
+                jefe: "FERNANDO TEJEDA LOYA", gerente: "VALENTIN VALENCIA", chat: "" },
+            { num: 71687, nombre: "AARON GONZALEZ CRUZ", email: "aaron.gonzalez@telcel.com", celular: "8331472214",
+                puesto: "ANALISTA", zona: "TAMPICO", jefe: "JOSE DE JESUS AGUIRRE MARES",
+                gerente: "VALENTIN VALENCIA", chat: "" },
+            { num: 71686, nombre: "ALEJANDRO GABRIEL ORTIZ GAMEZ", email: "alejandro.gamez@telcel.com",
+                celular: "8444270003", puesto: "ANALISTA", zona: "SAN PEDRO",
+                jefe: "EDGAR ALEJANDRO GONZALEZ LUMBRERAS", gerente: "VALENTIN VALENCIA",
+                chat: "7532669458" },
+            { num: 5083, nombre: "IVAN FERNANDO MARTIN SALAS", email: "ivan.martin@telcel.com", celular: "8183620014",
+                puesto: "JEFE", zona: "CARRANZA", jefe: "VALENTIN VALENCIA GARCIA",
+                gerente: "VALENTIN VALENCIA", chat: "7751236230" },
+            { num: 72314, nombre: "ISRAEL LOPEZ PEREZ", email: "israel.lopezp@telcel.com", celular: "8679050003",
+                puesto: "ANALISTA", zona: "NUEVO LAREDO", jefe: "GONZALO LARES FLORES",
+                gerente: "VALENTIN VALENCIA", chat: "" }
+        ];
+
+        // ============================================================
+        // 2. ESTADO GLOBAL
+        // ============================================================
+        let currentUser = null; // objeto empleado
+        let tasks = [];
+        let taskIdCounter = 1;
+
+        function loadTasks() {
+            const stored = localStorage.getItem('tasks');
+            if (stored) {
+                try {
+                    tasks = JSON.parse(stored);
+                    if (tasks.length > 0) {
+                        taskIdCounter = Math.max(...tasks.map(t => t.id)) + 1;
+                    }
+                } catch (e) { tasks = []; }
+            }
+            if (tasks.length === 0) {
+                const sample = [
+                    { id: taskIdCounter++, titulo: 'Revisar infraestructura de red', descripcion: 'Auditoría de switches y routers en zona San Pedro',
+                        fecha_creacion: new Date().toISOString().split('T')[0], fecha_limite: '2026-07-15',
+                        prioridad: 'alta', estado: 'pendiente', asignado_por: 11519,
+                        asignados_a: [6850, 7695, 8054], archivos: [] },
+                    { id: taskIdCounter++, titulo: 'Actualizar documentación de procesos',
+                        descripcion: 'Revisar y actualizar manuales de procedimientos', fecha_creacion: new Date()
+                            .toISOString().split('T')[0], fecha_limite: '2026-07-20', prioridad: 'media',
+                        estado: 'en-progreso', asignado_por: 10911, asignados_a: [5630, 8716],
+                        archivos: [] },
+                    { id: taskIdCounter++, titulo: 'Preparar informe trimestral', descripcion: 'Recopilar métricas de desempeño',
+                        fecha_creacion: new Date().toISOString().split('T')[0], fecha_limite: '2026-07-30',
+                        prioridad: 'baja', estado: 'completado', asignado_por: 4246,
+                        asignados_a: [8161, 8702], archivos: [] },
+                    { id: taskIdCounter++, titulo: 'Capacitación en nuevos sistemas', descripcion: 'Curso de actualización para equipo de Tampico',
+                        fecha_creacion: new Date().toISOString().split('T')[0], fecha_limite: '2026-08-05',
+                        prioridad: 'media', estado: 'pendiente', asignado_por: 5664,
+                        asignados_a: [59454, 6760, 36084], archivos: [] }
+                ];
+                tasks = sample;
+                saveTasks();
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // ============================================================
+        // 3. AUTENTICACIÓN CON MICROSOFT 365 (MSAL)
+        // ============================================================
+        function getEmpleadoByEmail(email) {
+            return EMPLEADOS.find(e => e.email.toLowerCase() === email.toLowerCase());
+        }
+
+        async function loginMicrosoft() {
+            const loginBtn = document.getElementById('microsoft-login-btn');
+            loginBtn.disabled = true;
+            document.getElementById('login-error').textContent = '';
+
+            try {
+                // Intentar obtener cuenta existente
+                const accounts = msalInstance.getAllAccounts();
+                let account = accounts.length > 0 ? accounts[0] : null;
+
+                if (!account) {
+                    // Iniciar sesión con popup
+                    const response = await msalInstance.loginPopup({
+                        scopes: ["User.Read"],
+                        prompt: "select_account"
+                    });
+                    account = response.account;
+                }
+
+                if (account) {
+                    // Obtener email
+                    const email = account.username;
+                    const empleado = getEmpleadoByEmail(email);
+                    if (empleado) {
+                        // Iniciar app
+                        initApp(empleado);
+                        return;
+                    } else {
+                        document.getElementById('login-error').textContent =
+                            'No se encontró un empleado con el correo: ' + email +
+                            '. Verifica que esté registrado en la base de datos.';
+                        // Cerrar sesión de MSAL para no quedar bloqueados
+                        await msalInstance.logoutPopup();
+                    }
+                }
+            } catch (error) {
+                console.error('Error en login Microsoft:', error);
+                document.getElementById('login-error').textContent =
+                    'Error al iniciar sesión con Microsoft: ' + (error.errorMessage || error.message);
+            } finally {
+                loginBtn.disabled = false;
+            }
+        }
+
+        // ============================================================
+        // 4. LOGIN SIMULADO (MODO DESARROLLO)
+        // ============================================================
+        function loginSimulado() {
+            // Mostrar un prompt para elegir un empleado por número o email (para pruebas)
+            const input = prompt(
+                "Modo desarrollo: ingresa el número de empleado o correo (ej. 10077 o mauricio.munoz@telcel.com):"
+            );
+            if (!input) return;
+            let empleado = null;
+            if (input.includes('@')) {
+                empleado = getEmpleadoByEmail(input.trim());
+            } else {
+                const num = parseInt(input.trim());
+                empleado = EMPLEADOS.find(e => e.num === num);
+            }
+            if (empleado) {
+                initApp(empleado);
+            } else {
+                alert('Empleado no encontrado. Revisa el número o correo.');
+            }
+        }
+
+        // ============================================================
+        // 5. PERMISOS Y ROLES
+        // ============================================================
+        function canAssignTasks(user) {
+            if (!user) return false;
+            const role = user.puesto.toUpperCase();
+            return role === 'GERENTE' || role === 'JEFE' || role === 'SECRETARIA';
+        }
+
+        function getRoleDisplay(user) {
+            if (!user) return '';
+            const p = user.puesto.toUpperCase();
+            if (p === 'GERENTE') return 'Gerente';
+            if (p === 'JEFE') return 'Jefe';
+            if (p === 'SECRETARIA') return 'Secretaria';
+            return 'Analista';
+        }
+
+        // ============================================================
+        // 6. RENDERIZADO DE VISTAS
+        // ============================================================
+
+        function renderDashboard() {
+            const isAssigner = canAssignTasks(currentUser);
+            let userTasks = [];
+            if (isAssigner) {
+                userTasks = tasks;
+            } else {
+                userTasks = tasks.filter(t => t.asignados_a.includes(currentUser.num));
+            }
+
+            const total = userTasks.length;
+            const pendientes = userTasks.filter(t => t.estado === 'pendiente').length;
+            const enProgreso = userTasks.filter(t => t.estado === 'en-progreso').length;
+            const completados = userTasks.filter(t => t.estado === 'completado').length;
+
+            const stats = [
+                { label: 'Total', value: total, icon: 'fa-list' },
+                { label: 'Pendientes', value: pendientes, icon: 'fa-hourglass-half' },
+                { label: 'En Progreso', value: enProgreso, icon: 'fa-spinner' },
+                { label: 'Completadas', value: completados, icon: 'fa-check-circle' }
+            ];
+
+            const grid = document.getElementById('stats-grid');
+            grid.innerHTML = stats.map(s => `
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="fas ${s.icon}"></i></span>
+                    <div class="stat-label">${s.label}</div>
+                    <div class="stat-value">${s.value}</div>
+                </div>
+            `).join('');
+
+            const sorted = [...userTasks].sort((a, b) => b.id - a.id).slice(0, 5);
+            const container = document.getElementById('recent-tasks');
+            if (sorted.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay tareas recientes</p></div>`;
+            } else {
+                container.innerHTML = sorted.map(t => renderTaskItem(t)).join('');
+            }
+        }
+
+        function renderMisTareas() {
+            const isAssigner = canAssignTasks(currentUser);
+            let userTasks = [];
+            if (isAssigner) {
+                userTasks = tasks;
+            } else {
+                userTasks = tasks.filter(t => t.asignados_a.includes(currentUser.num));
+            }
+
+            const filter = document.getElementById('filter-status').value;
+            if (filter !== 'all') {
+                userTasks = userTasks.filter(t => t.estado === filter);
+            }
+
+            const container = document.getElementById('mis-tareas-list');
+            if (userTasks.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>No hay tareas para mostrar</p></div>`;
+            } else {
+                container.innerHTML = userTasks.map(t => renderTaskItem(t)).join('');
+            }
+        }
+
+        function renderColaboradores() {
+            const tbody = document.getElementById('colaboradores-table-body');
+            tbody.innerHTML = EMPLEADOS.map(e => `
+                <tr>
+                    <td>${e.num}</td>
+                    <td>${e.nombre}</td>
+                    <td>${e.puesto}</td>
+                    <td>${e.zona}</td>
+                    <td>${e.jefe}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDesempeno() {
+            const tbody = document.getElementById('desempeno-table-body');
+            const rows = EMPLEADOS.map(e => {
+                const asignadas = tasks.filter(t => t.asignados_a.includes(e.num));
+                const total = asignadas.length;
+                const completadas = asignadas.filter(t => t.estado === 'completado').length;
+                const score = total === 0 ? 0 : Math.round((completadas / total) * 100);
+                return { ...e, total, completadas, score };
+            });
+
+            rows.sort((a, b) => b.score - a.score);
+
+            tbody.innerHTML = rows.map(r => `
+                <tr>
+                    <td><strong>${r.nombre}</strong></td>
+                    <td>${r.puesto}</td>
+                    <td>${r.total}</td>
+                    <td>${r.completadas}</td>
+                    <td>
+                        <div class="score-bar"><div class="fill" style="width:${r.score}%;"></div></div>
+                        ${r.score}%
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTaskItem(task) {
+            const asignadoPor = EMPLEADOS.find(e => e.num === task.asignado_por);
+            const nombreAsignador = asignadoPor ? asignadoPor.nombre : 'Desconocido';
+            const estadoClass = task.estado;
+            const prioridadIcon = task.prioridad === 'alta' ? '🔴' : task.prioridad === 'media' ? '🟡' : '🟢';
+
+            const isAssignee = task.asignados_a.includes(currentUser.num);
+            const isAssigner = canAssignTasks(currentUser);
+            const canUpdate = isAssignee || isAssigner;
+
+            return `
+                <div class="task-item" data-id="${task.id}">
+                    <div class="task-info">
+                        <div class="task-title">${prioridadIcon} ${task.titulo}</div>
+                        <div class="task-meta">
+                            <span><i class="fas fa-user"></i> ${nombreAsignador}</span>
+                            <span><i class="fas fa-calendar-alt"></i> ${task.fecha_limite || 'Sin fecha'}</span>
+                            <span><i class="fas fa-tag"></i> ${task.prioridad}</span>
+                            <span><i class="fas fa-users"></i> ${task.asignados_a.length} asignados</span>
+                            ${task.archivos && task.archivos.length > 0 ? `<span><i class="fas fa-paperclip"></i> ${task.archivos.length}</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <span class="task-status ${estadoClass}">${task.estado}</span>
+                        <div class="task-actions">
+                            ${canUpdate ? `
+                                <select class="status-select" data-id="${task.id}" style="padding:4px 8px;border-radius:30px;border:1px solid var(--border);font-size:12px;background:#fff;">
+                                    <option value="pendiente" ${task.estado==='pendiente'?'selected':''}>Pendiente</option>
+                                    <option value="en-progreso" ${task.estado==='en-progreso'?'selected':''}>En progreso</option>
+                                    <option value="completado" ${task.estado==='completado'?'selected':''}>Completado</option>
+                                </select>
+                            ` : ''}
+                            <button class="view-detail-btn" data-id="${task.id}" title="Ver detalle"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // 7. FUNCIONES DE TAREAS
+        // ============================================================
+
+        function createTask(titulo, descripcion, fecha_limite, prioridad, asignados_a, archivos) {
+            const nueva = {
+                id: taskIdCounter++,
+                titulo,
+                descripcion: descripcion || '',
+                fecha_creacion: new Date().toISOString().split('T')[0],
+                fecha_limite: fecha_limite || '',
+                prioridad: prioridad || 'media',
+                estado: 'pendiente',
+                asignado_por: currentUser.num,
+                asignados_a: asignados_a,
+                archivos: archivos || []
+            };
+            tasks.push(nueva);
+            saveTasks();
+            return nueva;
+        }
+
+        function updateTaskStatus(taskId, nuevoEstado) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.estado = nuevoEstado;
+                saveTasks();
+                return true;
+            }
+            return false;
+        }
+
+        function getTaskById(id) {
+            return tasks.find(t => t.id === id);
+        }
+
+        // ============================================================
+        // 8. NAVEGACIÓN Y EVENTOS
+        // ============================================================
+
+        function navigateTo(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const view = document.getElementById(`view-${viewName}`);
+            if (view) view.classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const navItem = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+            if (navItem) navItem.classList.add('active');
+
+            const titles = {
+                dashboard: 'Dashboard',
+                'mis-tareas': 'Mis Tareas',
+                asignar: 'Asignar Tarea',
+                colaboradores: 'Colaboradores',
+                desempeno: 'Desempeño'
+            };
+            document.getElementById('page-title').textContent = titles[viewName] || 'Dashboard';
+
+            switch (viewName) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'mis-tareas':
+                    renderMisTareas();
+                    break;
+                case 'colaboradores':
+                    renderColaboradores();
+                    break;
+                case 'desempeno':
+                    renderDesempeno();
+                    break;
+                case 'asignar':
+                    populateAssigneesSelect();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        function populateAssigneesSelect() {
+            const select = document.getElementById('task-assignees');
+            select.innerHTML = EMPLEADOS
+                .filter(e => e.num !== currentUser.num)
+                .map(e => `<option value="${e.num}">${e.nombre} (${e.puesto})</option>`)
+                .join('');
+        }
+
+        function showTaskDetail(taskId) {
+            const task = getTaskById(taskId);
+            if (!task) return;
+            const modal = document.getElementById('task-detail-modal');
+            document.getElementById('detail-title').textContent = `Tarea #${task.id}`;
+
+            const asignados = task.asignados_a.map(num => {
+                const e = EMPLEADOS.find(emp => emp.num === num);
+                return e ? e.nombre : num;
+            }).join(', ');
+
+            const asignador = EMPLEADOS.find(e => e.num === task.asignado_por);
+            const nombreAsignador = asignador ? asignador.nombre : 'Desconocido';
+
+            let archivosHtml = '';
+            if (task.archivos && task.archivos.length > 0) {
+                archivosHtml = task.archivos.map(f => `<span class="file-tag"><i class="fas fa-file"></i> ${f}</span>`).join(' ');
+            } else {
+                archivosHtml = '<span style="color:#94a3b8;">Sin archivos adjuntos</span>';
+            }
+
+            const content = document.getElementById('detail-content');
+            content.innerHTML = `
+                <div style="display:grid;gap:12px;">
+                    <p><strong>Título:</strong> ${task.titulo}</p>
+                    <p><strong>Descripción:</strong> ${task.descripcion || 'Sin descripción'}</p>
+                    <p><strong>Asignado por:</strong> ${nombreAsignador}</p>
+                    <p><strong>Asignados a:</strong> ${asignados}</p>
+                    <p><strong>Estado:</strong> <span class="task-status ${task.estado}">${task.estado}</span></p>
+                    <p><strong>Fecha límite:</strong> ${task.fecha_limite || 'Sin definir'}</p>
+                    <p><strong>Prioridad:</strong> ${task.prioridad}</p>
+                    <p><strong>Archivos adjuntos:</strong></p>
+                    <div class="file-list">${archivosHtml}</div>
+                    <p><strong>Fecha creación:</strong> ${task.fecha_creacion}</p>
+                </div>
+            `;
+            modal.classList.add('open');
+        }
+
+        // ============================================================
+        // 9. INICIALIZACIÓN DE LA APLICACIÓN
+        // ============================================================
+
+        function initApp(user) {
+            currentUser = user;
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+
+            document.getElementById('sidebar-username').textContent = user.nombre;
+            document.getElementById('sidebar-role').textContent = getRoleDisplay(user);
+            document.getElementById('avatar-letter').textContent = user.nombre.charAt(0);
+            document.getElementById('header-role-badge').textContent = getRoleDisplay(user);
+
+            const navAsignar = document.getElementById('nav-asignar');
+            if (canAssignTasks(user)) {
+                navAsignar.style.display = 'flex';
+            } else {
+                navAsignar.style.display = 'none';
+            }
+
+            loadTasks();
+            navigateTo('dashboard');
+
+            // Eventos de navegación
+            document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    const view = this.dataset.view;
+                    navigateTo(view);
+                    document.getElementById('sidebar').classList.remove('open');
+                });
+            });
+
+            document.getElementById('hamburger-btn').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('open');
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', async function() {
+                // Cerrar sesión de Microsoft si es posible
+                try {
+                    await msalInstance.logoutPopup();
+                } catch (e) { /* ignore */ }
+                localStorage.removeItem('currentUser');
+                location.reload();
+            });
+
+            document.getElementById('filter-status').addEventListener('change', function() {
+                renderMisTareas();
+            });
+
+            document.getElementById('task-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (!canAssignTasks(currentUser)) {
+                    alert('No tienes permiso para asignar tareas.');
+                    return;
+                }
+                const titulo = document.getElementById('task-title').value.trim();
+                if (!titulo) {
+                    alert('El título es obligatorio');
+                    return;
+                }
+                const desc = document.getElementById('task-desc').value.trim();
+                const deadline = document.getElementById('task-deadline').value;
+                const prioridad = document.getElementById('task-priority').value;
+                const select = document.getElementById('task-assignees');
+                const selected = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+                if (selected.length === 0) {
+                    alert('Selecciona al menos un colaborador');
+                    return;
+                }
+
+                const fileInput = document.getElementById('task-files');
+                const fileNames = Array.from(fileInput.files).map(f => f.name);
+
+                createTask(titulo, desc, deadline, prioridad, selected, fileNames);
+                alert(`Tarea "${titulo}" asignada exitosamente.`);
+                this.reset();
+                document.getElementById('file-list-preview').innerHTML = '';
+                navigateTo('mis-tareas');
+            });
+
+            document.addEventListener('click', function(e) {
+                const detailBtn = e.target.closest('.view-detail-btn');
+                if (detailBtn) {
+                    const id = parseInt(detailBtn.dataset.id);
+                    showTaskDetail(id);
+                }
+
+                const statusSelect = e.target.closest('.status-select');
+                if (statusSelect) {
+                    const id = parseInt(statusSelect.dataset.id);
+                    const newStatus = statusSelect.value;
+                    if (updateTaskStatus(id, newStatus)) {
+                        const activeView = document.querySelector('.view.active');
+                        if (activeView) {
+                            const viewId = activeView.id.replace('view-', '');
+                            navigateTo(viewId);
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('close-detail-modal').addEventListener('click', function() {
+                document.getElementById('task-detail-modal').classList.remove('open');
+            });
+            document.getElementById('task-detail-modal').addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('open');
+            });
+
+            document.getElementById('task-files').addEventListener('change', function() {
+                const preview = document.getElementById('file-list-preview');
+                const files = Array.from(this.files);
+                preview.innerHTML = files.map(f =>
+                    `<span class="file-tag"><i class="fas fa-file"></i> ${f.name}</span>`
+                ).join(' ');
+            });
+        }
+
+        // ============================================================
+        // 10. MANEJO DE EVENTOS DE LOGIN
+        // ============================================================
+
+        document.getElementById('microsoft-login-btn').addEventListener('click', loginMicrosoft);
+
+        document.getElementById('dev-login-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            loginSimulado();
+        });
+
+        // ============================================================
+        // 11. RESTAURAR SESIÓN AL RECARGAR
+        // ============================================================
+
+        (async function restoreSession() {
+            // Primero intentar con MSAL
+            try {
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    const account = accounts[0];
+                    const email = account.username;
+                    const empleado = getEmpleadoByEmail(email);
+                    if (empleado) {
+                        initApp(empleado);
+                        return;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+
+            // Si no, intentar con localStorage (usuario guardado)
+            const saved = localStorage.getItem('currentUser');
+            if (saved) {
+                try {
+                    const user = JSON.parse(saved);
+                    const found = EMPLEADOS.find(e => e.num === user.num);
+                    if (found) {
+                        initApp(found);
+                        return;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            // Si no hay sesión, mostrar login
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        })();
+
+        // Guardar usuario al iniciar sesión
+        const originalInit = initApp;
+        initApp = function(user) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            originalInit(user);
+        };
+    </script>
+</body>
+</html>
