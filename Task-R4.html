@@ -1020,6 +1020,25 @@
             padding: 0 6px;
             border-radius: 10px;
         }
+        .background-sync-toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+        .background-sync-toast.show {
+            opacity: 1;
+        }
         @media (max-width: 768px) {
             :root {
                 --sidebar-width: 0px;
@@ -1076,6 +1095,11 @@
             }
             .sync-indicator .last-updated {
                 display: none;
+            }
+            .background-sync-toast {
+                bottom: 70px;
+                font-size: 12px;
+                padding: 6px 16px;
             }
         }
         @media (max-width: 480px) {
@@ -1188,6 +1212,9 @@
 
     <!-- ===== TOAST ===== -->
     <div id="toast" class="toast"></div>
+
+    <!-- ===== BACKGROUND SYNC TOAST ===== -->
+    <div id="backgroundSyncToast" class="background-sync-toast">🔄 Actualizando datos en segundo plano...</div>
 
     <!-- ===== LOGIN ===== -->
     <div id="login-container">
@@ -1453,10 +1480,10 @@
         let chartInstances = { zona: null, estado: null };
         let archivosEliminar = [];
 
-        // Control de sincronización
         let syncInterval = null;
         let isSyncing = false;
         let syncCount = 0;
+        let chartInitialized = false;
 
         const FILE_STORE_KEY = 'taskflow_file_store';
 
@@ -2048,7 +2075,7 @@
         }
 
         // ============================================================
-        // 15. RENDERIZADO DE DASHBOARD
+        // 15. RENDERIZADO DE DASHBOARD (con actualización suave de gráficos)
         // ============================================================
         function renderDashboard() {
             const visibleTasks = getVisibleTasks(currentUser).filter(t => t.id && t.id !== '');
@@ -2106,14 +2133,8 @@
             }
             filtrosDiv.innerHTML = filtrosHtml;
 
-            if (typeof Chart !== 'undefined') {
-                dibujarGraficos(tasksFiltradas);
-            } else {
-                document.getElementById('chartZonaContainer').innerHTML =
-                    '<p class="chart-error">⚠️ Librería de gráficos no disponible</p>';
-                document.getElementById('chartEstadoContainer').innerHTML =
-                    '<p class="chart-error">⚠️ Librería de gráficos no disponible</p>';
-            }
+            // Actualizar gráficos de forma suave (sin recrearlos)
+            actualizarGraficos(tasksFiltradas);
 
             const sorted = [...tasksFiltradas].sort((a, b) => a.id.localeCompare(b.id)).slice(0, 5);
             const container = document.getElementById('recent-tasks');
@@ -2126,14 +2147,9 @@
         }
 
         // ============================================================
-        // 16. GRÁFICOS
+        // 16. GRÁFICOS - ACTUALIZACIÓN SUAVE (sin recrear)
         // ============================================================
-        function dibujarGraficos(tasksData) {
-            if (chartInstances.zona) { chartInstances.zona.destroy();
-                chartInstances.zona = null; }
-            if (chartInstances.estado) { chartInstances.estado.destroy();
-                chartInstances.estado = null; }
-
+        function actualizarGraficos(tasksData) {
             const zonasMap = {};
             tasksData.forEach(t => {
                 const emp = empleados.find(e => e.num === t.asignado_a);
@@ -2153,104 +2169,145 @@
             const completados = zonas.map(z => zonasMap[z].completado);
             const criticas = zonas.map(z => zonasMap[z].critica);
 
-            const ctxZona = document.getElementById('dashboardZonaChart');
+            // Actualizar gráfico de zonas (barra)
             const zonaContainer = document.getElementById('chartZonaContainer');
-            if (ctxZona && typeof Chart !== 'undefined') {
+
+            if (typeof Chart !== 'undefined') {
                 if (zonas.length === 0) {
-                    zonaContainer.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No hay datos de zonas</p>';
-                } else {
+                    // No hay datos: mostrar mensaje
+                    if (chartInstances.zona) {
+                        chartInstances.zona.destroy();
+                        chartInstances.zona = null;
+                    }
                     zonaContainer.innerHTML =
-                        `<canvas id="dashboardZonaChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en una barra para filtrar por zona</p>`;
-                    const newCtx = document.getElementById('dashboardZonaChart');
-                    chartInstances.zona = new Chart(newCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: zonas,
-                            datasets: [
-                                { label: 'Pendiente', data: pendientes, backgroundColor: '#fecb6e',
-                                    borderRadius: 4 },
-                                { label: 'En Progreso', data: enProgreso, backgroundColor: '#63b3ed',
-                                    borderRadius: 4 },
-                                { label: 'Completado', data: completados, backgroundColor: '#68d391',
-                                    borderRadius: 4 },
-                                { label: '🔴 Críticas', data: criticas, backgroundColor: '#fc8181',
-                                    borderRadius: 4 }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'top', labels: { font: { size: 10 } } },
-                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
+                        '<p style="text-align:center;color:#999;padding:20px;">No hay datos de zonas</p>';
+                } else {
+                    if (!chartInstances.zona) {
+                        // Crear gráfico por primera vez
+                        zonaContainer.innerHTML =
+                            `<canvas id="dashboardZonaChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en una barra para filtrar por zona</p>`;
+                        const newCtx = document.getElementById('dashboardZonaChart');
+                        chartInstances.zona = new Chart(newCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: zonas,
+                                datasets: [
+                                    { label: 'Pendiente', data: pendientes, backgroundColor: '#fecb6e',
+                                        borderRadius: 4 },
+                                    { label: 'En Progreso', data: enProgreso, backgroundColor: '#63b3ed',
+                                        borderRadius: 4 },
+                                    { label: 'Completado', data: completados, backgroundColor: '#68d391',
+                                        borderRadius: 4 },
+                                    { label: '🔴 Críticas', data: criticas, backgroundColor: '#fc8181',
+                                        borderRadius: 4 }
+                                ]
                             },
-                            scales: {
-                                x: { stacked: false },
-                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                            },
-                            onClick: (e, elements) => {
-                                if (elements.length > 0) {
-                                    const index = elements[0].index;
-                                    const zona = zonas[index];
-                                    if (zona) window.aplicarFiltroDashboard('zona', zona);
+                            options: {
+                                responsive: true,
+                                animation: {
+                                    duration: 300,
+                                    easing: 'easeInOutQuad'
+                                },
+                                plugins: {
+                                    legend: { position: 'top', labels: { font: { size: 10 } } },
+                                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
+                                },
+                                scales: {
+                                    x: { stacked: false },
+                                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                                },
+                                onClick: (e, elements) => {
+                                    if (elements.length > 0) {
+                                        const index = elements[0].index;
+                                        const zona = zonas[index];
+                                        if (zona) window.aplicarFiltroDashboard('zona', zona);
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    } else {
+                        // Actualizar datos existentes (sin recrear)
+                        const chart = chartInstances.zona;
+                        chart.data.labels = zonas;
+                        chart.data.datasets[0].data = pendientes;
+                        chart.data.datasets[1].data = enProgreso;
+                        chart.data.datasets[2].data = completados;
+                        chart.data.datasets[3].data = criticas;
+                        chart.update('none');
+                    }
                 }
             }
 
+            // Actualizar gráfico de estados (dona/pie)
             const estadoCounts = { pendiente: 0, 'en-progreso': 0, completado: 0 };
             tasksData.forEach(t => {
                 if (estadoCounts[t.estado] !== undefined) estadoCounts[t.estado]++;
             });
-            const ctxEstado = document.getElementById('dashboardEstadoChart');
+
             const estadoContainer = document.getElementById('chartEstadoContainer');
-            if (ctxEstado && typeof Chart !== 'undefined') {
+
+            if (typeof Chart !== 'undefined') {
                 const totalEstados = estadoCounts.pendiente + estadoCounts['en-progreso'] + estadoCounts.completado;
                 if (totalEstados === 0) {
+                    if (chartInstances.estado) {
+                        chartInstances.estado.destroy();
+                        chartInstances.estado = null;
+                    }
                     estadoContainer.innerHTML =
                         '<p style="text-align:center;color:#999;padding:20px;">No hay datos de estados</p>';
                 } else {
-                    estadoContainer.innerHTML =
-                        `<canvas id="dashboardEstadoChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en un sector para filtrar por estado</p>`;
-                    const newCtx = document.getElementById('dashboardEstadoChart');
-                    chartInstances.estado = new Chart(newCtx, {
-                        type: 'pie',
-                        data: {
-                            labels: ['Pendiente', 'En Progreso', 'Completado'],
-                            datasets: [{
-                                data: [estadoCounts.pendiente, estadoCounts['en-progreso'], estadoCounts
-                                    .completado
-                                ],
-                                backgroundColor: ['#fecb6e', '#63b3ed', '#68d391'],
-                                borderWidth: 2,
-                                borderColor: '#fff'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'bottom', labels: { font: { size: 10 } } },
-                                tooltip: {
-                                    callbacks: {
-                                        label: ctx => {
-                                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                            const pct = total > 0 ? Math.round((ctx.raw / total) * 100) :
-                                                0;
-                                            return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                    if (!chartInstances.estado) {
+                        estadoContainer.innerHTML =
+                            `<canvas id="dashboardEstadoChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en un sector para filtrar por estado</p>`;
+                        const newCtx = document.getElementById('dashboardEstadoChart');
+                        chartInstances.estado = new Chart(newCtx, {
+                            type: 'pie',
+                            data: {
+                                labels: ['Pendiente', 'En Progreso', 'Completado'],
+                                datasets: [{
+                                    data: [estadoCounts.pendiente, estadoCounts['en-progreso'], estadoCounts
+                                        .completado
+                                    ],
+                                    backgroundColor: ['#fecb6e', '#63b3ed', '#68d391'],
+                                    borderWidth: 2,
+                                    borderColor: '#fff'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                animation: {
+                                    duration: 300,
+                                    easing: 'easeInOutQuad'
+                                },
+                                plugins: {
+                                    legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: ctx => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? Math.round((ctx.raw / total) *
+                                                    100) : 0;
+                                                return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            onClick: (e, elements) => {
-                                if (elements.length > 0) {
-                                    const index = elements[0].index;
-                                    const estado = ['pendiente', 'en-progreso', 'completado'][index];
-                                    if (estado) window.aplicarFiltroDashboard('estado', estado);
+                                },
+                                onClick: (e, elements) => {
+                                    if (elements.length > 0) {
+                                        const index = elements[0].index;
+                                        const estado = ['pendiente', 'en-progreso', 'completado'][index];
+                                        if (estado) window.aplicarFiltroDashboard('estado', estado);
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    } else {
+                        const chart = chartInstances.estado;
+                        chart.data.datasets[0].data = [estadoCounts.pendiente, estadoCounts['en-progreso'],
+                            estadoCounts.completado
+                        ];
+                        chart.update('none');
+                    }
                 }
             }
         }
@@ -2391,7 +2448,6 @@
 
             await saveTasksToAppSheet(nuevas);
 
-            // Enviar notificaciones por Telegram
             const asignador = currentUser;
             for (const task of nuevas) {
                 const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
@@ -2438,7 +2494,6 @@
             task.estado = nuevoEstado;
             await updateTaskStatusInAppSheet(taskId, nuevoEstado);
 
-            // Si el nuevo estado es 'completado' y antes no lo estaba, enviar notificación
             if (nuevoEstado === 'completado' && oldEstado !== 'completado') {
                 const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
                 if (asignadoEmp && asignadoEmp.chatId) {
@@ -3297,7 +3352,7 @@
         }
 
         // ============================================================
-        // 31. INICIALIZACIÓN
+        // 31. INICIALIZACIÓN OPTIMIZADA (carga rápida desde caché)
         // ============================================================
         async function initApp(user) {
             currentUser = user;
@@ -3313,13 +3368,15 @@
             navAsignar.style.display = canAssignTasks(user) ? 'flex' : 'none';
 
             await loadTasksFromAppSheet();
-            await loadEmployeesFromAppSheet(false, true);
             populateFilterOptions();
             setupPredefinedTitles();
             navigateTo('dashboard');
 
             startAutoSync(30000);
 
+            // ============================================================
+            // EVENTOS DE NAVEGACIÓN - REGISTRADOS UNA SOLA VEZ AQUÍ
+            // ============================================================
             document.querySelectorAll('.nav-item[data-view]').forEach(el => {
                 el.addEventListener('click', function(e) {
                     const view = this.dataset.view;
@@ -3398,7 +3455,7 @@
                     return;
                 }
                 const zonaPrompt =
-                `Selecciona una zona:\n${zonaList.map((z, i) => `${i+1}. ${z}`).join('\n')}`;
+                    `Selecciona una zona:\n${zonaList.map((z, i) => `${i+1}. ${z}`).join('\n')}`;
                 const choice = prompt(zonaPrompt);
                 if (choice === null) return;
                 const idx = parseInt(choice) - 1;
@@ -3554,7 +3611,7 @@
             e.preventDefault();
             if (empleados.length === 0) {
                 document.getElementById('login-error').textContent = 'Cargando empleados...';
-                await loadEmployeesFromAppSheet();
+                await loadEmployeesFromAppSheet(false, true);
             }
             const identifier = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
@@ -3568,34 +3625,68 @@
         });
 
         // ============================================================
-        // 33. RESTAURAR SESIÓN Y PRECARGA
+        // 33. PRECARGA RÁPIDA Y RESTAURACIÓN DE SESIÓN
         // ============================================================
         (async function initialize() {
-            showLoading('Cargando datos de empleados...');
-            await loadEmployeesFromAppSheet(false, true);
-            hideLoading();
-
-            const saved = localStorage.getItem('currentUser');
-            if (saved) {
-                try {
-                    const userData = JSON.parse(saved);
-                    const found = empleados.find(e => e.num === userData.num);
-                    if (found) {
-                        initApp(found);
-                        return;
-                    }
-                } catch (e) { /* ignore */ }
+            // 1. Intentar cargar empleados desde caché (rápido)
+            const hasCache = await loadEmployeesFromAppSheet(true, false);
+            if (hasCache) {
+                // Tenemos caché, podemos mostrar el login inmediatamente
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                // Ocultar overlay de carga
+                hideLoading();
+                // Iniciar carga en segundo plano de empleados frescos (sin bloquear)
+                const syncToast = document.getElementById('backgroundSyncToast');
+                syncToast.textContent = '🔄 Actualizando datos en segundo plano...';
+                syncToast.classList.add('show');
+                loadEmployeesFromAppSheet(true, true).then(() => {
+                    syncToast.textContent = '✅ Datos actualizados';
+                    setTimeout(() => syncToast.classList.remove('show'), 2000);
+                }).catch(() => {
+                    syncToast.textContent = '⚠️ Error al actualizar';
+                    setTimeout(() => syncToast.classList.remove('show'), 3000);
+                });
+                // También cargar tareas en segundo plano si hay sesión
+                const saved = localStorage.getItem('currentUser');
+                if (saved) {
+                    try {
+                        const userData = JSON.parse(saved);
+                        const found = empleados.find(e => e.num === userData.num);
+                        if (found) {
+                            // Restaurar sesión con datos en caché
+                            initApp(found);
+                            // Luego actualizar tareas en segundo plano
+                            loadTasksFromAppSheet(true).then(() => {
+                                const activeView = document.querySelector('.view.active');
+                                if (activeView) {
+                                    const viewId = activeView.id.replace('view-', '');
+                                    navigateTo(viewId);
+                                }
+                            });
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+            } else {
+                // No hay caché, mostrar loading y cargar desde AppSheet
+                showLoading('Cargando datos de empleados...');
+                await loadEmployeesFromAppSheet(false, true);
+                hideLoading();
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                // Restaurar sesión si existe
+                const saved = localStorage.getItem('currentUser');
+                if (saved) {
+                    try {
+                        const userData = JSON.parse(saved);
+                        const found = empleados.find(e => e.num === userData.num);
+                        if (found) {
+                            initApp(found);
+                        }
+                    } catch (e) { /* ignore */ }
+                }
             }
-
-            document.getElementById('login-container').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
         })();
-
-        const originalInit = initApp;
-        initApp = function(user) {
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            originalInit(user);
-        };
     </script>
 </body>
 </html>
