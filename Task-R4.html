@@ -1020,6 +1020,25 @@
             padding: 0 6px;
             border-radius: 10px;
         }
+        .background-sync-toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+        .background-sync-toast.show {
+            opacity: 1;
+        }
         @media (max-width: 768px) {
             :root {
                 --sidebar-width: 0px;
@@ -1076,6 +1095,11 @@
             }
             .sync-indicator .last-updated {
                 display: none;
+            }
+            .background-sync-toast {
+                bottom: 70px;
+                font-size: 12px;
+                padding: 6px 16px;
             }
         }
         @media (max-width: 480px) {
@@ -1188,6 +1212,9 @@
 
     <!-- ===== TOAST ===== -->
     <div id="toast" class="toast"></div>
+
+    <!-- ===== BACKGROUND SYNC TOAST ===== -->
+    <div id="backgroundSyncToast" class="background-sync-toast">🔄 Actualizando datos en segundo plano...</div>
 
     <!-- ===== LOGIN ===== -->
     <div id="login-container">
@@ -1453,7 +1480,6 @@
         let chartInstances = { zona: null, estado: null };
         let archivosEliminar = [];
 
-        // Control de sincronización
         let syncInterval = null;
         let isSyncing = false;
         let syncCount = 0;
@@ -2391,7 +2417,6 @@
 
             await saveTasksToAppSheet(nuevas);
 
-            // Enviar notificaciones por Telegram
             const asignador = currentUser;
             for (const task of nuevas) {
                 const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
@@ -2438,7 +2463,6 @@
             task.estado = nuevoEstado;
             await updateTaskStatusInAppSheet(taskId, nuevoEstado);
 
-            // Si el nuevo estado es 'completado' y antes no lo estaba, enviar notificación
             if (nuevoEstado === 'completado' && oldEstado !== 'completado') {
                 const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
                 if (asignadoEmp && asignadoEmp.chatId) {
@@ -3297,7 +3321,7 @@
         }
 
         // ============================================================
-        // 31. INICIALIZACIÓN
+        // 31. INICIALIZACIÓN OPTIMIZADA (carga rápida desde caché)
         // ============================================================
         async function initApp(user) {
             currentUser = user;
@@ -3312,22 +3336,104 @@
             const navAsignar = document.getElementById('nav-asignar');
             navAsignar.style.display = canAssignTasks(user) ? 'flex' : 'none';
 
+            // Cargar tareas desde AppSheet (puede tardar, pero no bloquea la interfaz)
             await loadTasksFromAppSheet();
-            await loadEmployeesFromAppSheet(false, true);
+            // Asegurar que empleados estén cargados (ya deberían estar desde la precarga)
             populateFilterOptions();
             setupPredefinedTitles();
             navigateTo('dashboard');
 
             startAutoSync(30000);
+        }
 
-            document.querySelectorAll('.nav-item[data-view]').forEach(el => {
-                el.addEventListener('click', function(e) {
-                    const view = this.dataset.view;
-                    navigateTo(view);
-                    document.getElementById('sidebar').classList.remove('open');
+        // ============================================================
+        // 32. LOGIN FORM
+        // ============================================================
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (empleados.length === 0) {
+                document.getElementById('login-error').textContent = 'Cargando empleados...';
+                await loadEmployeesFromAppSheet(false, true);
+            }
+            const identifier = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const result = login(identifier, password);
+            if (result.success) {
+                document.getElementById('login-error').textContent = '';
+                initApp(result.user);
+            } else {
+                document.getElementById('login-error').textContent = result.message;
+            }
+        });
+
+        // ============================================================
+        // 33. PRECARGA RÁPIDA Y RESTAURACIÓN DE SESIÓN
+        // ============================================================
+        (async function initialize() {
+            // 1. Intentar cargar empleados desde caché (rápido)
+            const hasCache = await loadEmployeesFromAppSheet(true, false);
+            if (hasCache) {
+                // Tenemos caché, podemos mostrar el login inmediatamente
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                // Ocultar overlay de carga
+                hideLoading();
+                // Iniciar carga en segundo plano de empleados frescos (sin bloquear)
+                const syncToast = document.getElementById('backgroundSyncToast');
+                syncToast.textContent = '🔄 Actualizando datos en segundo plano...';
+                syncToast.classList.add('show');
+                loadEmployeesFromAppSheet(true, true).then(() => {
+                    syncToast.textContent = '✅ Datos actualizados';
+                    setTimeout(() => syncToast.classList.remove('show'), 2000);
+                }).catch(() => {
+                    syncToast.textContent = '⚠️ Error al actualizar';
+                    setTimeout(() => syncToast.classList.remove('show'), 3000);
                 });
-            });
+                // También cargar tareas en segundo plano si hay sesión
+                const saved = localStorage.getItem('currentUser');
+                if (saved) {
+                    try {
+                        const userData = JSON.parse(saved);
+                        const found = empleados.find(e => e.num === userData.num);
+                        if (found) {
+                            // Restaurar sesión con datos en caché
+                            initApp(found);
+                            // Luego actualizar tareas en segundo plano
+                            loadTasksFromAppSheet(true).then(() => {
+                                const activeView = document.querySelector('.view.active');
+                                if (activeView) {
+                                    const viewId = activeView.id.replace('view-', '');
+                                    navigateTo(viewId);
+                                }
+                            });
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+            } else {
+                // No hay caché, mostrar loading y cargar desde AppSheet
+                showLoading('Cargando datos de empleados...');
+                await loadEmployeesFromAppSheet(false, true);
+                hideLoading();
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                // Restaurar sesión si existe
+                const saved = localStorage.getItem('currentUser');
+                if (saved) {
+                    try {
+                        const userData = JSON.parse(saved);
+                        const found = empleados.find(e => e.num === userData.num);
+                        if (found) {
+                            initApp(found);
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+            }
+        })();
 
+        // ============================================================
+        // 34. EVENTOS GLOBALES (hamburguesa, etc.)
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('hamburger-btn').addEventListener('click', function() {
                 document.getElementById('sidebar').classList.toggle('open');
             });
@@ -3398,7 +3504,7 @@
                     return;
                 }
                 const zonaPrompt =
-                `Selecciona una zona:\n${zonaList.map((z, i) => `${i+1}. ${z}`).join('\n')}`;
+                    `Selecciona una zona:\n${zonaList.map((z, i) => `${i+1}. ${z}`).join('\n')}`;
                 const choice = prompt(zonaPrompt);
                 if (choice === null) return;
                 const idx = parseInt(choice) - 1;
@@ -3545,57 +3651,7 @@
                     showToast(`❌ Error: ${result.error}`, 'error');
                 }
             });
-        }
-
-        // ============================================================
-        // 32. LOGIN FORM
-        // ============================================================
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (empleados.length === 0) {
-                document.getElementById('login-error').textContent = 'Cargando empleados...';
-                await loadEmployeesFromAppSheet();
-            }
-            const identifier = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value.trim();
-            const result = login(identifier, password);
-            if (result.success) {
-                document.getElementById('login-error').textContent = '';
-                initApp(result.user);
-            } else {
-                document.getElementById('login-error').textContent = result.message;
-            }
         });
-
-        // ============================================================
-        // 33. RESTAURAR SESIÓN Y PRECARGA
-        // ============================================================
-        (async function initialize() {
-            showLoading('Cargando datos de empleados...');
-            await loadEmployeesFromAppSheet(false, true);
-            hideLoading();
-
-            const saved = localStorage.getItem('currentUser');
-            if (saved) {
-                try {
-                    const userData = JSON.parse(saved);
-                    const found = empleados.find(e => e.num === userData.num);
-                    if (found) {
-                        initApp(found);
-                        return;
-                    }
-                } catch (e) { /* ignore */ }
-            }
-
-            document.getElementById('login-container').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
-        })();
-
-        const originalInit = initApp;
-        initApp = function(user) {
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            originalInit(user);
-        };
     </script>
 </body>
 </html>
