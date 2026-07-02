@@ -32,6 +32,7 @@
             --accent-sd: #f59e0b;      /* Sitios Disabled (Amber) */
             --accent-ftotal: #ef4444;  /* Sitios Falla Totales (Red) */
             --accent-fifa: #22c55e;    /* FIFA26 Gestor (Green) */
+            --accent-task: #06b6d4;    /* Gestor de Tareas (Cyan) */
             
             --success: #10b981;
             --info: #06b6d4;
@@ -495,6 +496,12 @@
             border-left: 5px solid var(--accent-fifa);
         }
 
+        /* NEW: Card 7 - Gestor de Tareas */
+        .portal-card.card-task {
+            grid-column: span 6;
+            border-left: 5px solid var(--accent-task);
+        }
+
         /* Interactive Card Glows & Hovers */
         .portal-card::before {
             content: '';
@@ -554,6 +561,7 @@
         .card-sd .card-badge { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
         .card-ftotal .card-badge { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
         .card-fifa .card-badge { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .card-task .card-badge { background: rgba(6, 182, 212, 0.12); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.2); }
 
         .card-icon-container {
             width: 48px;
@@ -709,6 +717,7 @@
         .stagger-4 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
         .stagger-5 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; opacity: 0; }
         .stagger-6 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; opacity: 0; }
+        .stagger-7 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards; opacity: 0; }
 
         @keyframes slideUpFade {
             from {
@@ -746,7 +755,8 @@
 
             .portal-card.card-ft,
             .portal-card.card-bq,
-            .portal-card.card-fifa {
+            .portal-card.card-fifa,
+            .portal-card.card-task {
                 grid-column: span 12;
             }
         }
@@ -839,7 +849,7 @@
                         <div class="filter-options">
                             <button class="filter-btn active" data-filter="all">
                                 <span><i class="fa-solid fa-border-all" style="margin-right: 8px; opacity: 0.7;"></i> Todos</span>
-                                <span class="count">6</span>
+                                <span class="count">7</span>
                             </button>
                             <button class="filter-btn" data-filter="monitoreo">
                                 <span><i class="fa-solid fa-chart-line" style="margin-right: 8px; opacity: 0.7;"></i> Monitoreo</span>
@@ -855,7 +865,7 @@
                             </button>
                             <button class="filter-btn" data-filter="gestion">
                                 <span><i class="fa-solid fa-chalkboard-user" style="margin-right: 8px; opacity: 0.7;"></i> Gestión</span>
-                                <span class="count">1</span>
+                                <span class="count">2</span>
                             </button>
                         </div>
                     </div>
@@ -1202,6 +1212,58 @@
                             </div>
                         </div>
                         <a href="r4-fifa26-gestor-4.1.html" class="enter-btn">
+                            Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- MODULE 7: Gestor de Tareas (TaskFlow) (NEW) -->
+                <article class="portal-card card-task stagger-7" 
+                         style="--card-accent: var(--accent-task); --shadow-glow: rgba(6, 182, 212, 0.12); --glow-color: rgba(6, 182, 212, 0.05);"
+                         data-tags="all gestion">
+                    <div class="card-top">
+                        <div class="card-meta">
+                            <span class="card-badge">
+                                <i class="fa-solid fa-list-check"></i> TASKFLOW
+                            </span>
+                        </div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+                    </div>
+                    <div class="card-middle">
+                        <h2 class="card-title">R4 | Gestor de Tareas</h2>
+                        <p class="card-desc">
+                            Sistema de administración de tareas OYM Región 4 con tablero Kanban, permisos por rol y seguimiento en tiempo real integrado con backend AppSheet.
+                        </p>
+                        
+                        <!-- Mini visual representation -->
+                        <div class="card-visual">
+                            <div class="visual-row">
+                                <span>Sincronización</span>
+                                <span style="color: #22d3ee; font-weight: bold;">ACTIVA</span>
+                            </div>
+                            <div class="visual-row">
+                                <span style="opacity: 0.6;">Disponibilidad</span>
+                                <div class="visual-bar-bg">
+                                    <div class="visual-bar-fill" style="width: 98%;"></div>
+                                </div>
+                                <span style="opacity: 0.8;">98%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="card-metrics">
+                            <div class="metric-unit">
+                                <span class="metric-val">v2.0</span>
+                                <span class="metric-lbl">Versión</span>
+                            </div>
+                            <div class="metric-unit">
+                                <span class="metric-val">KANBAN</span>
+                                <span class="metric-lbl">Tipo</span>
+                            </div>
+                        </div>
+                        <a href="Task-R4.html" class="enter-btn">
                             Ingresar Módulo <i class="fa-solid fa-arrow-right-long"></i>
                         </a>
                     </div>
