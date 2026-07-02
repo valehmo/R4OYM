@@ -5,183 +5,1171 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TaskFlow - Gestión de Tareas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- CDN para Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <!-- CDN para Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* ===== RESET & VARIABLES ===== */
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,sans-serif; }
-        :root { --primary:#1a73e8; --primary-dark:#1557b0; --primary-light:#e8f0fe; --bg:#f5f7fa; --card-bg:#ffffff; --text:#1e293b; --text-secondary:#475569; --border:#e2e8f0; --shadow:0 8px 24px rgba(0,0,0,0.06); --radius:16px; --radius-sm:10px; --transition:all 0.25s ease; --sidebar-width:240px; --header-height:64px; --critical-color:#dc2626; --critical-bg:#fee2e2; --success-color:#28a745; --warning-color:#ffc107; }
-        body { background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
-        ::-webkit-scrollbar { width:6px; height:6px; }
-        ::-webkit-scrollbar-track { background:#f1f1f1; border-radius:10px; }
-        ::-webkit-scrollbar-thumb { background:var(--primary); border-radius:10px; }
-        #login-container { display:flex; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#e8f0fe 0%,#d4e2fc 100%); }
-        .login-card { background:var(--card-bg); padding:48px 40px; border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,0.12); width:420px; max-width:90%; }
-        .login-card h1 { font-size:28px; font-weight:700; color:var(--primary); margin-bottom:8px; display:flex; align-items:center; gap:10px; justify-content:center; }
-        .login-card p { color:var(--text-secondary); margin-bottom:24px; font-size:14px; text-align:center; }
-        .login-card label { display:block; font-weight:600; font-size:13px; color:var(--text-secondary); margin-bottom:4px; }
-        .login-card input { width:100%; padding:12px 16px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; transition:var(--transition); margin-bottom:16px; background:#fafbfc; }
-        .login-card input:focus { border-color:var(--primary); outline:none; box-shadow:0 0 0 3px rgba(26,115,232,0.15); background:#fff; }
-        .login-card .btn-login { width:100%; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; cursor:pointer; transition:var(--transition); margin-top:8px; }
-        .login-card .btn-login:hover { background:var(--primary-dark); transform:translateY(-2px); box-shadow:0 8px 24px rgba(26,115,232,0.3); }
-        .login-card .error-msg { color:#dc2626; font-size:13px; margin-top:12px; min-height:20px; text-align:center; }
-        .login-card .dev-hint { font-size:12px; color:#94a3b8; margin-top:16px; text-align:center; }
-        .login-card .dev-hint span { color:var(--primary); cursor:pointer; text-decoration:underline; }
-        .login-card .dev-hint .diagnostic { display:inline-block; margin-top:8px; background:#f1f5f9; padding:6px 14px; border-radius:30px; font-weight:500; }
-        .loading-overlay, .saving-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); backdrop-filter:blur(4px); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
-        .saving-overlay { z-index:9998; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px); }
-        .loading-overlay.hidden, .saving-overlay.hidden { display:none; }
-        .loader { border:6px solid #f3f3f3; border-top:6px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite; }
-        .saving-overlay .loader { border-top-color:#fff; }
-        .loading-overlay p { margin-top:20px; color:var(--text-secondary); font-weight:500; }
-        .saving-overlay p { margin-top:20px; color:#fff; font-weight:500; }
-        @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
-        #app { display:none; height:100vh; width:100vw; background:var(--bg); }
-        .sidebar { position:fixed; top:0; left:0; width:var(--sidebar-width); height:100vh; background:var(--card-bg); border-right:1px solid var(--border); padding:20px 0; display:flex; flex-direction:column; z-index:100; box-shadow:2px 0 12px rgba(0,0,0,0.04); }
-        .sidebar-brand { padding:0 20px 28px 20px; font-size:22px; font-weight:700; color:var(--primary); display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
-        .sidebar-brand i { font-size:26px; }
-        .sidebar-nav { flex:1; padding:20px 12px 0 12px; overflow-y:auto; }
-        .sidebar-nav .nav-item { display:flex; align-items:center; gap:14px; padding:12px 16px; border-radius:var(--radius-sm); color:var(--text-secondary); font-weight:500; font-size:14px; cursor:pointer; transition:var(--transition); margin-bottom:4px; text-decoration:none; }
-        .sidebar-nav .nav-item i { width:20px; font-size:18px; text-align:center; }
-        .sidebar-nav .nav-item:hover { background:var(--primary-light); color:var(--primary); }
-        .sidebar-nav .nav-item.active { background:var(--primary-light); color:var(--primary); font-weight:600; }
-        .sidebar-footer { padding:16px 20px; border-top:1px solid var(--border); display:flex; align-items:center; gap:12px; }
-        .sidebar-footer .user-avatar { width:40px; height:40px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; }
-        .sidebar-footer .user-info { flex:1; font-size:13px; line-height:1.3; }
-        .sidebar-footer .user-info .name { font-weight:600; color:var(--text); }
-        .sidebar-footer .user-info .role { color:var(--text-secondary); font-size:12px; }
-        .sidebar-footer .logout-btn { background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer; transition:var(--transition); padding:6px; }
-        .sidebar-footer .logout-btn:hover { color:#dc2626; }
-        .main-content { margin-left:var(--sidebar-width); height:100vh; display:flex; flex-direction:column; }
-        .top-header { height:var(--header-height); background:var(--card-bg); border-bottom:1px solid var(--border); padding:0 32px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-        .top-header .page-title { font-size:20px; font-weight:600; }
-        .top-header .header-actions { display:flex; align-items:center; gap:16px; }
-        .top-header .header-actions .badge { background:var(--primary-light); color:var(--primary); padding:6px 14px; border-radius:30px; font-size:13px; font-weight:500; }
-        .page-content { flex:1; padding:28px 32px; overflow-y:auto; }
-        .view { display:none; animation:fadeUp 0.3s ease; }
-        .view.active { display:block; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:18px; margin-bottom:32px; }
-        .stat-card { background:var(--card-bg); padding:20px 22px; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--border); transition:var(--transition); }
-        .stat-card:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,0.08); }
-        .stat-card .stat-label { font-size:13px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; }
-        .stat-card .stat-value { font-size:32px; font-weight:700; margin-top:6px; color:var(--text); }
-        .stat-card .stat-icon { float:right; font-size:28px; color:var(--primary); opacity:0.6; }
-        .stat-card.critical .stat-value { color:var(--critical-color); }
-        .stat-card.critical .stat-icon { color:var(--critical-color); opacity:1; }
-        .task-section-title { font-size:18px; font-weight:600; margin:28px 0 16px 0; display:flex; align-items:center; gap:10px; }
-        .task-list { display:flex; flex-direction:column; gap:12px; }
-        .task-item { background:var(--card-bg); border-radius:var(--radius-sm); padding:16px 20px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; transition:var(--transition); box-shadow:0 2px 6px rgba(0,0,0,0.02); flex-wrap:wrap; gap:12px; }
-        .task-item:hover { border-color:var(--primary); box-shadow:0 4px 12px rgba(0,0,0,0.05); }
-        .task-item.task-critical { border-color:var(--critical-color); background:var(--critical-bg); }
-        .task-item .task-info { flex:1; min-width:200px; }
-        .task-item .task-info .task-title { font-weight:600; font-size:15px; }
-        .task-item .task-info .task-meta { font-size:13px; color:var(--text-secondary); margin-top:4px; display:flex; flex-wrap:wrap; gap:16px; }
-        .task-item .task-info .task-meta i { margin-right:4px; width:16px; }
-        .task-item .task-status { padding:4px 14px; border-radius:30px; font-size:12px; font-weight:600; text-transform:capitalize; }
-        .task-status.pendiente { background:#fef3c7; color:#b45309; }
-        .task-status.en-progreso { background:#dbeafe; color:#1d4ed8; }
-        .task-status.completado { background:#d1fae5; color:#065f46; }
-        .task-status.critical { background:var(--critical-color); color:#fff; }
-        .task-item .task-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-        .task-item .task-actions button { background:none; border:none; cursor:pointer; padding:6px 8px; border-radius:6px; transition:var(--transition); color:var(--text-secondary); font-size:14px; }
-        .task-item .task-actions button:hover { background:var(--primary-light); color:var(--primary); }
-        .task-item .task-actions .btn-delete:hover { color:#dc2626; background:#fee2e2; }
-        .task-item .task-actions .btn-download { color:#217346; }
-        .task-item .task-actions .btn-download:hover { background:#d4edda; color:#1a5c38; }
-        .table-wrap { background:var(--card-bg); border-radius:var(--radius); border:1px solid var(--border); overflow:auto; box-shadow:var(--shadow); }
-        table { width:100%; border-collapse:collapse; font-size:14px; }
-        th { background:#f8fafc; text-align:left; padding:14px 18px; font-weight:600; color:var(--text-secondary); border-bottom:1px solid var(--border); }
-        td { padding:12px 18px; border-bottom:1px solid var(--border); color:var(--text); }
-        tr:last-child td { border-bottom:none; }
-        .score-bar { display:inline-block; width:80px; height:8px; background:#e2e8f0; border-radius:10px; overflow:hidden; vertical-align:middle; margin-right:10px; }
-        .score-bar .fill { height:100%; background:var(--primary); border-radius:10px; transition:width 0.6s ease; }
-        .form-group { margin-bottom:18px; }
-        .form-group label { display:block; font-weight:600; font-size:13px; color:var(--text-secondary); margin-bottom:4px; }
-        .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; transition:var(--transition); background:#fafbfc; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--primary); outline:none; box-shadow:0 0 0 3px rgba(26,115,232,0.12); background:#fff; }
-        .form-group textarea { resize:vertical; min-height:80px; }
-        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-        .btn-primary { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:var(--radius-sm); font-weight:600; font-size:14px; cursor:pointer; transition:var(--transition); }
-        .btn-primary:hover { background:var(--primary-dark); transform:translateY(-1px); box-shadow:0 8px 20px rgba(26,115,232,0.25); }
-        .btn-secondary { background:var(--border); color:var(--text); border:none; padding:10px 24px; border-radius:var(--radius-sm); font-weight:600; font-size:14px; cursor:pointer; transition:var(--transition); }
-        .btn-secondary:hover { background:#cbd5e1; }
-        .btn-delete { background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:var(--radius-sm); cursor:pointer; font-size:12px; transition:var(--transition); }
-        .btn-delete:hover { background:#b91c1c; }
-        .btn-success { background:var(--success-color); color:#fff; border:none; padding:8px 20px; border-radius:var(--radius-sm); cursor:pointer; font-size:14px; transition:var(--transition); }
-        .btn-success:hover { background:#218838; }
-        .btn-success:disabled { opacity:0.6; cursor:not-allowed; }
-        .btn-excel { background:#217346; color:#fff; border:none; padding:8px 20px; border-radius:var(--radius-sm); cursor:pointer; font-size:14px; transition:var(--transition); }
-        .btn-excel:hover { background:#1a5c38; }
-        .btn-file-remove { background:var(--critical-color); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:var(--transition); }
-        .btn-file-remove:hover { background:#b91c1c; transform:scale(1.1); }
-        .file-item { display:inline-flex; align-items:center; gap:6px; background:var(--primary-light); color:var(--primary); padding:4px 12px; border-radius:30px; font-size:12px; font-weight:500; margin:2px; }
-        .file-item .file-name { cursor:default; }
-        .file-item .file-download { color:var(--primary); cursor:pointer; transition:var(--transition); }
-        .file-item .file-download:hover { color:var(--primary-dark); }
-        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); z-index:999; display:none; justify-content:center; align-items:center; padding:20px; }
-        .modal-overlay.open { display:flex; }
-        .modal-box { background:var(--card-bg); border-radius:var(--radius); max-width:700px; width:100%; max-height:90vh; overflow-y:auto; padding:32px 36px; box-shadow:0 30px 60px rgba(0,0,0,0.2); animation:fadeUp 0.25s ease; }
-        .modal-box .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
-        .modal-box .modal-header h2 { font-size:22px; font-weight:700; }
-        .modal-box .modal-header .close-modal { background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-secondary); transition:var(--transition); }
-        .modal-box .modal-header .close-modal:hover { color:#dc2626; }
-        .modal-box .edit-indicator { display:inline-block; background:var(--warning-color); color:#333; padding:4px 12px; border-radius:30px; font-size:11px; font-weight:600; margin-left:12px; }
-        .modal-box .saving-indicator { display:flex; align-items:center; gap:10px; margin-top:12px; padding:10px; background:var(--primary-light); border-radius:var(--radius-sm); color:var(--primary); }
-        .modal-box .saving-indicator .spinner-small { width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid var(--primary); border-radius:50%; animation:spin 1s linear infinite; }
-        .file-attach { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-        .file-attach input[type="file"] { flex:1; padding:8px; border:1px dashed var(--border); border-radius:var(--radius-sm); background:#fafbfc; }
-        .file-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-        .file-tag { background:var(--primary-light); color:var(--primary); padding:4px 14px; border-radius:30px; font-size:12px; font-weight:500; display:inline-flex; align-items:center; gap:6px; }
-        .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
-        .chart-box { background:#fafafa; border-radius:10px; padding:15px; border:1px solid #eee; min-height:200px; position:relative; }
-        .chart-box canvas { max-height:220px; width:100%; cursor:pointer; }
-        .chart-box .chart-error { text-align:center; color:#999; padding:20px; font-size:14px; }
-        .filter-chip { display:inline-block; background:var(--primary-light); color:var(--primary); padding:4px 12px; border-radius:30px; font-size:13px; margin-right:8px; }
-        .filter-chip .remove { cursor:pointer; margin-left:6px; font-weight:bold; }
-        .filter-chip .remove:hover { color:var(--critical-color); }
-        .assign-counter { display:inline-block; background:var(--primary-light); color:var(--primary); padding:4px 12px; border-radius:30px; font-size:13px; font-weight:600; margin-left:12px; }
-        .assign-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-        .assign-actions .btn-sm { padding:4px 12px; border-radius:20px; font-size:12px; border:1px solid var(--border); cursor:pointer; transition:var(--transition); background:#fff; }
-        .assign-actions .btn-sm:hover { background:var(--primary-light); border-color:var(--primary); }
-        .assign-bulk { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:6px; }
-        .assign-bulk textarea { flex:1; min-width:200px; padding:8px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; resize:vertical; min-height:60px; max-height:120px; }
-        .assign-bulk .btn-bulk { background:var(--primary); color:#fff; border:none; padding:8px 16px; border-radius:var(--radius-sm); cursor:pointer; font-size:13px; transition:var(--transition); white-space:nowrap; }
-        .assign-bulk .btn-bulk:hover { background:var(--primary-dark); }
-        .search-bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-        .search-bar input { padding:8px 14px; border:1.5px solid var(--border); border-radius:30px; font-size:14px; flex:1; min-width:150px; background:#fafbfc; transition:var(--transition); }
-        .search-bar input:focus { border-color:var(--primary); outline:none; box-shadow:0 0 0 3px rgba(26,115,232,0.12); background:#fff; }
-        .search-bar .search-clear { background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:16px; padding:0 8px; }
-        .search-bar .search-clear:hover { color:var(--critical-color); }
-        .filters-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:15px; }
-        .filters-row select { padding:8px 14px; border:1.5px solid var(--border); border-radius:30px; font-size:13px; background:#fff; min-width:120px; }
-        .filters-row select:focus { border-color:var(--primary); outline:none; }
-        .filter-label { font-size:13px; color:var(--text-secondary); font-weight:500; margin-right:4px; }
-        .predefined-titles { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
-        .predefined-titles .tag { background:var(--primary-light); color:var(--primary); padding:4px 14px; border-radius:30px; font-size:12px; cursor:pointer; transition:var(--transition); border:1px solid transparent; }
-        .predefined-titles .tag:hover { background:var(--primary); color:#fff; border-color:var(--primary); transform:scale(1.02); }
-        .predefined-titles .tag:active { transform:scale(0.95); }
-        @media (max-width:768px) { :root { --sidebar-width:0px; } .sidebar { transform:translateX(-100%); transition:transform 0.3s ease; width:260px; } .sidebar.open { transform:translateX(0); } .main-content { margin-left:0; } .top-header { padding:0 16px; } .page-content { padding:16px; } .form-row { grid-template-columns:1fr; } .stats-grid { grid-template-columns:1fr 1fr; } .login-card { padding:32px 24px; } .modal-box { padding:24px 20px; } .task-item { flex-direction:column; align-items:stretch; } .task-item .task-actions { justify-content:flex-end; } .charts-row { grid-template-columns:1fr; } .filters-row { flex-direction:column; align-items:stretch; } .predefined-titles { justify-content:center; } }
-        @media (max-width:480px) { .stats-grid { grid-template-columns:1fr; } }
-        .text-center { text-align:center; }
-        .mt-12 { margin-top:12px; }
-        .mt-24 { margin-top:24px; }
-        .gap-8 { gap:8px; }
-        .flex { display:flex; }
-        .flex-wrap { flex-wrap:wrap; }
-        .items-center { align-items:center; }
-        .justify-between { justify-content:space-between; }
-        .empty-state { padding:40px 20px; text-align:center; color:var(--text-secondary); }
-        .empty-state i { font-size:48px; opacity:0.3; margin-bottom:16px; }
-        .hidden { display:none !important; }
-        .hamburger { display:none; background:none; border:none; font-size:24px; color:var(--text); cursor:pointer; padding:4px 8px; }
-        @media (max-width:768px) { .hamburger { display:block; } }
-        .toast { position:fixed; bottom:30px; right:30px; background:#333; color:#fff; padding:14px 24px; border-radius:var(--radius-sm); box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:9999; opacity:0; transform:translateY(20px); transition:all 0.3s ease; }
-        .toast.show { opacity:1; transform:translateY(0); }
-        .toast.success { background:var(--success-color); }
-        .toast.error { background:var(--critical-color); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #e8f0fe;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.25s ease;
+            --sidebar-width: 240px;
+            --header-height: 64px;
+            --critical-color: #dc2626;
+            --critical-bg: #fee2e2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+        #login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #e8f0fe 0%, #d4e2fc 100%);
+        }
+        .login-card {
+            background: var(--card-bg);
+            padding: 48px 40px;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            width: 420px;
+            max-width: 90%;
+        }
+        .login-card h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+        .login-card p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .login-card label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            margin-bottom: 16px;
+            background: #fafbfc;
+        }
+        .login-card input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+            background: #fff;
+        }
+        .login-card .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 8px;
+        }
+        .login-card .btn-login:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26, 115, 232, 0.3);
+        }
+        .login-card .error-msg {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
+            text-align: center;
+        }
+        .loading-overlay,
+        .saving-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .saving-overlay {
+            z-index: 9998;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+        .loading-overlay.hidden,
+        .saving-overlay.hidden {
+            display: none;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        .saving-overlay .loader {
+            border-top-color: #fff;
+        }
+        .loading-overlay p {
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .saving-overlay p {
+            margin-top: 20px;
+            color: #fff;
+            font-weight: 500;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        #app {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            background: var(--bg);
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
+        }
+        .sidebar-brand {
+            padding: 0 20px 28px 20px;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-brand i {
+            font-size: 26px;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px 0 12px;
+            overflow-y: auto;
+        }
+        .sidebar-nav .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+        .sidebar-nav .nav-item i {
+            width: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .sidebar-nav .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        .sidebar-nav .nav-item.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .sidebar-footer .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .sidebar-footer .user-info {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+        .sidebar-footer .user-info .name {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .sidebar-footer .user-info .role {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        .sidebar-footer .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 6px;
+        }
+        .sidebar-footer .logout-btn:hover {
+            color: #dc2626;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .top-header {
+            height: var(--header-height);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .top-header .page-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .top-header .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .top-header .header-actions .badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .page-content {
+            flex: 1;
+            padding: 28px 32px;
+            overflow-y: auto;
+        }
+        .view {
+            display: none;
+            animation: fadeUp 0.3s ease;
+        }
+        .view.active {
+            display: block;
+        }
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px 22px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+        }
+        .stat-card .stat-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 6px;
+            color: var(--text);
+        }
+        .stat-card .stat-icon {
+            float: right;
+            font-size: 28px;
+            color: var(--primary);
+            opacity: 0.6;
+        }
+        .stat-card.critical .stat-value {
+            color: var(--critical-color);
+        }
+        .stat-card.critical .stat-icon {
+            color: var(--critical-color);
+            opacity: 1;
+        }
+        .task-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 28px 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .task-item {
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .task-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .task-item.task-critical {
+            border-color: var(--critical-color);
+            background: var(--critical-bg);
+        }
+        .task-item .task-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        .task-item .task-info .task-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .task-item .task-info .task-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .task-item .task-info .task-meta i {
+            margin-right: 4px;
+            width: 16px;
+        }
+        .task-item .task-status {
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .task-status.pendiente {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .task-status.en-progreso {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .task-status.completado {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .task-status.critical {
+            background: var(--critical-color);
+            color: #fff;
+        }
+        .task-item .task-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .task-item .task-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .task-item .task-actions button:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        .task-item .task-actions .btn-delete:hover {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+        .task-item .task-actions .btn-download {
+            color: #217346;
+        }
+        .task-item .task-actions .btn-download:hover {
+            background: #d4edda;
+            color: #1a5c38;
+        }
+        .table-wrap {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: auto;
+            box-shadow: var(--shadow);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 14px 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .score-bar {
+            display: inline-block;
+            width: 80px;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .score-bar .fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            background: #fafbfc;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+            background: #fff;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(26, 115, 232, 0.25);
+        }
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        .btn-delete {
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+            transition: var(--transition);
+        }
+        .btn-delete:hover {
+            background: #b91c1c;
+        }
+        .btn-success {
+            background: var(--success-color);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-success:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-excel {
+            background: #217346;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        .btn-excel:hover {
+            background: #1a5c38;
+        }
+        .btn-file-remove {
+            background: var(--critical-color);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .btn-file-remove:hover {
+            background: #b91c1c;
+            transform: scale(1.1);
+        }
+        .file-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 2px;
+        }
+        .file-item .file-name {
+            cursor: default;
+        }
+        .file-item .file-download {
+            color: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .file-item .file-download:hover {
+            color: var(--primary-dark);
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 32px 36px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            animation: fadeUp 0.25s ease;
+        }
+        .modal-box .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .modal-box .modal-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .modal-box .modal-header .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+        .modal-box .modal-header .close-modal:hover {
+            color: #dc2626;
+        }
+        .modal-box .edit-indicator {
+            display: inline-block;
+            background: var(--warning-color);
+            color: #333;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+        .modal-box .saving-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 10px;
+            background: var(--primary-light);
+            border-radius: var(--radius-sm);
+            color: var(--primary);
+        }
+        .modal-box .saving-indicator .spinner-small {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .file-attach {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .file-attach input[type="file"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            background: #fafbfc;
+        }
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .file-tag {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-box {
+            background: #fafafa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #eee;
+            min-height: 200px;
+            position: relative;
+        }
+        .chart-box canvas {
+            max-height: 220px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .chart-box .chart-error {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 14px;
+        }
+        .filter-chip {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            margin-right: 8px;
+        }
+        .filter-chip .remove {
+            cursor: pointer;
+            margin-left: 6px;
+            font-weight: bold;
+        }
+        .filter-chip .remove:hover {
+            color: var(--critical-color);
+        }
+        .assign-counter {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+        .assign-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .assign-actions .btn-sm {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fff;
+        }
+        .assign-actions .btn-sm:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+        .assign-bulk {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 6px;
+        }
+        .assign-bulk textarea {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            resize: vertical;
+            min-height: 60px;
+            max-height: 120px;
+        }
+        .assign-bulk .btn-bulk {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .assign-bulk .btn-bulk:hover {
+            background: var(--primary-dark);
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-bar input {
+            padding: 8px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 30px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 150px;
+            background: #fafbfc;
+            transition: var(--transition);
+        }
+        .search-bar input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+            background: #fff;
+        }
+        .search-bar .search-clear {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 8px;
+        }
+        .search-bar .search-clear:hover {
+            color: var(--critical-color);
+        }
+        .filters-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .filters-row select {
+            padding: 8px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 30px;
+            font-size: 13px;
+            background: #fff;
+            min-width: 120px;
+        }
+        .filters-row select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        .filter-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-right: 4px;
+        }
+        .predefined-titles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .predefined-titles .tag {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+        .predefined-titles .tag:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+        .predefined-titles .tag:active {
+            transform: scale(0.95);
+        }
+        .sync-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-left: 16px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .sync-indicator .fa-sync {
+            font-size: 14px;
+        }
+        .sync-indicator .fa-sync.spinning {
+            animation: spin 1s linear infinite;
+        }
+        .sync-indicator .last-updated {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-left: 4px;
+        }
+        .sync-indicator .sync-error {
+            color: var(--critical-color);
+        }
+        .sync-indicator .sync-count {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-left: 4px;
+            background: #f1f5f9;
+            padding: 0 6px;
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 0px;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                width: 260px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .top-header {
+                padding: 0 16px;
+            }
+            .page-content {
+                padding: 16px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .login-card {
+                padding: 32px 24px;
+            }
+            .modal-box {
+                padding: 24px 20px;
+            }
+            .task-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .task-item .task-actions {
+                justify-content: flex-end;
+            }
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .predefined-titles {
+                justify-content: center;
+            }
+            .sync-indicator {
+                margin-left: 8px;
+                font-size: 12px;
+            }
+            .sync-indicator .last-updated {
+                display: none;
+            }
+        }
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-24 {
+            margin-top: 24px;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .flex {
+            display: flex;
+        }
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .justify-between {
+            justify-content: space-between;
+        }
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #333;
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success {
+            background: var(--success-color);
+        }
+        .toast.error {
+            background: var(--critical-color);
+        }
+        .telegram-test-btn {
+            background: #0088cc;
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .telegram-test-btn:hover {
+            background: #006699;
+        }
     </style>
 </head>
 <body>
@@ -214,11 +1202,6 @@
                 <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Ingresar</button>
                 <div id="login-error" class="error-msg"></div>
             </form>
-            <div class="dev-hint">
-                <span id="dev-quick-login">⚡ Acceso rápido (demo)</span>
-                <br>
-                <span id="diagnostic-btn" class="diagnostic">🔍 Diagnosticar tablas de AppSheet</span>
-            </div>
         </div>
     </div>
 
@@ -247,6 +1230,13 @@
                 <div style="display:flex;align-items:center;gap:12px;">
                     <button class="hamburger" id="hamburger-btn"><i class="fas fa-bars"></i></button>
                     <span class="page-title" id="page-title">Dashboard</span>
+                    <!-- Indicador de sincronización -->
+                    <span class="sync-indicator" id="syncIndicator">
+                        <i class="fas fa-sync" id="syncIcon"></i>
+                        <span id="syncText">Actualizado</span>
+                        <span class="last-updated" id="lastUpdated"></span>
+                        <span class="sync-count" id="syncCount"></span>
+                    </span>
                 </div>
                 <div class="header-actions">
                     <span class="badge" id="header-role-badge">Analista</span>
@@ -390,6 +1380,15 @@
                             <button type="reset" class="btn-secondary">Limpiar</button>
                         </div>
                     </form>
+                    <!-- Botón de prueba de Telegram -->
+                    <div style="margin-top:16px;border-top:1px solid #eee;padding-top:16px;">
+                        <h3 style="font-size:14px;">🧪 Prueba de Telegram</h3>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <input type="text" id="telegram-test-chatid" placeholder="Chat ID (ej: 123456789)" style="padding:6px 12px;border:1px solid #ccc;border-radius:20px;font-size:13px;width:200px;" />
+                            <button class="telegram-test-btn" id="telegram-test-btn"><i class="fab fa-telegram"></i> Enviar mensaje de prueba</button>
+                            <span style="font-size:12px;color:#666;">(Usa un chat ID real para probar)</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ===== VIEW: COLABORADORES ===== -->
@@ -440,6 +1439,9 @@
         const EMPLOYEE_TABLE = "Repair Persons";
         const API_BASE = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/`;
 
+        const TELEGRAM_BOT_TOKEN = "6058551841:AAFP_ESC6FhNZX3M2sTn6rRO_dubm9rdso8";
+        const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
         // ============================================================
         // 2. ESTADO GLOBAL
         // ============================================================
@@ -451,7 +1453,11 @@
         let chartInstances = { zona: null, estado: null };
         let archivosEliminar = [];
 
-        // Almacenamiento local de archivos (base64)
+        // Control de sincronización
+        let syncInterval = null;
+        let isSyncing = false;
+        let syncCount = 0;
+
         const FILE_STORE_KEY = 'taskflow_file_store';
 
         function getFileStore() {
@@ -465,7 +1471,6 @@
             localStorage.setItem(FILE_STORE_KEY, JSON.stringify(store));
         }
 
-        // Guardar un archivo en el store
         function storeFile(taskId, fileName, base64Data) {
             const store = getFileStore();
             const key = `${taskId}_${fileName}`;
@@ -473,14 +1478,12 @@
             setFileStore(store);
         }
 
-        // Obtener archivo del store
         function getFileData(taskId, fileName) {
             const store = getFileStore();
             const key = `${taskId}_${fileName}`;
             return store[key] || null;
         }
 
-        // Eliminar archivo del store
         function removeFileFromStore(taskId, fileName) {
             const store = getFileStore();
             const key = `${taskId}_${fileName}`;
@@ -488,7 +1491,6 @@
             setFileStore(store);
         }
 
-        // Generar URL de objeto a partir del base64
         function getFileUrl(taskId, fileName, mimeType = 'application/octet-stream') {
             const base64 = getFileData(taskId, fileName);
             if (!base64) return null;
@@ -507,7 +1509,6 @@
             }
         }
 
-        // Leer archivo como base64
         function readFileAsBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -524,8 +1525,11 @@
         // 3. FALLBACK LOCAL DE EMPLEADOS (mínimo)
         // ============================================================
         const EMPLEADOS_FALLBACK = [
-            { num: 11519, nombre: "VALENTIN VALENCIA GARCIA", email: "valehmo76@gmail.com", puesto: "GERENTE", zona: "GERENTE", jefe: "SALVADOR SALAZAR", gerente: "S.S." },
-            { num: 10077, nombre: "MAURICIO MUÑOZ LOPEZ", email: "mauricio.munoz@telcel.com", puesto: "ANALISTA", zona: "VOZ Y DATOS", jefe: "MARCO MARQUEZ GUTIERREZ", gerente: "VALENTIN VALENCIA" },
+            { num: 11519, nombre: "VALENTIN VALENCIA GARCIA", email: "valehmo76@gmail.com", puesto: "GERENTE", zona: "GERENTE",
+                jefe: "SALVADOR SALAZAR", gerente: "S.S.", celular: "55332211", chatId: "123456789" },
+            { num: 10077, nombre: "MAURICIO MUÑOZ LOPEZ", email: "mauricio.munoz@telcel.com", puesto: "ANALISTA",
+                zona: "VOZ Y DATOS", jefe: "MARCO MARQUEZ GUTIERREZ", gerente: "VALENTIN VALENCIA", celular: "55443322",
+                chatId: "987654321" },
         ];
 
         // ============================================================
@@ -564,27 +1568,6 @@
             }
         }
 
-        async function listTables() {
-            try {
-                const url = API_BASE;
-                const response = await fetch(url, {
-                    headers: { 'ApplicationAccessKey': API_KEY }
-                });
-                if (!response.ok) {
-                    const text = await response.text();
-                    alert(`❌ Error al listar tablas: ${response.status}\n${text}`);
-                    return;
-                }
-                const data = await response.json();
-                const names = data.map(t => `- ${t.name}`).join('\n');
-                alert(`📋 Tablas disponibles en AppSheet:\n\n${names}`);
-                console.log('Tablas:', data);
-            } catch (e) {
-                alert('Error de red. Asegúrate de que la página esté servida con Live Server.');
-                console.error(e);
-            }
-        }
-
         // ============================================================
         // 5. INDICADOR DE GUARDADO
         // ============================================================
@@ -599,7 +1582,7 @@
         }
 
         // ============================================================
-        // 6. CARGA DE EMPLEADOS (con filtro de zona BAJA)
+        // 6. CARGA DE EMPLEADOS (con filtro de zona BAJA y opción forzar)
         // ============================================================
         function filterActiveEmployees(employees) {
             return employees.filter(e => {
@@ -608,17 +1591,19 @@
             });
         }
 
-        async function loadEmployeesFromAppSheet() {
-            const cached = localStorage.getItem('empleados_cache');
-            if (cached) {
-                try {
-                    const parsed = JSON.parse(cached);
-                    if (parsed.length > 0 && parsed[0].nombre) {
-                        empleados = filterActiveEmployees(parsed);
-                        console.log('✅ Empleados cargados desde caché (filtrados).');
-                        return true;
-                    }
-                } catch (e) { /* ignore */ }
+        async function loadEmployeesFromAppSheet(silent = false, forceRefresh = false) {
+            if (!forceRefresh) {
+                const cached = localStorage.getItem('empleados_cache');
+                if (cached) {
+                    try {
+                        const parsed = JSON.parse(cached);
+                        if (parsed.length > 0 && parsed[0].nombre) {
+                            empleados = filterActiveEmployees(parsed);
+                            if (!silent) console.log('✅ Empleados cargados desde caché (filtrados).');
+                            return true;
+                        }
+                    } catch (e) { /* ignore */ }
+                }
             }
 
             try {
@@ -632,21 +1617,22 @@
                     zona: record['ZONA'] || '',
                     jefe: record['JEFE'] || '',
                     gerente: record['GERENTE'] || '',
+                    chatId: record['CHAT ID'] || record['CHAT_ID'] || null,
                 })).filter(e => e.num > 0 && e.nombre !== '');
                 empleados = filterActiveEmployees(all);
                 if (empleados.length === 0) {
                     throw new Error('No se encontraron empleados activos (zona != BAJA).');
                 }
                 localStorage.setItem('empleados_cache', JSON.stringify(empleados));
-                console.log(`✅ ${empleados.length} empleados cargados desde AppSheet (filtrados).`);
+                if (!silent) console.log(`✅ ${empleados.length} empleados cargados desde AppSheet (filtrados).`);
                 return true;
             } catch (error) {
-                console.warn('⚠️ Falló carga desde AppSheet, usando fallback local:', error);
+                if (!silent) console.warn('⚠️ Falló carga desde AppSheet, usando fallback local:', error);
                 const fallback = filterActiveEmployees(EMPLEADOS_FALLBACK);
                 empleados = fallback;
                 localStorage.setItem('empleados_cache', JSON.stringify(fallback));
-                console.log(`✅ ${fallback.length} empleados cargados desde fallback local (filtrados).`);
-                alert('⚠️ No se pudo conectar con AppSheet para cargar empleados. Se usarán datos locales de respaldo.');
+                if (!silent) console.log(`✅ ${fallback.length} empleados cargados desde fallback local (filtrados).`);
+                if (!silent) alert('⚠️ No se pudo conectar con AppSheet para cargar empleados. Se usarán datos locales de respaldo.');
                 return true;
             }
         }
@@ -666,7 +1652,7 @@
         }
 
         // ============================================================
-        // 8. CARGA DE TAREAS CON SOPORTE PARA ARCHIVOS DE APPSHEET
+        // 8. CARGA DE TAREAS
         // ============================================================
         function getFieldValue(record, ...keys) {
             for (const key of keys) {
@@ -706,32 +1692,36 @@
                     } else {
                         return [{ name: String(parsed), url: null }];
                     }
-                } catch(e) {
+                } catch (e) {
                     return [{ name: archivosField, url: null }];
                 }
             }
             return [];
         }
 
-        async function loadTasksFromAppSheet() {
+        async function loadTasksFromAppSheet(silent = false) {
             try {
                 const data = await appSheetAction(TABLE_NAME, "Find", []);
                 tasks = data
                     .map(record => {
                         const id = getFieldValue(record, 'id', 'ID');
-                        let fechaLimite = getFieldValue(record, 'fecha_limite', 'FechaLimite', 'fecha_lim', 'Fecha_Limite');
+                        let fechaLimite = getFieldValue(record, 'fecha_limite', 'FechaLimite', 'fecha_lim',
+                        'Fecha_Limite');
                         fechaLimite = formatDateToInput(fechaLimite);
                         const archivosRaw = getFieldValue(record, 'archivos', 'Archivos');
                         const archivos = parseArchivos(archivosRaw);
                         return {
                             id: id || `task_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
                             titulo: getFieldValue(record, 'titulo', 'título', 'Titulo', 'Título'),
-                            descripcion: getFieldValue(record, 'descripcion', 'descripción', 'Descripcion', 'Descripción'),
-                            fecha_creacion: getFieldValue(record, 'fecha_creacion', 'fecha_cr', 'FechaCreacion', 'Fecha_Creacion', 'fecha_creación'),
+                            descripcion: getFieldValue(record, 'descripcion', 'descripción', 'Descripcion',
+                                'Descripción'),
+                            fecha_creacion: getFieldValue(record, 'fecha_creacion', 'fecha_cr', 'FechaCreacion',
+                                'Fecha_Creacion', 'fecha_creación'),
                             fecha_limite: fechaLimite,
                             prioridad: getFieldValue(record, 'prioridad', 'Prioridad') || 'media',
                             estado: getFieldValue(record, 'estado', 'Estado') || 'pendiente',
-                            asignado_por: Number(getFieldValue(record, 'asignado_por', 'Asignado_por', 'asignadoPor')) || 0,
+                            asignado_por: Number(getFieldValue(record, 'asignado_por', 'Asignado_por',
+                                'asignadoPor')) || 0,
                             asignado_a: Number(getFieldValue(record, 'asignado_a', 'Asignado_a', 'asignadoA')) || 0,
                             archivos: archivos,
                             _RowNumber: record._RowNumber,
@@ -739,12 +1729,11 @@
                         };
                     })
                     .filter(t => t.id && t.id !== '' && t.id !== 'undefined' && t.id !== 'null');
-                console.log(`✅ ${tasks.length} tareas cargadas.`);
+                if (!silent) console.log(`✅ ${tasks.length} tareas cargadas.`);
                 return true;
             } catch (error) {
                 console.error('❌ Error cargando tareas:', error);
-                tasks = [];
-                alert(`No se pudieron cargar las tareas desde AppSheet.\n${error.message}`);
+                if (!silent) alert(`No se pudieron cargar las tareas desde AppSheet.\n${error.message}`);
                 return false;
             }
         }
@@ -784,7 +1773,8 @@
                     if (result && result.length > 0) {
                         result.forEach((created, idx) => {
                             if (created && created.id) {
-                                const task = tareasParaGuardar.find(t => t._isNew && t === tareasParaGuardar[idx]);
+                                const task = tareasParaGuardar.find(t => t._isNew && t === tareasParaGuardar[
+                                idx]);
                                 if (task) {
                                     task.id = created.id;
                                     task._isNew = false;
@@ -851,8 +1841,6 @@
                 if (!taskId || typeof taskId !== 'string') throw new Error('ID inválido');
                 const rows = [{ id: taskId, estado: newStatus }];
                 await appSheetAction(TABLE_NAME, "Edit", rows);
-                const task = tasks.find(t => t.id === taskId);
-                if (task) task.estado = newStatus;
                 console.log(`✅ Estado de tarea ${taskId} actualizado a ${newStatus}.`);
             } catch (error) {
                 console.error('❌ Error actualizando estado:', error);
@@ -886,15 +1874,28 @@
             if (!empleado) {
                 return { success: false, message: 'Usuario no encontrado.' };
             }
+
             let validPassword = false;
+            const puesto = (empleado.puesto || '').toUpperCase();
+
             if (empleado.num === 11519) {
                 validPassword = (password === 'TriFelix03');
+            } else if (puesto === 'JEFE' || puesto === 'SECRETARIA') {
+                const cel = (empleado.celular || '').trim();
+                if (cel.length >= 4) {
+                    const last4 = cel.slice(-4);
+                    validPassword = (password === last4);
+                } else {
+                    return { success: false, message: 'Este usuario no tiene un número de celular válido para autenticación.' };
+                }
             } else {
                 validPassword = (password === String(empleado.num));
             }
+
             if (!validPassword) {
                 return { success: false, message: 'Contraseña incorrecta.' };
             }
+
             return { success: true, user: empleado };
         }
 
@@ -960,7 +1961,81 @@
         }
 
         // ============================================================
-        // 13. LOADING UI
+        // 13. FUNCIONES DE TELEGRAM
+        // ============================================================
+        async function sendTelegramMessage(chatId, text) {
+            if (!chatId || chatId.trim() === '') {
+                console.warn('❌ Chat ID vacío, no se enviará mensaje.');
+                return { ok: false, error: 'Chat ID vacío' };
+            }
+            const cleanChatId = chatId.trim();
+            if (/^\d{8,10}$/.test(cleanChatId) && (cleanChatId === '123456789' || cleanChatId === '987654321')) {
+                console.warn('⚠️ Chat ID parece ser de prueba (123456789). No se enviará.');
+                return { ok: false, error: 'Chat ID de prueba no válido' };
+            }
+
+            try {
+                const response = await fetch(TELEGRAM_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: cleanChatId,
+                        text: text,
+                        parse_mode: 'HTML',
+                        disable_web_page_preview: true
+                    })
+                });
+                const data = await response.json();
+                console.log('📨 Respuesta de Telegram:', data);
+                if (!data.ok) {
+                    const errorMsg = data.description || 'Error desconocido';
+                    console.error('❌ Error de Telegram:', errorMsg);
+                    return { ok: false, error: errorMsg };
+                }
+                console.log('✅ Mensaje enviado correctamente a', cleanChatId);
+                return { ok: true };
+            } catch (error) {
+                console.error('❌ Error de red al enviar Telegram:', error);
+                return { ok: false, error: error.message };
+            }
+        }
+
+        function getTaskSummaryForUser(userId) {
+            const userTasks = tasks.filter(t => t.asignado_a === userId);
+            const total = userTasks.length;
+            const pendientes = userTasks.filter(t => t.estado === 'pendiente').length;
+            const enProgreso = userTasks.filter(t => t.estado === 'en-progreso').length;
+            const completadas = userTasks.filter(t => t.estado === 'completado').length;
+            const criticas = userTasks.filter(t => isTaskOverdue(t)).length;
+            return { total, pendientes, enProgreso, completadas, criticas };
+        }
+
+        function formatTelegramTaskMessage(task, asignadoNombre, asignadorNombre) {
+            const prioridadEmoji = task.prioridad === 'alta' ? '🔴' : task.prioridad === 'media' ? '🟡' : '🟢';
+            const fechaLimite = task.fecha_limite || 'Sin fecha';
+            let mensaje = `<b>📋 NUEVA TAREA ASIGNADA</b>\n\n`;
+            mensaje += `<b>Título:</b> ${task.titulo}\n`;
+            mensaje += `<b>Descripción:</b> ${task.descripcion || 'Sin descripción'}\n`;
+            mensaje += `<b>Prioridad:</b> ${prioridadEmoji} ${task.prioridad.toUpperCase()}\n`;
+            mensaje += `<b>Fecha límite:</b> ${fechaLimite}\n`;
+            mensaje += `<b>Asignado por:</b> ${asignadorNombre}\n`;
+            mensaje += `<b>Asignado a:</b> ${asignadoNombre}\n`;
+            mensaje += `<b>Estado:</b> ${task.estado}\n`;
+            return mensaje;
+        }
+
+        function formatTelegramSummary(summary) {
+            let resumen = `<b>📊 RESUMEN DE TAREAS</b>\n`;
+            resumen += `📌 Total: ${summary.total}\n`;
+            resumen += `⏳ Pendientes: ${summary.pendientes}\n`;
+            resumen += `🔄 En progreso: ${summary.enProgreso}\n`;
+            resumen += `✅ Completadas: ${summary.completadas}\n`;
+            resumen += `🔴 Críticas: ${summary.criticas}`;
+            return resumen;
+        }
+
+        // ============================================================
+        // 14. LOADING UI
         // ============================================================
         function showLoading(text = 'Cargando...') {
             const overlay = document.getElementById('loadingOverlay');
@@ -973,7 +2048,7 @@
         }
 
         // ============================================================
-        // 14. RENDERIZADO DE DASHBOARD
+        // 15. RENDERIZADO DE DASHBOARD
         // ============================================================
         function renderDashboard() {
             const visibleTasks = getVisibleTasks(currentUser).filter(t => t.id && t.id !== '');
@@ -1014,15 +2089,19 @@
             const filtrosDiv = document.getElementById('dashboard-filtros');
             let filtrosHtml = '';
             if (filtrosDashboard.zona || filtrosDashboard.estado) {
-                filtrosHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;background:#f0f4f8;border-radius:8px;">';
+                filtrosHtml =
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;background:#f0f4f8;border-radius:8px;">';
                 filtrosHtml += '<span style="font-weight:600;font-size:13px;">🔍 Filtros activos:</span>';
                 if (filtrosDashboard.zona) {
-                    filtrosHtml += `<span class="filter-chip">Zona: ${filtrosDashboard.zona} <span class="remove" onclick="window.aplicarFiltroDashboard('zona', null)">✖</span></span>`;
+                    filtrosHtml +=
+                        `<span class="filter-chip">Zona: ${filtrosDashboard.zona} <span class="remove" onclick="window.aplicarFiltroDashboard('zona', null)">✖</span></span>`;
                 }
                 if (filtrosDashboard.estado) {
-                    filtrosHtml += `<span class="filter-chip">Estado: ${filtrosDashboard.estado} <span class="remove" onclick="window.aplicarFiltroDashboard('estado', null)">✖</span></span>`;
+                    filtrosHtml +=
+                        `<span class="filter-chip">Estado: ${filtrosDashboard.estado} <span class="remove" onclick="window.aplicarFiltroDashboard('estado', null)">✖</span></span>`;
                 }
-                filtrosHtml += `<button class="btn btn-clear" onclick="window.limpiarFiltrosDashboard()" style="background:#6c757d;color:#fff;border:none;padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Limpiar todo</button>`;
+                filtrosHtml +=
+                    `<button class="btn btn-clear" onclick="window.limpiarFiltrosDashboard()" style="background:#6c757d;color:#fff;border:none;padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Limpiar todo</button>`;
                 filtrosHtml += '</div>';
             }
             filtrosDiv.innerHTML = filtrosHtml;
@@ -1030,21 +2109,24 @@
             if (typeof Chart !== 'undefined') {
                 dibujarGraficos(tasksFiltradas);
             } else {
-                document.getElementById('chartZonaContainer').innerHTML = '<p class="chart-error">⚠️ Librería de gráficos no disponible</p>';
-                document.getElementById('chartEstadoContainer').innerHTML = '<p class="chart-error">⚠️ Librería de gráficos no disponible</p>';
+                document.getElementById('chartZonaContainer').innerHTML =
+                    '<p class="chart-error">⚠️ Librería de gráficos no disponible</p>';
+                document.getElementById('chartEstadoContainer').innerHTML =
+                    '<p class="chart-error">⚠️ Librería de gráficos no disponible</p>';
             }
 
             const sorted = [...tasksFiltradas].sort((a, b) => a.id.localeCompare(b.id)).slice(0, 5);
             const container = document.getElementById('recent-tasks');
             if (sorted.length === 0) {
-                container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay tareas con los filtros seleccionados</p></div>`;
+                container.innerHTML =
+                `<div class="empty-state"><i class="fas fa-inbox"></i><p>No hay tareas con los filtros seleccionados</p></div>`;
             } else {
                 container.innerHTML = sorted.map(t => renderTaskItem(t)).join('');
             }
         }
 
         // ============================================================
-        // 15. GRÁFICOS
+        // 16. GRÁFICOS
         // ============================================================
         function dibujarGraficos(tasksData) {
             if (chartInstances.zona) { chartInstances.zona.destroy();
@@ -1077,19 +2159,22 @@
                 if (zonas.length === 0) {
                     zonaContainer.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No hay datos de zonas</p>';
                 } else {
-                    zonaContainer.innerHTML = `<canvas id="dashboardZonaChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en una barra para filtrar por zona</p>`;
+                    zonaContainer.innerHTML =
+                        `<canvas id="dashboardZonaChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en una barra para filtrar por zona</p>`;
                     const newCtx = document.getElementById('dashboardZonaChart');
                     chartInstances.zona = new Chart(newCtx, {
                         type: 'bar',
                         data: {
                             labels: zonas,
                             datasets: [
-                                { label: 'Pendiente', data: pendientes, backgroundColor: '#fecb6e', borderRadius: 4 },
-                                { label: 'En Progreso', data: enProgreso, backgroundColor: '#63b3ed', borderRadius: 4 },
+                                { label: 'Pendiente', data: pendientes, backgroundColor: '#fecb6e',
+                                    borderRadius: 4 },
+                                { label: 'En Progreso', data: enProgreso, backgroundColor: '#63b3ed',
+                                    borderRadius: 4 },
                                 { label: 'Completado', data: completados, backgroundColor: '#68d391',
-                                borderRadius: 4 },
+                                    borderRadius: 4 },
                                 { label: '🔴 Críticas', data: criticas, backgroundColor: '#fc8181',
-                                borderRadius: 4 }
+                                    borderRadius: 4 }
                             ]
                         },
                         options: {
@@ -1123,9 +2208,11 @@
             if (ctxEstado && typeof Chart !== 'undefined') {
                 const totalEstados = estadoCounts.pendiente + estadoCounts['en-progreso'] + estadoCounts.completado;
                 if (totalEstados === 0) {
-                    estadoContainer.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No hay datos de estados</p>';
+                    estadoContainer.innerHTML =
+                        '<p style="text-align:center;color:#999;padding:20px;">No hay datos de estados</p>';
                 } else {
-                    estadoContainer.innerHTML = `<canvas id="dashboardEstadoChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en un sector para filtrar por estado</p>`;
+                    estadoContainer.innerHTML =
+                        `<canvas id="dashboardEstadoChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en un sector para filtrar por estado</p>`;
                     const newCtx = document.getElementById('dashboardEstadoChart');
                     chartInstances.estado = new Chart(newCtx, {
                         type: 'pie',
@@ -1148,7 +2235,8 @@
                                     callbacks: {
                                         label: ctx => {
                                             const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                            const pct = total > 0 ? Math.round((ctx.raw / total) * 100) : 0;
+                                            const pct = total > 0 ? Math.round((ctx.raw / total) * 100) :
+                                                0;
                                             return `${ctx.label}: ${ctx.raw} (${pct}%)`;
                                         }
                                     }
@@ -1168,7 +2256,7 @@
         }
 
         // ============================================================
-        // 16. FUNCIONES DE FILTRO (globales)
+        // 17. FUNCIONES DE FILTRO (globales)
         // ============================================================
         window.aplicarFiltroDashboard = function(tipo, valor) {
             filtrosDashboard[tipo] = (filtrosDashboard[tipo] === valor) ? null : valor;
@@ -1182,7 +2270,7 @@
         };
 
         // ============================================================
-        // 17. RENDER TASK ITEM (con enlace de descarga real)
+        // 18. RENDER TASK ITEM (con enlace de descarga real)
         // ============================================================
         function renderTaskItem(task) {
             if (!task || !task.id || task.id === '') {
@@ -1200,7 +2288,6 @@
             const critical = isTaskOverdue(task);
             const criticalBadge = critical ? `<span class="task-status critical">🔴 Crítica</span>` : '';
 
-            // Archivos: mostrar enlaces de descarga si existen localmente
             let archivosHtml = '';
             if (task.archivos && task.archivos.length > 0) {
                 const archivosMostrar = task.archivos.slice(0, 3);
@@ -1209,19 +2296,20 @@
                     const fileName = f.name || 'archivo';
                     const hasLocal = getFileData(task.id, fileName) !== null;
                     const hasUrl = f.url && f.url.startsWith('http');
-                    let icon = 'fa-file-alt';
                     let linkHtml = '';
                     if (hasLocal) {
                         const url = getFileUrl(task.id, fileName);
                         if (url) {
-                            linkHtml = `<a href="${url}" download="${fileName}" class="file-tag" style="text-decoration:none;color:var(--primary);" title="Descargar archivo">
+                            linkHtml =
+                                `<a href="${url}" download="${fileName}" class="file-tag" style="text-decoration:none;color:var(--primary);" title="Descargar archivo">
                                 <i class="fas fa-file"></i> ${fileName} <i class="fas fa-download" style="font-size:10px;"></i>
                             </a>`;
                         } else {
                             linkHtml = `<span class="file-tag"><i class="fas fa-file"></i> ${fileName}</span>`;
                         }
                     } else if (hasUrl) {
-                        linkHtml = `<a href="${f.url}" target="_blank" class="file-tag" style="text-decoration:none;color:var(--primary);" title="Abrir archivo">
+                        linkHtml =
+                            `<a href="${f.url}" target="_blank" class="file-tag" style="text-decoration:none;color:var(--primary);" title="Abrir archivo">
                             <i class="fas fa-file"></i> ${fileName} <i class="fas fa-external-link-alt" style="font-size:10px;"></i>
                         </a>`;
                     } else {
@@ -1269,7 +2357,7 @@
         }
 
         // ============================================================
-        // 18. FUNCIONES DE TAREAS (con almacenamiento local de archivos)
+        // 19. FUNCIONES DE TAREAS (con almacenamiento local de archivos)
         // ============================================================
         async function createTasks(titulo, descripcion, fecha_limite, prioridad, asignados, archivos) {
             const allowed = getVisibleEmployees(currentUser).map(e => e.num);
@@ -1297,33 +2385,75 @@
                     archivos: archivos.map(f => ({ name: f, url: null })),
                     _isNew: true
                 };
-                // Guardar los archivos en el store local
-                for (const file of archivos) {
-                    // Los archivos vienen del input, ya los tenemos en memoria pero no podemos acceder a ellos aquí.
-                    // Los archivos se guardan en el store al momento de seleccionarlos en el formulario.
-                    // Aquí solo asociamos el nombre; el contenido ya fue guardado en el evento change del input.
-                }
                 tasks.push(tarea);
                 nuevas.push(tarea);
             }
+
             await saveTasksToAppSheet(nuevas);
+
+            // Enviar notificaciones por Telegram
+            const asignador = currentUser;
+            for (const task of nuevas) {
+                const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
+                if (!asignadoEmp) continue;
+                const chatId = asignadoEmp.chatId;
+                if (!chatId) {
+                    console.warn(`⚠️ Empleado ${asignadoEmp.nombre} no tiene chatId, no se envía notificación.`);
+                    continue;
+                }
+                if (/^\d{8,10}$/.test(chatId) && (chatId === '123456789' || chatId === '987654321')) {
+                    console.warn(`⚠️ ChatId de prueba (${chatId}) para ${asignadoEmp.nombre}, no se envía.`);
+                    continue;
+                }
+
+                const taskMsg = formatTelegramTaskMessage(task, asignadoEmp.nombre, asignador.nombre);
+                const summary = getTaskSummaryForUser(task.asignado_a);
+                const summaryMsg = formatTelegramSummary(summary);
+                const fullMsg = `${taskMsg}\n${summaryMsg}`;
+                const result = await sendTelegramMessage(chatId, fullMsg);
+                if (result.ok) {
+                    showToast(`📨 Notificación enviada a ${asignadoEmp.nombre}`, 'success');
+                } else {
+                    showToast(`⚠️ No se pudo enviar a ${asignadoEmp.nombre}: ${result.error}`, 'error');
+                }
+            }
+
             return nuevas;
         }
 
+        // ============================================================
+        // ACTUALIZACIÓN DE ESTADO CON NOTIFICACIÓN AL COMPLETAR
+        // ============================================================
         async function updateTaskStatus(taskId, nuevoEstado) {
             if (!taskId || typeof taskId !== 'string') {
                 alert('ID de tarea inválido.');
                 return false;
             }
             const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.estado = nuevoEstado;
-                await updateTaskStatusInAppSheet(taskId, nuevoEstado);
-                return true;
+            if (!task) {
+                alert('Tarea no encontrada.');
+                return false;
             }
-            return false;
+            const oldEstado = task.estado;
+            task.estado = nuevoEstado;
+            await updateTaskStatusInAppSheet(taskId, nuevoEstado);
+
+            // Si el nuevo estado es 'completado' y antes no lo estaba, enviar notificación
+            if (nuevoEstado === 'completado' && oldEstado !== 'completado') {
+                const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
+                if (asignadoEmp && asignadoEmp.chatId) {
+                    const summary = getTaskSummaryForUser(task.asignado_a);
+                    const summaryMsg = formatTelegramSummary(summary);
+                    const mensaje = `✅ <b>¡Tarea completada!</b>\n\nLa tarea "${task.titulo}" ha sido marcada como completada.\n\n${summaryMsg}`;
+                    await sendTelegramMessage(asignadoEmp.chatId, mensaje);
+                }
+            }
+            return true;
         }
 
+        // ============================================================
+        // ELIMINAR TAREA
+        // ============================================================
         async function deleteTask(taskId) {
             if (!taskId || typeof taskId !== 'string') {
                 alert('ID de tarea inválido.');
@@ -1333,7 +2463,6 @@
                 return false;
             }
             try {
-                // Eliminar archivos del store
                 const task = tasks.find(t => t.id === taskId);
                 if (task && task.archivos) {
                     for (const f of task.archivos) {
@@ -1361,7 +2490,7 @@
         }
 
         // ============================================================
-        // 19. DESCARGAR ARCHIVOS DESDE MIS TAREAS (con URL real o local)
+        // 20. DESCARGAR ARCHIVOS DESDE MIS TAREAS (con URL real o local)
         // ============================================================
         function descargarArchivos(taskId) {
             const task = getTaskById(taskId);
@@ -1370,10 +2499,8 @@
                 return;
             }
 
-            // Primero intentar descargar desde el store local
             const archivosConLocal = task.archivos.filter(f => getFileData(taskId, f.name) !== null);
             if (archivosConLocal.length > 0) {
-                // Si hay uno, descargarlo directamente
                 if (archivosConLocal.length === 1) {
                     const f = archivosConLocal[0];
                     const url = getFileUrl(taskId, f.name);
@@ -1389,7 +2516,6 @@
                         return;
                     }
                 } else {
-                    // Múltiples: mostrar lista
                     let msg = '📁 Archivos disponibles localmente:\n\n';
                     archivosConLocal.forEach((f, i) => {
                         msg += `${i+1}. ${f.name}\n`;
@@ -1413,7 +2539,6 @@
                 }
             }
 
-            // Si no hay local, intentar con URLs de AppSheet
             const conUrl = task.archivos.filter(f => f.url && f.url.startsWith('http'));
             if (conUrl.length > 0) {
                 if (conUrl.length === 1) {
@@ -1432,14 +2557,14 @@
                 return;
             }
 
-            // Si no hay ni local ni URL
             const listaNombres = task.archivos.map((f, i) => `${i+1}. ${f.name}`).join('\n');
-            alert(`📥 Archivos disponibles (solo referencia):\n\n${listaNombres}\n\n(No se puede descargar porque el archivo no está almacenado localmente ni en AppSheet.)`);
+            alert(
+                `📥 Archivos disponibles (solo referencia):\n\n${listaNombres}\n\n(No se puede descargar porque el archivo no está almacenado localmente ni en AppSheet.)`);
             showToast(`ℹ️ ${task.archivos.length} archivos referenciados, pero no disponibles para descarga.`, 'error');
         }
 
         // ============================================================
-        // 20. MODAL DE EDICIÓN DE TAREA (con archivos y enlaces reales)
+        // 21. MODAL DE EDICIÓN DE TAREA (con archivos y enlaces reales)
         // ============================================================
         function showTaskDetail(taskId) {
             if (!taskId || typeof taskId !== 'string') {
@@ -1466,7 +2591,6 @@
             const prioridadOptions = ['baja', 'media', 'alta'];
             const fechaLimiteFormateada = formatDateToInput(task.fecha_limite);
 
-            // Generar HTML para archivos con enlace real (local o AppSheet)
             let archivosHtml = '';
             if (task.archivos && task.archivos.length > 0) {
                 archivosHtml = task.archivos.map(f => {
@@ -1477,14 +2601,18 @@
                     if (hasLocal) {
                         const url = getFileUrl(taskId, fileName);
                         if (url) {
-                            downloadIcon = `<a href="${url}" download="${fileName}" class="file-download" title="Descargar archivo"><i class="fas fa-download"></i></a>`;
+                            downloadIcon =
+                                `<a href="${url}" download="${fileName}" class="file-download" title="Descargar archivo"><i class="fas fa-download"></i></a>`;
                         } else {
-                            downloadIcon = `<i class="fas fa-download file-download" data-file="${fileName}" title="Descargar (simulado)"></i>`;
+                            downloadIcon =
+                                `<i class="fas fa-download file-download" data-file="${fileName}" title="Descargar (simulado)"></i>`;
                         }
                     } else if (hasUrl) {
-                        downloadIcon = `<a href="${f.url}" target="_blank" class="file-download" title="Abrir archivo"><i class="fas fa-external-link-alt"></i></a>`;
+                        downloadIcon =
+                            `<a href="${f.url}" target="_blank" class="file-download" title="Abrir archivo"><i class="fas fa-external-link-alt"></i></a>`;
                     } else {
-                        downloadIcon = `<i class="fas fa-download file-download" data-file="${fileName}" title="Descargar (simulado)"></i>`;
+                        downloadIcon =
+                            `<i class="fas fa-download file-download" data-file="${fileName}" title="Descargar (simulado)"></i>`;
                     }
                     return `
                         <span class="file-item" data-file="${fileName}">
@@ -1580,7 +2708,6 @@
                     previewContainer.innerHTML = files.map(f =>
                         `<span class="file-tag"><i class="fas fa-file"></i> ${f.name}</span>`
                     ).join(' ');
-                    // Almacenar los archivos seleccionados en el store local temporalmente (se guardarán al guardar)
                 });
 
                 const fileList = document.getElementById('edit-file-list');
@@ -1589,7 +2716,6 @@
                     if (downloadBtn) {
                         const fileName = downloadBtn.dataset.file;
                         if (fileName) {
-                            // Intentar descargar desde store local
                             const taskId = editingTaskId;
                             const data = getFileData(taskId, fileName);
                             if (data) {
@@ -1605,7 +2731,9 @@
                                     showToast(`📥 Descargando: ${fileName}`, 'success');
                                 }
                             } else {
-                                alert(`📥 Descarga del archivo: "${fileName}"\n(No se encontró el contenido localmente.)`);
+                                alert(
+                                    `📥 Descarga del archivo: "${fileName}"\n(No se encontró el contenido localmente.)`
+                                    );
                             }
                         }
                         return;
@@ -1614,12 +2742,9 @@
                     if (removeBtn) {
                         const fileName = removeBtn.dataset.file;
                         if (confirm(`¿Eliminar el archivo "${fileName}"?`)) {
-                            // Eliminar del store local
                             removeFileFromStore(editingTaskId, fileName);
-                            // Eliminar del DOM
                             const fileItem = removeBtn.closest('.file-item');
                             if (fileItem) fileItem.remove();
-                            // Actualizar la tarea en memoria
                             const taskToUpdate = tasks.find(t => t.id === editingTaskId);
                             if (taskToUpdate && taskToUpdate.archivos) {
                                 taskToUpdate.archivos = taskToUpdate.archivos.filter(f => f.name !== fileName);
@@ -1641,9 +2766,7 @@
                         return;
                     }
 
-                    // Procesar nuevos archivos seleccionados
                     const newFiles = Array.from(fileInput.files);
-                    // Guardar en store local
                     for (const file of newFiles) {
                         try {
                             const base64 = await readFileAsBase64(file);
@@ -1654,16 +2777,10 @@
                     }
 
                     const taskToUpdate = tasks.find(t => t.id === editingTaskId);
-                    // Obtener lista actual de archivos (nombres) desde la tarea en memoria
-                    const currentFileNames = taskToUpdate ? taskToUpdate.archivos.map(f => f.name) : [];
-                    // Los archivos eliminados se quitan del store, pero los nombres aún están en la tarea; los actualizamos
-                    // Reconstruir la lista de archivos desde los elementos visibles en el DOM
                     const fileItems = document.querySelectorAll('#edit-file-list .file-item');
                     const finalFileNames = Array.from(fileItems).map(el => el.dataset.file).filter(Boolean);
-                    // Agregar los nuevos archivos (ya están en el store)
                     const newFileNames = newFiles.map(f => f.name);
                     const allNames = [...finalFileNames, ...newFileNames];
-                    // Actualizar la tarea en memoria
                     if (taskToUpdate) {
                         taskToUpdate.titulo = newTitle;
                         taskToUpdate.descripcion = newDesc;
@@ -1682,7 +2799,8 @@
                         const record = {
                             titulo: newTitle,
                             descripcion: newDesc || '',
-                            fecha_creacion: taskToUpdate ? taskToUpdate.fecha_creacion : new Date().toISOString().split('T')[0],
+                            fecha_creacion: taskToUpdate ? taskToUpdate.fecha_creacion : new Date().toISOString()
+                                .split('T')[0],
                             fecha_limite: newDeadline || '',
                             prioridad: newPriority,
                             estado: newStatus,
@@ -1717,7 +2835,7 @@
         }
 
         // ============================================================
-        // 21. NAVEGACIÓN Y EVENTOS
+        // 22. NAVEGACIÓN Y EVENTOS
         // ============================================================
         function navigateTo(viewName) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1759,7 +2877,7 @@
         }
 
         // ============================================================
-        // 22. ASIGNACIÓN MASIVA MEJORADA
+        // 23. ASIGNACIÓN MASIVA MEJORADA
         // ============================================================
         function populateAssigneesSelect() {
             const select = document.getElementById('task-assignees');
@@ -1795,7 +2913,7 @@
         }
 
         // ============================================================
-        // 23. CARGA MASIVA POR LISTA DE NÚMEROS
+        // 24. CARGA MASIVA POR LISTA DE NÚMEROS
         // ============================================================
         function cargarListaEmpleados() {
             const textarea = document.getElementById('bulk-employee-list');
@@ -1811,7 +2929,8 @@
                 .map(Number);
 
             if (numbers.length === 0) {
-                alert('No se encontraron números de empleado válidos. Asegúrate de que cada línea contenga solo un número.');
+                alert(
+                    'No se encontraron números de empleado válidos. Asegúrate de que cada línea contenga solo un número.');
                 return;
             }
 
@@ -1855,7 +2974,7 @@
         }
 
         // ============================================================
-        // 24. MIS TAREAS (con búsqueda, estado, zona y analista)
+        // 25. MIS TAREAS (con búsqueda, estado, zona y analista)
         // ============================================================
         function renderMisTareas() {
             const visibleTasks = getVisibleTasks(currentUser).filter(t => t.id && t.id !== '');
@@ -1893,18 +3012,20 @@
                 );
             }
 
-            document.getElementById('mis-tareas-count').textContent = `Mostrando ${filtered.length} de ${visibleTasks.length} tareas`;
+            document.getElementById('mis-tareas-count').textContent =
+                `Mostrando ${filtered.length} de ${visibleTasks.length} tareas`;
 
             const container = document.getElementById('mis-tareas-list');
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>No hay tareas que coincidan con los filtros</p></div>`;
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-tasks"></i><p>No hay tareas que coincidan con los filtros</p></div>`;
             } else {
                 container.innerHTML = filtered.map(t => renderTaskItem(t)).join('');
             }
         }
 
         // ============================================================
-        // 25. EXPORTAR A EXCEL
+        // 26. EXPORTAR A EXCEL
         // ============================================================
         function exportToExcel() {
             const visibleTasks = getVisibleTasks(currentUser).filter(t => t.id && t.id !== '');
@@ -1981,7 +3102,7 @@
         }
 
         // ============================================================
-        // 26. POBLAR FILTROS DE ZONA Y ANALISTA
+        // 27. POBLAR FILTROS DE ZONA Y ANALISTA
         // ============================================================
         function populateFilterOptions() {
             const zonas = new Set();
@@ -2005,7 +3126,7 @@
         }
 
         // ============================================================
-        // 27. TÍTULOS PREDEFINIDOS
+        // 28. TÍTULOS PREDEFINIDOS
         // ============================================================
         function setupPredefinedTitles() {
             const tags = document.querySelectorAll('.predefined-titles .tag');
@@ -2030,7 +3151,7 @@
         }
 
         // ============================================================
-        // 28. OTRAS VISTAS
+        // 29. OTRAS VISTAS
         // ============================================================
         function renderColaboradores() {
             const tbody = document.getElementById('colaboradores-table-body');
@@ -2072,7 +3193,111 @@
         }
 
         // ============================================================
-        // 29. INICIALIZACIÓN
+        // 30. SINCRONIZACIÓN AUTOMÁTICA (polling)
+        // ============================================================
+        function updateSyncIndicator(status, message = '') {
+            const indicator = document.getElementById('syncIndicator');
+            const icon = document.getElementById('syncIcon');
+            const text = document.getElementById('syncText');
+            const updated = document.getElementById('lastUpdated');
+            const count = document.getElementById('syncCount');
+
+            switch (status) {
+                case 'syncing':
+                    icon.className = 'fas fa-sync spinning';
+                    text.textContent = 'Actualizando...';
+                    updated.textContent = '';
+                    count.textContent = '';
+                    break;
+                case 'success':
+                    icon.className = 'fas fa-check-circle';
+                    text.textContent = 'Actualizado';
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    updated.textContent = `(${timeStr})`;
+                    syncCount++;
+                    count.textContent = `#${syncCount}`;
+                    setTimeout(() => {
+                        if (!isSyncing) {
+                            icon.className = 'fas fa-sync';
+                        }
+                    }, 2000);
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-exclamation-circle';
+                    text.textContent = 'Error al sincronizar';
+                    updated.textContent = '';
+                    count.textContent = '';
+                    setTimeout(() => {
+                        if (!isSyncing) {
+                            icon.className = 'fas fa-sync';
+                            text.textContent = 'Actualizado';
+                        }
+                    }, 4000);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        async function refreshData() {
+            if (isSyncing || !currentUser) return;
+            isSyncing = true;
+            updateSyncIndicator('syncing');
+            console.log('🔄 Iniciando sincronización automática...');
+
+            try {
+                await loadEmployeesFromAppSheet(true, true);
+                await loadTasksFromAppSheet(true);
+
+                const activeView = document.querySelector('.view.active');
+                if (activeView) {
+                    const viewId = activeView.id.replace('view-', '');
+                    switch (viewId) {
+                        case 'dashboard':
+                            renderDashboard();
+                            break;
+                        case 'mis-tareas':
+                            renderMisTareas();
+                            break;
+                        case 'colaboradores':
+                            renderColaboradores();
+                            break;
+                        case 'desempeno':
+                            renderDesempeno();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                updateSyncIndicator('success');
+                console.log('✅ Sincronización completada exitosamente.');
+            } catch (error) {
+                console.error('❌ Error en sincronización automática:', error);
+                updateSyncIndicator('error');
+                showToast('⚠️ Error al sincronizar datos automáticamente', 'error');
+            } finally {
+                isSyncing = false;
+            }
+        }
+
+        function startAutoSync(intervalMs = 30000) {
+            if (syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(refreshData, intervalMs);
+            console.log(`🔄 Sincronización automática iniciada cada ${intervalMs/1000} segundos.`);
+            setTimeout(refreshData, 1000);
+        }
+
+        function stopAutoSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+                console.log('🔄 Sincronización automática detenida.');
+            }
+        }
+
+        // ============================================================
+        // 31. INICIALIZACIÓN
         // ============================================================
         async function initApp(user) {
             currentUser = user;
@@ -2088,9 +3313,12 @@
             navAsignar.style.display = canAssignTasks(user) ? 'flex' : 'none';
 
             await loadTasksFromAppSheet();
+            await loadEmployeesFromAppSheet(false, true);
             populateFilterOptions();
             setupPredefinedTitles();
             navigateTo('dashboard');
+
+            startAutoSync(30000);
 
             document.querySelectorAll('.nav-item[data-view]').forEach(el => {
                 el.addEventListener('click', function(e) {
@@ -2105,11 +3333,11 @@
             });
 
             document.getElementById('logout-btn').addEventListener('click', function() {
+                stopAutoSync();
                 localStorage.removeItem('currentUser');
                 location.reload();
             });
 
-            // MIS TAREAS - Filtros
             document.getElementById('filter-status').addEventListener('change', renderMisTareas);
             document.getElementById('filter-zona').addEventListener('change', renderMisTareas);
             document.getElementById('filter-analista').addEventListener('change', renderMisTareas);
@@ -2137,7 +3365,6 @@
 
             document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
 
-            // Evento para descargar archivos desde Mis Tareas
             document.addEventListener('click', function(e) {
                 const downloadBtn = e.target.closest('.download-files-btn');
                 if (downloadBtn) {
@@ -2146,7 +3373,6 @@
                 }
             });
 
-            // SELECT ALL / DESELECT ALL
             document.getElementById('select-all-assignees').addEventListener('click', function() {
                 const select = document.getElementById('task-assignees');
                 Array.from(select.options).forEach(opt => opt.selected = true);
@@ -2171,7 +3397,8 @@
                     alert('No hay zonas disponibles.');
                     return;
                 }
-                const zonaPrompt = `Selecciona una zona:\n${zonaList.map((z, i) => `${i+1}. ${z}`).join('\n')}`;
+                const zonaPrompt =
+                `Selecciona una zona:\n${zonaList.map((z, i) => `${i+1}. ${z}`).join('\n')}`;
                 const choice = prompt(zonaPrompt);
                 if (choice === null) return;
                 const idx = parseInt(choice) - 1;
@@ -2193,17 +3420,12 @@
                 document.getElementById('bulk-employee-list').value = '';
             });
 
-            // Guardar archivos seleccionados en el store local al momento de crearlos
             document.getElementById('task-files').addEventListener('change', async function() {
                 const preview = document.getElementById('file-list-preview');
                 const files = Array.from(this.files);
                 preview.innerHTML = files.map(f =>
                     `<span class="file-tag"><i class="fas fa-file"></i> ${f.name}</span>`
                 ).join(' ');
-                // Guardar en el store local asociado a la tarea (aún no creada)
-                // La tarea no tiene ID aún, así que usamos un identificador temporal
-                // En createTasks se asociarán con el ID de la tarea
-                // Almacenamos temporalmente en un objeto global
                 if (!window._tempFiles) window._tempFiles = {};
                 for (const file of files) {
                     try {
@@ -2240,10 +3462,8 @@
                 const fileNames = Array.from(fileInput.files).map(f => f.name);
 
                 try {
-                    // Crear las tareas
                     const created = await createTasks(titulo, desc, deadline, prioridad, selected, fileNames);
                     if (created.length > 0) {
-                        // Asociar los archivos temporales con el ID de cada tarea
                         if (window._tempFiles) {
                             for (const task of created) {
                                 for (const fileName of fileNames) {
@@ -2255,7 +3475,9 @@
                             }
                             window._tempFiles = {};
                         }
-                        showToast(`✅ Tarea "${titulo}" asignada a ${created.length} colaborador(es) exitosamente.`, 'success');
+                        showToast(
+                            `✅ Tarea "${titulo}" asignada a ${created.length} colaborador(es) exitosamente.`,
+                            'success');
                         this.reset();
                         document.getElementById('file-list-preview').innerHTML = '';
                         document.getElementById('selected-counter').textContent = '0 seleccionados';
@@ -2306,10 +3528,27 @@
             document.getElementById('task-detail-modal').addEventListener('click', function(e) {
                 if (e.target === this) this.classList.remove('open');
             });
+
+            document.getElementById('telegram-test-btn').addEventListener('click', async function() {
+                const chatIdInput = document.getElementById('telegram-test-chatid');
+                const chatId = chatIdInput.value.trim();
+                if (!chatId) {
+                    alert('Ingresa un Chat ID válido.');
+                    return;
+                }
+                const testMessage =
+                    '🧪 <b>Mensaje de prueba</b>\nEste es un mensaje enviado desde TaskFlow para verificar la conexión con Telegram.';
+                const result = await sendTelegramMessage(chatId, testMessage);
+                if (result.ok) {
+                    showToast('✅ Mensaje de prueba enviado correctamente.', 'success');
+                } else {
+                    showToast(`❌ Error: ${result.error}`, 'error');
+                }
+            });
         }
 
         // ============================================================
-        // 30. LOGIN FORM
+        // 32. LOGIN FORM
         // ============================================================
         document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -2328,26 +3567,12 @@
             }
         });
 
-        document.getElementById('dev-quick-login').addEventListener('click', async function() {
-            if (empleados.length === 0) {
-                await loadEmployeesFromAppSheet();
-            }
-            const demoUser = empleados.find(e => e.num === 11519);
-            if (demoUser) {
-                initApp(demoUser);
-            } else {
-                alert('No se encontró el usuario demo (Gerente).');
-            }
-        });
-
-        document.getElementById('diagnostic-btn').addEventListener('click', listTables);
-
         // ============================================================
-        // 31. RESTAURAR SESIÓN Y PRECARGA
+        // 33. RESTAURAR SESIÓN Y PRECARGA
         // ============================================================
         (async function initialize() {
             showLoading('Cargando datos de empleados...');
-            await loadEmployeesFromAppSheet();
+            await loadEmployeesFromAppSheet(false, true);
             hideLoading();
 
             const saved = localStorage.getItem('currentUser');
