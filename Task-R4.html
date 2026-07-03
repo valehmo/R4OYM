@@ -1039,6 +1039,81 @@
         .background-sync-toast.show {
             opacity: 1;
         }
+        /* Estilos para Reportes */
+        .report-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 16px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .report-filters .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .report-filters .filter-group label {
+            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .report-filters .filter-group input[type="date"],
+        .report-filters .filter-group select {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            background: #fff;
+        }
+        .report-filters .filter-group input[type="date"]:focus,
+        .report-filters .filter-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+        }
+        .report-charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .report-chart-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .report-chart-box h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        .report-chart-box canvas {
+            max-height: 250px;
+            width: 100% !important;
+        }
+        .report-chart-box.full-width {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 768px) {
+            .report-charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .report-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .report-filters .filter-group {
+                flex-wrap: wrap;
+            }
+        }
         @media (max-width: 768px) {
             :root {
                 --sidebar-width: 0px;
@@ -1242,6 +1317,7 @@
                 <div class="nav-item" data-view="asignar" id="nav-asignar" style="display:none;"><i class="fas fa-plus-circle"></i> Asignar Tarea</div>
                 <div class="nav-item" data-view="colaboradores"><i class="fas fa-users"></i> Colaboradores</div>
                 <div class="nav-item" data-view="desempeno"><i class="fas fa-star"></i> Desempeño</div>
+                <div class="nav-item" data-view="reportes"><i class="fas fa-chart-line"></i> Reportes</div>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-avatar" id="avatar-letter">U</div>
@@ -1440,6 +1516,49 @@
                     </div>
                 </div>
 
+                <!-- ===== VIEW: REPORTES ===== -->
+                <div class="view" id="view-reportes">
+                    <h2 style="font-size:20px;font-weight:600;margin-bottom:20px;"><i class="fas fa-chart-line"></i> Reportes Avanzados</h2>
+                    <!-- Filtros -->
+                    <div class="report-filters">
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar-alt"></i> Desde:</label>
+                            <input type="date" id="report-date-from" />
+                        </div>
+                        <div class="filter-group">
+                            <label>Hasta:</label>
+                            <input type="date" id="report-date-to" />
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-user"></i> Colaborador:</label>
+                            <select id="report-colaborador">
+                                <option value="all">Todos</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" id="report-apply-btn" style="padding:6px 18px;"><i class="fas fa-filter"></i> Aplicar filtros</button>
+                        <button class="btn-secondary" id="report-reset-btn" style="padding:6px 18px;"><i class="fas fa-undo"></i> Reset</button>
+                    </div>
+                    <!-- Gráficos -->
+                    <div class="report-charts-grid">
+                        <div class="report-chart-box">
+                            <h3>📈 Tareas por día</h3>
+                            <canvas id="reportDailyChart"></canvas>
+                        </div>
+                        <div class="report-chart-box">
+                            <h3>📊 Distribución por estado</h3>
+                            <canvas id="reportStatusChart"></canvas>
+                        </div>
+                        <div class="report-chart-box full-width">
+                            <h3>📍 Tareas por zona</h3>
+                            <canvas id="reportZonaChart"></canvas>
+                        </div>
+                        <div class="report-chart-box full-width">
+                            <h3>🏆 Rendimiento por colaborador</h3>
+                            <canvas id="reportPerformanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1477,75 +1596,39 @@
         let empleados = [];
         let editingTaskId = null;
         let filtrosDashboard = { zona: null, estado: null };
-        let chartInstances = { zona: null, estado: null };
+        let chartInstances = { zona: null, estado: null, reportDaily: null, reportStatus: null, reportZona: null,
+            reportPerformance: null };
         let archivosEliminar = [];
 
         let syncInterval = null;
+        let reminderInterval = null;
         let isSyncing = false;
         let syncCount = 0;
-        let chartInitialized = false;
+        const NOTIFIED_KEY = 'task_reminder_notified';
+        const REPORT_FILTERS_KEY = 'taskflow_report_filters';
 
-        const FILE_STORE_KEY = 'taskflow_file_store';
-
-        function getFileStore() {
+        // ========== FILTROS DE REPORTES (PERSISTENCIA) ==========
+        function getReportFilters() {
             try {
-                const data = localStorage.getItem(FILE_STORE_KEY);
-                return data ? JSON.parse(data) : {};
-            } catch { return {}; }
-        }
-
-        function setFileStore(store) {
-            localStorage.setItem(FILE_STORE_KEY, JSON.stringify(store));
-        }
-
-        function storeFile(taskId, fileName, base64Data) {
-            const store = getFileStore();
-            const key = `${taskId}_${fileName}`;
-            store[key] = base64Data;
-            setFileStore(store);
-        }
-
-        function getFileData(taskId, fileName) {
-            const store = getFileStore();
-            const key = `${taskId}_${fileName}`;
-            return store[key] || null;
-        }
-
-        function removeFileFromStore(taskId, fileName) {
-            const store = getFileStore();
-            const key = `${taskId}_${fileName}`;
-            delete store[key];
-            setFileStore(store);
-        }
-
-        function getFileUrl(taskId, fileName, mimeType = 'application/octet-stream') {
-            const base64 = getFileData(taskId, fileName);
-            if (!base64) return null;
-            try {
-                const byteCharacters = atob(base64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                const data = localStorage.getItem(REPORT_FILTERS_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    console.log('📂 Filtros recuperados:', parsed);
+                    return parsed;
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: mimeType });
-                return URL.createObjectURL(blob);
             } catch (e) {
-                console.warn('Error generando URL de archivo:', e);
-                return null;
+                console.warn('Error al leer filtros:', e);
             }
+            return null;
         }
 
-        function readFileAsBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const base64 = e.target.result.split(',')[1];
-                    resolve(base64);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
+        function saveReportFilters(filters) {
+            try {
+                localStorage.setItem(REPORT_FILTERS_KEY, JSON.stringify(filters));
+                console.log('💾 Filtros guardados:', filters);
+            } catch (e) {
+                console.warn('Error al guardar filtros:', e);
+            }
         }
 
         // ============================================================
@@ -1678,6 +1761,18 @@
             return `${year}-${month}-${day}`;
         }
 
+        function formatDateForDisplay(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function getToday() {
+            const d = new Date();
+            return d.toISOString().split('T')[0];
+        }
+
         // ============================================================
         // 8. CARGA DE TAREAS
         // ============================================================
@@ -1737,14 +1832,19 @@
                         fechaLimite = formatDateToInput(fechaLimite);
                         const archivosRaw = getFieldValue(record, 'archivos', 'Archivos');
                         const archivos = parseArchivos(archivosRaw);
+                        let fechaCreacion = getFieldValue(record, 'fecha_creacion', 'fecha_cr', 'FechaCreacion',
+                            'Fecha_Creacion', 'fecha_creación');
+                        if (fechaCreacion && !/^\d{4}-\d{2}-\d{2}$/.test(fechaCreacion)) {
+                            const d = new Date(fechaCreacion);
+                            if (!isNaN(d.getTime())) fechaCreacion = d.toISOString().split('T')[0];
+                        }
                         return {
                             id: id || `task_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
                             titulo: getFieldValue(record, 'titulo', 'título', 'Titulo', 'Título'),
                             descripcion: getFieldValue(record, 'descripcion', 'descripción', 'Descripcion',
                                 'Descripción'),
-                            fecha_creacion: getFieldValue(record, 'fecha_creacion', 'fecha_cr', 'FechaCreacion',
-                                'Fecha_Creacion', 'fecha_creación'),
-                            fecha_limite: fechaLimite,
+                            fecha_creacion: fechaCreacion || '',
+                            fecha_limite: fechaLimite || '',
                             prioridad: getFieldValue(record, 'prioridad', 'Prioridad') || 'media',
                             estado: getFieldValue(record, 'estado', 'Estado') || 'pendiente',
                             asignado_por: Number(getFieldValue(record, 'asignado_por', 'Asignado_por',
@@ -1987,6 +2087,17 @@
             return limitDate < today;
         }
 
+        function getDaysUntilDue(task) {
+            if (!task.fecha_limite) return Infinity;
+            if (task.estado === 'completado') return Infinity;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const limitDate = new Date(task.fecha_limite);
+            limitDate.setHours(0, 0, 0, 0);
+            const diff = (limitDate - today) / (1000 * 60 * 60 * 24);
+            return Math.round(diff);
+        }
+
         // ============================================================
         // 13. FUNCIONES DE TELEGRAM
         // ============================================================
@@ -2169,12 +2280,10 @@
             const completados = zonas.map(z => zonasMap[z].completado);
             const criticas = zonas.map(z => zonasMap[z].critica);
 
-            // Actualizar gráfico de zonas (barra)
             const zonaContainer = document.getElementById('chartZonaContainer');
 
             if (typeof Chart !== 'undefined') {
                 if (zonas.length === 0) {
-                    // No hay datos: mostrar mensaje
                     if (chartInstances.zona) {
                         chartInstances.zona.destroy();
                         chartInstances.zona = null;
@@ -2183,7 +2292,6 @@
                         '<p style="text-align:center;color:#999;padding:20px;">No hay datos de zonas</p>';
                 } else {
                     if (!chartInstances.zona) {
-                        // Crear gráfico por primera vez
                         zonaContainer.innerHTML =
                             `<canvas id="dashboardZonaChart"></canvas><p style="font-size:0.8rem;text-align:center;margin-top:10px;">🔽 Haz clic en una barra para filtrar por zona</p>`;
                         const newCtx = document.getElementById('dashboardZonaChart');
@@ -2226,7 +2334,6 @@
                             }
                         });
                     } else {
-                        // Actualizar datos existentes (sin recrear)
                         const chart = chartInstances.zona;
                         chart.data.labels = zonas;
                         chart.data.datasets[0].data = pendientes;
@@ -2238,7 +2345,6 @@
                 }
             }
 
-            // Actualizar gráfico de estados (dona/pie)
             const estadoCounts = { pendiente: 0, 'en-progreso': 0, completado: 0 };
             tasksData.forEach(t => {
                 if (estadoCounts[t.estado] !== undefined) estadoCounts[t.estado]++;
@@ -2344,6 +2450,8 @@
             const canDelete = canDeleteTasks(currentUser);
             const critical = isTaskOverdue(task);
             const criticalBadge = critical ? `<span class="task-status critical">🔴 Crítica</span>` : '';
+            const daysUntil = getDaysUntilDue(task);
+            const dueSoon = (daysUntil >= 0 && daysUntil <= 1 && task.estado !== 'completado');
 
             let archivosHtml = '';
             if (task.archivos && task.archivos.length > 0) {
@@ -2376,6 +2484,10 @@
                 }).join(' ') + archivosExtra;
             }
 
+            const dueSoonBadge = dueSoon ?
+                `<span class="task-status" style="background:#fbbf24;color:#78350f;">⏰ Próxima a vencer</span>` :
+                '';
+
             return `
                 <div class="task-item ${critical ? 'task-critical' : ''}" data-id="${task.id}">
                     <div class="task-info">
@@ -2392,6 +2504,7 @@
                     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                         <span class="task-status ${estadoClass}">${task.estado}</span>
                         ${criticalBadge}
+                        ${dueSoonBadge}
                         <div class="task-actions">
                             ${task.archivos && task.archivos.length > 0 ? `
                                 <button class="btn-download download-files-btn" data-id="${task.id}" title="Descargar/Ver archivos" style="background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:6px;transition:var(--transition);color:#217346;font-size:14px;">
@@ -2416,6 +2529,69 @@
         // ============================================================
         // 19. FUNCIONES DE TAREAS (con almacenamiento local de archivos)
         // ============================================================
+        const FILE_STORE_KEY = 'taskflow_file_store';
+
+        function getFileStore() {
+            try {
+                const data = localStorage.getItem(FILE_STORE_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch { return {}; }
+        }
+
+        function setFileStore(store) {
+            localStorage.setItem(FILE_STORE_KEY, JSON.stringify(store));
+        }
+
+        function storeFile(taskId, fileName, base64Data) {
+            const store = getFileStore();
+            const key = `${taskId}_${fileName}`;
+            store[key] = base64Data;
+            setFileStore(store);
+        }
+
+        function getFileData(taskId, fileName) {
+            const store = getFileStore();
+            const key = `${taskId}_${fileName}`;
+            return store[key] || null;
+        }
+
+        function removeFileFromStore(taskId, fileName) {
+            const store = getFileStore();
+            const key = `${taskId}_${fileName}`;
+            delete store[key];
+            setFileStore(store);
+        }
+
+        function getFileUrl(taskId, fileName, mimeType = 'application/octet-stream') {
+            const base64 = getFileData(taskId, fileName);
+            if (!base64) return null;
+            try {
+                const byteCharacters = atob(base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: mimeType });
+                return URL.createObjectURL(blob);
+            } catch (e) {
+                console.warn('Error generando URL de archivo:', e);
+                return null;
+            }
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64 = e.target.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         async function createTasks(titulo, descripcion, fecha_limite, prioridad, asignados, archivos) {
             const allowed = getVisibleEmployees(currentUser).map(e => e.num);
             const invalid = asignados.filter(id => !allowed.includes(id));
@@ -2906,7 +3082,8 @@
                 'mis-tareas': 'Mis Tareas',
                 asignar: 'Asignar Tarea',
                 colaboradores: 'Colaboradores',
-                desempeno: 'Desempeño'
+                desempeno: 'Desempeño',
+                reportes: 'Reportes'
             };
             document.getElementById('page-title').textContent = titles[viewName] || 'Dashboard';
 
@@ -2925,6 +3102,9 @@
                     break;
                 case 'asignar':
                     populateAssigneesSelect();
+                    break;
+                case 'reportes':
+                    renderReportes();
                     break;
                 default:
                     break;
@@ -3248,7 +3428,426 @@
         }
 
         // ============================================================
-        // 30. SINCRONIZACIÓN AUTOMÁTICA (polling)
+        // 30. REPORTES AVANZADOS CON PERSISTENCIA (CORREGIDO - IGUAL QUE DASHBOARD)
+        // ============================================================
+        function renderReportes() {
+            // 1. Poblar select de colaboradores
+            const colaboradorSelect = document.getElementById('report-colaborador');
+            const visible = getVisibleEmployees(currentUser);
+            colaboradorSelect.innerHTML = '<option value="all">Todos</option>';
+            visible.forEach(e => {
+                colaboradorSelect.innerHTML += `<option value="${e.num}">${e.nombre}</option>`;
+            });
+
+            // 2. Restaurar filtros guardados
+            const saved = getReportFilters();
+            let from, to, colaborador;
+
+            if (saved && saved.from && saved.to) {
+                from = saved.from;
+                to = saved.to;
+                colaborador = saved.colaborador || 'all';
+                console.log('✅ Restaurando filtros guardados:', { from, to, colaborador });
+            } else {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                from = thirtyDaysAgo.toISOString().split('T')[0];
+                to = today.toISOString().split('T')[0];
+                colaborador = 'all';
+                console.log('🔄 Usando valores por defecto:', { from, to, colaborador });
+                saveReportFilters({ from, to, colaborador });
+            }
+
+            // 3. Aplicar al DOM
+            document.getElementById('report-date-from').value = from;
+            document.getElementById('report-date-to').value = to;
+            document.getElementById('report-colaborador').value = colaborador;
+
+            // 4. Generar gráficos (o actualizar los existentes)
+            actualizarReportes();
+        }
+
+        function actualizarReportes() {
+            // 1. Leer filtros del DOM
+            const from = document.getElementById('report-date-from').value;
+            const to = document.getElementById('report-date-to').value;
+            const colaborador = document.getElementById('report-colaborador').value;
+
+            // 2. Guardar filtros en localStorage
+            saveReportFilters({ from, to, colaborador });
+            console.log('💾 Filtros guardados:', { from, to, colaborador });
+
+            // 3. Filtrar tareas
+            let filteredTasks = tasks.filter(t => t.id && t.id !== '');
+
+            if (from && to) {
+                const fromDate = new Date(from);
+                const toDate = new Date(to);
+                toDate.setHours(23, 59, 59);
+                filteredTasks = filteredTasks.filter(t => {
+                    if (!t.fecha_creacion) return false;
+                    const d = new Date(t.fecha_creacion);
+                    return d >= fromDate && d <= toDate;
+                });
+            }
+
+            if (colaborador && colaborador !== 'all') {
+                const numColaborador = parseInt(colaborador);
+                if (!isNaN(numColaborador)) {
+                    filteredTasks = filteredTasks.filter(t => t.asignado_a === numColaborador);
+                }
+            }
+
+            // ============================================================
+            // 4. Gráfico 1: Tareas por día (línea)
+            // ============================================================
+            const dailyMap = {};
+            filteredTasks.forEach(t => {
+                const date = t.fecha_creacion || 'Sin fecha';
+                if (!dailyMap[date]) dailyMap[date] = { creadas: 0, completadas: 0 };
+                dailyMap[date].creadas++;
+                if (t.estado === 'completado') dailyMap[date].completadas++;
+            });
+            const dates = Object.keys(dailyMap).sort();
+            const createdData = dates.map(d => dailyMap[d].creadas);
+            const completedData = dates.map(d => dailyMap[d].completadas);
+
+            const dailyCtx = document.getElementById('reportDailyChart');
+            if (dailyCtx) {
+                if (chartInstances.reportDaily) {
+                    // Actualizar gráfico existente
+                    const chart = chartInstances.reportDaily;
+                    chart.data.labels = dates.map(d => formatDateForDisplay(d));
+                    chart.data.datasets[0].data = createdData;
+                    chart.data.datasets[1].data = completedData;
+                    chart.update('none');
+                } else if (dates.length > 0 && typeof Chart !== 'undefined') {
+                    // Crear gráfico por primera vez
+                    chartInstances.reportDaily = new Chart(dailyCtx, {
+                        type: 'line',
+                        data: {
+                            labels: dates.map(d => formatDateForDisplay(d)),
+                            datasets: [{
+                                label: 'Creadas',
+                                data: createdData,
+                                borderColor: '#1a73e8',
+                                backgroundColor: 'rgba(26,115,232,0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3
+                            }, {
+                                label: 'Completadas',
+                                data: completedData,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40,167,69,0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top' },
+                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                                x: { ticks: { maxTicksLimit: 20, autoSkip: true } }
+                            }
+                        }
+                    });
+                } else if (dates.length === 0) {
+                    // Mostrar mensaje de no datos
+                    dailyCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
+                }
+            }
+
+            // ============================================================
+            // 5. Gráfico 2: Distribución por estado (dona)
+            // ============================================================
+            const estadoCounts = { pendiente: 0, 'en-progreso': 0, completado: 0 };
+            filteredTasks.forEach(t => {
+                if (estadoCounts[t.estado] !== undefined) estadoCounts[t.estado]++;
+            });
+            const statusLabels = ['Pendiente', 'En Progreso', 'Completado'];
+            const statusData = [estadoCounts.pendiente, estadoCounts['en-progreso'], estadoCounts.completado];
+            const criticas = filteredTasks.filter(t => isTaskOverdue(t)).length;
+
+            const statusCtx = document.getElementById('reportStatusChart');
+            if (statusCtx) {
+                if (chartInstances.reportStatus) {
+                    const chart = chartInstances.reportStatus;
+                    const labels = [...statusLabels];
+                    const data = [...statusData];
+                    if (criticas > 0) {
+                        labels.push('🔴 Críticas');
+                        data.push(criticas);
+                    }
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = data;
+                    chart.update('none');
+                } else if ((statusData.reduce((a, b) => a + b, 0) > 0 || criticas > 0) && typeof Chart !== 'undefined') {
+                    const labels = [...statusLabels];
+                    const data = [...statusData];
+                    if (criticas > 0) {
+                        labels.push('🔴 Críticas');
+                        data.push(criticas);
+                    }
+                    chartInstances.reportStatus = new Chart(statusCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: ['#fecb6e', '#63b3ed', '#68d391', '#fc8181'],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => {
+                                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                            const pct = total > 0 ? Math.round((ctx.raw / total) * 100) : 0;
+                                            return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else if (statusData.reduce((a, b) => a + b, 0) === 0 && criticas === 0) {
+                    statusCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
+                }
+            }
+
+            // ============================================================
+            // 6. Gráfico 3: Tareas por zona (barras)
+            // ============================================================
+            const zonasMap = {};
+            filteredTasks.forEach(t => {
+                const emp = empleados.find(e => e.num === t.asignado_a);
+                const zona = emp && emp.zona ? emp.zona : 'Sin zona';
+                if (!zonasMap[zona]) zonasMap[zona] = { total: 0, pendiente: 0, enProgreso: 0, completado: 0,
+                    critica: 0 };
+                zonasMap[zona].total++;
+                if (t.estado === 'pendiente') zonasMap[zona].pendiente++;
+                else if (t.estado === 'en-progreso') zonasMap[zona].enProgreso++;
+                else if (t.estado === 'completado') zonasMap[zona].completado++;
+                if (isTaskOverdue(t)) zonasMap[zona].critica++;
+            });
+            const zonas = Object.keys(zonasMap).sort();
+            const pendientesPorZona = zonas.map(z => zonasMap[z].pendiente);
+            const enProgresoPorZona = zonas.map(z => zonasMap[z].enProgreso);
+            const completadosPorZona = zonas.map(z => zonasMap[z].completado);
+            const criticasPorZona = zonas.map(z => zonasMap[z].critica);
+
+            const zonaCtx = document.getElementById('reportZonaChart');
+            if (zonaCtx) {
+                if (chartInstances.reportZona) {
+                    const chart = chartInstances.reportZona;
+                    chart.data.labels = zonas;
+                    chart.data.datasets[0].data = pendientesPorZona;
+                    chart.data.datasets[1].data = enProgresoPorZona;
+                    chart.data.datasets[2].data = completadosPorZona;
+                    chart.data.datasets[3].data = criticasPorZona;
+                    chart.update('none');
+                } else if (zonas.length > 0 && typeof Chart !== 'undefined') {
+                    chartInstances.reportZona = new Chart(zonaCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: zonas,
+                            datasets: [
+                                { label: 'Pendiente', data: pendientesPorZona, backgroundColor: '#fecb6e',
+                                    borderRadius: 4 },
+                                { label: 'En Progreso', data: enProgresoPorZona, backgroundColor: '#63b3ed',
+                                    borderRadius: 4 },
+                                { label: 'Completado', data: completadosPorZona, backgroundColor: '#68d391',
+                                    borderRadius: 4 },
+                                { label: '🔴 Críticas', data: criticasPorZona, backgroundColor: '#fc8181',
+                                    borderRadius: 4 }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top' },
+                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
+                            },
+                            scales: {
+                                x: { stacked: false },
+                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                            }
+                        }
+                    });
+                } else if (zonas.length === 0) {
+                    zonaCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos de zonas para el período seleccionado.</p>';
+                }
+            }
+
+            // ============================================================
+            // 7. Gráfico 4: Rendimiento por colaborador (barras)
+            // ============================================================
+            const empleadosMap = {};
+            filteredTasks.forEach(t => {
+                const emp = empleados.find(e => e.num === t.asignado_a);
+                if (!emp) return;
+                const key = emp.num;
+                if (!empleadosMap[key]) {
+                    empleadosMap[key] = { nombre: emp.nombre, total: 0, completadas: 0 };
+                }
+                empleadosMap[key].total++;
+                if (t.estado === 'completado') empleadosMap[key].completadas++;
+            });
+            const perfLabels = Object.values(empleadosMap).map(e => e.nombre);
+            const totalData = Object.values(empleadosMap).map(e => e.total);
+            const completedDataPerf = Object.values(empleadosMap).map(e => e.completadas);
+            const scoreData = Object.values(empleadosMap).map(e => {
+                if (e.total === 0) return 0;
+                return Math.round((e.completadas / e.total) * 100);
+            });
+
+            const perfCtx = document.getElementById('reportPerformanceChart');
+            if (perfCtx) {
+                if (chartInstances.reportPerformance) {
+                    const chart = chartInstances.reportPerformance;
+                    chart.data.labels = perfLabels;
+                    chart.data.datasets[0].data = totalData;
+                    chart.data.datasets[1].data = completedDataPerf;
+                    chart.data.datasets[2].data = scoreData;
+                    chart.update('none');
+                } else if (perfLabels.length > 0 && typeof Chart !== 'undefined') {
+                    chartInstances.reportPerformance = new Chart(perfCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: perfLabels,
+                            datasets: [{
+                                label: 'Total tareas',
+                                data: totalData,
+                                backgroundColor: '#63b3ed',
+                                borderRadius: 4
+                            }, {
+                                label: 'Completadas',
+                                data: completedDataPerf,
+                                backgroundColor: '#68d391',
+                                borderRadius: 4
+                            }, {
+                                label: 'Score (%)',
+                                data: scoreData,
+                                backgroundColor: '#f6ad55',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => {
+                                            if (ctx.dataset.label === 'Score (%)') {
+                                                return `${ctx.raw}%`;
+                                            }
+                                            return `${ctx.dataset.label}: ${ctx.raw}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                } else if (perfLabels.length === 0) {
+                    perfCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
+                }
+            }
+        }
+
+        // ============================================================
+        // 31. RECORDATORIOS AUTOMÁTICOS (cada 5 minutos)
+        // ============================================================
+        function getNotifiedTasks() {
+            try {
+                const data = localStorage.getItem(NOTIFIED_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch { return {}; }
+        }
+
+        function setNotifiedTasks(notified) {
+            localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notified));
+        }
+
+        async function checkAndSendReminders() {
+            if (!currentUser) return;
+            console.log('⏰ Revisando recordatorios de tareas próximas a vencer...');
+            const notified = getNotifiedTasks();
+            let anySent = false;
+
+            const pendingTasks = tasks.filter(t => t.estado !== 'completado' && t.fecha_limite);
+
+            for (const task of pendingTasks) {
+                const daysUntil = getDaysUntilDue(task);
+                if (daysUntil >= 0 && daysUntil <= 1) {
+                    const key = task.id;
+                    if (!notified[key]) {
+                        const asignadoEmp = empleados.find(e => e.num === task.asignado_a);
+                        if (asignadoEmp && asignadoEmp.chatId) {
+                            const mensaje = `⏰ <b>Recordatorio de tarea próxima a vencer</b>\n\n` +
+                                `La tarea "${task.titulo}" vence en ${daysUntil} día(s).\n` +
+                                `Fecha límite: ${task.fecha_limite}\n` +
+                                `Prioridad: ${task.prioridad.toUpperCase()}\n\n` +
+                                `Por favor, asegúrate de completarla a tiempo.`;
+                            const result = await sendTelegramMessage(asignadoEmp.chatId, mensaje);
+                            if (result.ok) {
+                                notified[key] = true;
+                                anySent = true;
+                                console.log(`✅ Recordatorio enviado para tarea ${task.id} a ${asignadoEmp.nombre}`);
+                            } else {
+                                console.warn(`⚠️ No se pudo enviar recordatorio a ${asignadoEmp.nombre}: ${result.error}`);
+                            }
+                        }
+                    }
+                } else if (daysUntil < 0) {
+                    const key = task.id;
+                    if (notified[key]) {
+                        delete notified[key];
+                    }
+                }
+            }
+
+            if (anySent) {
+                setNotifiedTasks(notified);
+            }
+        }
+
+        function startReminderService(intervalMs = 5 * 60 * 1000) {
+            if (reminderInterval) clearInterval(reminderInterval);
+            reminderInterval = setInterval(checkAndSendReminders, intervalMs);
+            console.log(`⏰ Servicio de recordatorios iniciado (cada ${intervalMs/60000} minutos).`);
+            setTimeout(checkAndSendReminders, 5000);
+        }
+
+        function stopReminderService() {
+            if (reminderInterval) {
+                clearInterval(reminderInterval);
+                reminderInterval = null;
+                console.log('⏰ Servicio de recordatorios detenido.');
+            }
+        }
+
+        // ============================================================
+        // 32. SINCRONIZACIÓN AUTOMÁTICA (polling)
         // ============================================================
         function updateSyncIndicator(status, message = '') {
             const indicator = document.getElementById('syncIndicator');
@@ -3321,6 +3920,13 @@
                         case 'desempeno':
                             renderDesempeno();
                             break;
+                        case 'reportes':
+                            if (document.getElementById('report-date-from')) {
+                                actualizarReportes();
+                            } else {
+                                renderReportes();
+                            }
+                            break;
                         default:
                             break;
                     }
@@ -3352,7 +3958,7 @@
         }
 
         // ============================================================
-        // 31. INICIALIZACIÓN OPTIMIZADA (carga rápida desde caché)
+        // 33. INICIALIZACIÓN OPTIMIZADA (carga rápida desde caché)
         // ============================================================
         async function initApp(user) {
             currentUser = user;
@@ -3373,9 +3979,10 @@
             navigateTo('dashboard');
 
             startAutoSync(30000);
+            startReminderService(5 * 60 * 1000);
 
             // ============================================================
-            // EVENTOS DE NAVEGACIÓN - REGISTRADOS UNA SOLA VEZ AQUÍ
+            // EVENTOS DE NAVEGACIÓN
             // ============================================================
             document.querySelectorAll('.nav-item[data-view]').forEach(el => {
                 el.addEventListener('click', function(e) {
@@ -3391,6 +3998,7 @@
 
             document.getElementById('logout-btn').addEventListener('click', function() {
                 stopAutoSync();
+                stopReminderService();
                 localStorage.removeItem('currentUser');
                 location.reload();
             });
@@ -3602,10 +4210,30 @@
                     showToast(`❌ Error: ${result.error}`, 'error');
                 }
             });
+
+            // Eventos de Reportes
+            document.getElementById('report-apply-btn').addEventListener('click', actualizarReportes);
+            document.getElementById('report-reset-btn').addEventListener('click', function() {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                document.getElementById('report-date-from').value = thirtyDaysAgo.toISOString().split('T')[0];
+                document.getElementById('report-date-to').value = today.toISOString().split('T')[0];
+                document.getElementById('report-colaborador').value = 'all';
+                saveReportFilters({
+                    from: document.getElementById('report-date-from').value,
+                    to: document.getElementById('report-date-to').value,
+                    colaborador: 'all'
+                });
+                actualizarReportes();
+            });
+            document.getElementById('report-date-from').addEventListener('change', actualizarReportes);
+            document.getElementById('report-date-to').addEventListener('change', actualizarReportes);
+            document.getElementById('report-colaborador').addEventListener('change', actualizarReportes);
         }
 
         // ============================================================
-        // 32. LOGIN FORM
+        // 34. LOGIN FORM
         // ============================================================
         document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -3625,18 +4253,14 @@
         });
 
         // ============================================================
-        // 33. PRECARGA RÁPIDA Y RESTAURACIÓN DE SESIÓN
+        // 35. PRECARGA RÁPIDA Y RESTAURACIÓN DE SESIÓN
         // ============================================================
         (async function initialize() {
-            // 1. Intentar cargar empleados desde caché (rápido)
             const hasCache = await loadEmployeesFromAppSheet(true, false);
             if (hasCache) {
-                // Tenemos caché, podemos mostrar el login inmediatamente
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
-                // Ocultar overlay de carga
                 hideLoading();
-                // Iniciar carga en segundo plano de empleados frescos (sin bloquear)
                 const syncToast = document.getElementById('backgroundSyncToast');
                 syncToast.textContent = '🔄 Actualizando datos en segundo plano...';
                 syncToast.classList.add('show');
@@ -3647,16 +4271,13 @@
                     syncToast.textContent = '⚠️ Error al actualizar';
                     setTimeout(() => syncToast.classList.remove('show'), 3000);
                 });
-                // También cargar tareas en segundo plano si hay sesión
                 const saved = localStorage.getItem('currentUser');
                 if (saved) {
                     try {
                         const userData = JSON.parse(saved);
                         const found = empleados.find(e => e.num === userData.num);
                         if (found) {
-                            // Restaurar sesión con datos en caché
                             initApp(found);
-                            // Luego actualizar tareas en segundo plano
                             loadTasksFromAppSheet(true).then(() => {
                                 const activeView = document.querySelector('.view.active');
                                 if (activeView) {
@@ -3668,13 +4289,11 @@
                     } catch (e) { /* ignore */ }
                 }
             } else {
-                // No hay caché, mostrar loading y cargar desde AppSheet
                 showLoading('Cargando datos de empleados...');
                 await loadEmployeesFromAppSheet(false, true);
                 hideLoading();
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
-                // Restaurar sesión si existe
                 const saved = localStorage.getItem('currentUser');
                 if (saved) {
                     try {
