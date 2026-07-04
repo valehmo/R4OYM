@@ -1433,6 +1433,11 @@
                             <label for="task-desc">Descripción</label>
                             <textarea id="task-desc" placeholder="Detalles de la tarea..."></textarea>
                         </div>
+                        <!-- NUEVO CAMPO: Notas de seguimiento -->
+                        <div class="form-group">
+                            <label for="task-notes">Notas de seguimiento</label>
+                            <textarea id="task-notes" placeholder="Agrega notas adicionales, comentarios o seguimiento de la tarea..."></textarea>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="task-deadline">Fecha límite</label>
@@ -1838,6 +1843,8 @@
                             const d = new Date(fechaCreacion);
                             if (!isNaN(d.getTime())) fechaCreacion = d.toISOString().split('T')[0];
                         }
+                        // NUEVO: leer campo Notas_de_seguimiento
+                        const notasSeg = getFieldValue(record, 'Notas_de_seguimiento', 'notas_seguimiento', 'NotasSeguimiento') || '';
                         return {
                             id: id || `task_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
                             titulo: getFieldValue(record, 'titulo', 'título', 'Titulo', 'Título'),
@@ -1851,6 +1858,7 @@
                                 'asignadoPor')) || 0,
                             asignado_a: Number(getFieldValue(record, 'asignado_a', 'Asignado_a', 'asignadoA')) || 0,
                             archivos: archivos,
+                            notas_seguimiento: notasSeg,  // <--- nuevo campo
                             _RowNumber: record._RowNumber,
                             _isNew: false
                         };
@@ -1886,7 +1894,8 @@
                         estado: task.estado,
                         asignado_por: task.asignado_por,
                         asignado_a: task.asignado_a,
-                        archivos: JSON.stringify(archivosParaGuardar)
+                        archivos: JSON.stringify(archivosParaGuardar),
+                        Notas_de_seguimiento: task.notas_seguimiento || ''   // <--- nuevo campo
                     };
                     if (isNew) {
                         nuevas.push(record);
@@ -2154,6 +2163,7 @@
             let mensaje = `<b>📋 NUEVA TAREA ASIGNADA</b>\n\n`;
             mensaje += `<b>Título:</b> ${task.titulo}\n`;
             mensaje += `<b>Descripción:</b> ${task.descripcion || 'Sin descripción'}\n`;
+            mensaje += `<b>Notas:</b> ${task.notas_seguimiento || 'Sin notas'}\n`;  // <--- agregado
             mensaje += `<b>Prioridad:</b> ${prioridadEmoji} ${task.prioridad.toUpperCase()}\n`;
             mensaje += `<b>Fecha límite:</b> ${fechaLimite}\n`;
             mensaje += `<b>Asignado por:</b> ${asignadorNombre}\n`;
@@ -2488,10 +2498,14 @@
                 `<span class="task-status" style="background:#fbbf24;color:#78350f;">⏰ Próxima a vencer</span>` :
                 '';
 
+            // Indicador de notas
+            const hasNotes = task.notas_seguimiento && task.notas_seguimiento.trim() !== '';
+            const notesIcon = hasNotes ? `<span title="Tiene notas de seguimiento" style="cursor:help;font-size:14px;color:var(--primary);">📝</span>` : '';
+
             return `
                 <div class="task-item ${critical ? 'task-critical' : ''}" data-id="${task.id}">
                     <div class="task-info">
-                        <div class="task-title">${prioridadIcon} ${task.titulo}</div>
+                        <div class="task-title">${prioridadIcon} ${task.titulo} ${notesIcon}</div>
                         <div class="task-meta">
                             <span><i class="fas fa-user"></i> Asignado por: ${nombreAsignador}</span>
                             <span><i class="fas fa-user-check"></i> Asignado a: ${nombreAsignado}</span>
@@ -2592,7 +2606,7 @@
             });
         }
 
-        async function createTasks(titulo, descripcion, fecha_limite, prioridad, asignados, archivos) {
+        async function createTasks(titulo, descripcion, fecha_limite, prioridad, asignados, archivos, notas) {
             const allowed = getVisibleEmployees(currentUser).map(e => e.num);
             const invalid = asignados.filter(id => !allowed.includes(id));
             if (invalid.length > 0) {
@@ -2616,6 +2630,7 @@
                     asignado_por: currentUser.num,
                     asignado_a: asignado,
                     archivos: archivos.map(f => ({ name: f, url: null })),
+                    notas_seguimiento: notas || '',   // <--- nuevo campo
                     _isNew: true
                 };
                 tasks.push(tarea);
@@ -2868,6 +2883,11 @@
                         <label><i class="fas fa-align-left"></i> Descripción</label>
                         <textarea id="edit-task-desc" ${canEdit ? '' : 'disabled'} rows="3">${task.descripcion || ''}</textarea>
                     </div>
+                    <!-- NUEVO: Notas de seguimiento en edición -->
+                    <div class="form-group">
+                        <label><i class="fas fa-pencil-alt"></i> Notas de seguimiento</label>
+                        <textarea id="edit-task-notes" ${canEdit ? '' : 'disabled'} rows="3" placeholder="Agrega notas de seguimiento...">${task.notas_seguimiento || ''}</textarea>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label><i class="fas fa-calendar-alt"></i> Fecha límite</label>
@@ -2988,6 +3008,7 @@
                 saveBtn.addEventListener('click', async function() {
                     const newTitle = document.getElementById('edit-task-title').value.trim();
                     const newDesc = document.getElementById('edit-task-desc').value.trim();
+                    const newNotes = document.getElementById('edit-task-notes').value.trim();  // <--- notas
                     const newDeadline = document.getElementById('edit-task-deadline').value;
                     const newPriority = document.getElementById('edit-task-priority').value;
                     const newStatus = document.getElementById('edit-task-status').value;
@@ -3015,6 +3036,7 @@
                     if (taskToUpdate) {
                         taskToUpdate.titulo = newTitle;
                         taskToUpdate.descripcion = newDesc;
+                        taskToUpdate.notas_seguimiento = newNotes;   // <--- actualizar notas
                         taskToUpdate.fecha_limite = newDeadline;
                         taskToUpdate.prioridad = newPriority;
                         taskToUpdate.estado = newStatus;
@@ -3030,6 +3052,7 @@
                         const record = {
                             titulo: newTitle,
                             descripcion: newDesc || '',
+                            Notas_de_seguimiento: newNotes || '',   // <--- campo en AppSheet
                             fecha_creacion: taskToUpdate ? taskToUpdate.fecha_creacion : new Date().toISOString()
                                 .split('T')[0],
                             fecha_limite: newDeadline || '',
@@ -3307,6 +3330,7 @@
                     'ID': t.id,
                     'Título': t.titulo,
                     'Descripción': t.descripcion || '',
+                    'Notas de seguimiento': t.notas_seguimiento || '',   // <--- agregado
                     'Asignado por': asignadoPor ? asignadoPor.nombre : 'Desconocido',
                     'Asignado a': asignadoA ? asignadoA.nombre : 'Desconocido',
                     'Zona': asignadoA ? asignadoA.zona : 'Sin zona',
@@ -3323,8 +3347,8 @@
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'Tareas');
                 const colWidths = [
-                    { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 25 }, { wch: 25 },
-                    { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
+                    { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 30 }, { wch: 25 },
+                    { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
                 ];
                 ws['!cols'] = colWidths;
                 const fileName = `Tareas_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -3428,10 +3452,9 @@
         }
 
         // ============================================================
-        // 30. REPORTES AVANZADOS CON PERSISTENCIA (CORREGIDO - IGUAL QUE DASHBOARD)
+        // 30. REPORTES AVANZADOS CON PERSISTENCIA
         // ============================================================
         function renderReportes() {
-            // 1. Poblar select de colaboradores
             const colaboradorSelect = document.getElementById('report-colaborador');
             const visible = getVisibleEmployees(currentUser);
             colaboradorSelect.innerHTML = '<option value="all">Todos</option>';
@@ -3439,7 +3462,6 @@
                 colaboradorSelect.innerHTML += `<option value="${e.num}">${e.nombre}</option>`;
             });
 
-            // 2. Restaurar filtros guardados
             const saved = getReportFilters();
             let from, to, colaborador;
 
@@ -3459,26 +3481,21 @@
                 saveReportFilters({ from, to, colaborador });
             }
 
-            // 3. Aplicar al DOM
             document.getElementById('report-date-from').value = from;
             document.getElementById('report-date-to').value = to;
             document.getElementById('report-colaborador').value = colaborador;
 
-            // 4. Generar gráficos (o actualizar los existentes)
             actualizarReportes();
         }
 
         function actualizarReportes() {
-            // 1. Leer filtros del DOM
             const from = document.getElementById('report-date-from').value;
             const to = document.getElementById('report-date-to').value;
             const colaborador = document.getElementById('report-colaborador').value;
 
-            // 2. Guardar filtros en localStorage
             saveReportFilters({ from, to, colaborador });
             console.log('💾 Filtros guardados:', { from, to, colaborador });
 
-            // 3. Filtrar tareas
             let filteredTasks = tasks.filter(t => t.id && t.id !== '');
 
             if (from && to) {
@@ -3499,9 +3516,7 @@
                 }
             }
 
-            // ============================================================
-            // 4. Gráfico 1: Tareas por día (línea)
-            // ============================================================
+            // ======= Gráfico 1: Tareas por día =======
             const dailyMap = {};
             filteredTasks.forEach(t => {
                 const date = t.fecha_creacion || 'Sin fecha';
@@ -3516,14 +3531,12 @@
             const dailyCtx = document.getElementById('reportDailyChart');
             if (dailyCtx) {
                 if (chartInstances.reportDaily) {
-                    // Actualizar gráfico existente
                     const chart = chartInstances.reportDaily;
                     chart.data.labels = dates.map(d => formatDateForDisplay(d));
                     chart.data.datasets[0].data = createdData;
                     chart.data.datasets[1].data = completedData;
                     chart.update('none');
                 } else if (dates.length > 0 && typeof Chart !== 'undefined') {
-                    // Crear gráfico por primera vez
                     chartInstances.reportDaily = new Chart(dailyCtx, {
                         type: 'line',
                         data: {
@@ -3560,14 +3573,11 @@
                         }
                     });
                 } else if (dates.length === 0) {
-                    // Mostrar mensaje de no datos
                     dailyCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
                 }
             }
 
-            // ============================================================
-            // 5. Gráfico 2: Distribución por estado (dona)
-            // ============================================================
+            // ======= Gráfico 2: Distribución por estado =======
             const estadoCounts = { pendiente: 0, 'en-progreso': 0, completado: 0 };
             filteredTasks.forEach(t => {
                 if (estadoCounts[t.estado] !== undefined) estadoCounts[t.estado]++;
@@ -3629,9 +3639,7 @@
                 }
             }
 
-            // ============================================================
-            // 6. Gráfico 3: Tareas por zona (barras)
-            // ============================================================
+            // ======= Gráfico 3: Tareas por zona =======
             const zonasMap = {};
             filteredTasks.forEach(t => {
                 const emp = empleados.find(e => e.num === t.asignado_a);
@@ -3694,9 +3702,7 @@
                 }
             }
 
-            // ============================================================
-            // 7. Gráfico 4: Rendimiento por colaborador (barras)
-            // ============================================================
+            // ======= Gráfico 4: Rendimiento por colaborador =======
             const empleadosMap = {};
             filteredTasks.forEach(t => {
                 const emp = empleados.find(e => e.num === t.asignado_a);
@@ -4115,6 +4121,7 @@
                     return;
                 }
                 const desc = document.getElementById('task-desc').value.trim();
+                const notas = document.getElementById('task-notes').value.trim();   // <--- notas
                 const deadline = document.getElementById('task-deadline').value;
                 const prioridad = document.getElementById('task-priority').value;
                 const select = document.getElementById('task-assignees');
@@ -4127,7 +4134,7 @@
                 const fileNames = Array.from(fileInput.files).map(f => f.name);
 
                 try {
-                    const created = await createTasks(titulo, desc, deadline, prioridad, selected, fileNames);
+                    const created = await createTasks(titulo, desc, deadline, prioridad, selected, fileNames, notas);
                     if (created.length > 0) {
                         if (window._tempFiles) {
                             for (const task of created) {
@@ -4147,6 +4154,7 @@
                         document.getElementById('file-list-preview').innerHTML = '';
                         document.getElementById('selected-counter').textContent = '0 seleccionados';
                         document.getElementById('bulk-employee-list').value = '';
+                        document.getElementById('task-notes').value = '';  // limpiar notas
                         navigateTo('mis-tareas');
                     }
                 } catch (error) {
