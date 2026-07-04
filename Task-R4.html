@@ -1548,18 +1548,22 @@
                         <div class="report-chart-box">
                             <h3>📈 Tareas por día</h3>
                             <canvas id="reportDailyChart"></canvas>
+                            <p class="no-data-msg" style="display:none;text-align:center;color:#999;padding:20px;">No hay datos para el período seleccionado.</p>
                         </div>
                         <div class="report-chart-box">
                             <h3>📊 Distribución por estado</h3>
                             <canvas id="reportStatusChart"></canvas>
+                            <p class="no-data-msg" style="display:none;text-align:center;color:#999;padding:20px;">No hay datos para el período seleccionado.</p>
                         </div>
                         <div class="report-chart-box full-width">
                             <h3>📍 Tareas por zona</h3>
                             <canvas id="reportZonaChart"></canvas>
+                            <p class="no-data-msg" style="display:none;text-align:center;color:#999;padding:20px;">No hay datos para el período seleccionado.</p>
                         </div>
                         <div class="report-chart-box full-width">
                             <h3>🏆 Rendimiento por colaborador</h3>
                             <canvas id="reportPerformanceChart"></canvas>
+                            <p class="no-data-msg" style="display:none;text-align:center;color:#999;padding:20px;">No hay datos para el período seleccionado.</p>
                         </div>
                     </div>
                 </div>
@@ -3452,7 +3456,7 @@
         }
 
         // ============================================================
-        // 30. REPORTES AVANZADOS CON PERSISTENCIA
+        // 30. REPORTES AVANZADOS CON PERSISTENCIA (CORREGIDO)
         // ============================================================
         function renderReportes() {
             const colaboradorSelect = document.getElementById('report-colaborador');
@@ -3516,6 +3520,33 @@
                 }
             }
 
+            // ============================================================
+            // Helper para mostrar/ocultar mensaje de "sin datos"
+            // ============================================================
+            function manejarSinDatos(canvasId, chartKey, hayDatos, callbackCrear) {
+                const container = document.getElementById(canvasId)?.parentElement;
+                if (!container) return;
+                const canvas = document.getElementById(canvasId);
+                const msg = container.querySelector('.no-data-msg');
+
+                if (!hayDatos) {
+                    // Destruir gráfico existente si lo hay
+                    if (chartInstances[chartKey]) {
+                        chartInstances[chartKey].destroy();
+                        chartInstances[chartKey] = null;
+                    }
+                    if (canvas) canvas.style.display = 'none';
+                    if (msg) msg.style.display = 'block';
+                } else {
+                    if (canvas) canvas.style.display = 'block';
+                    if (msg) msg.style.display = 'none';
+                    // Si no hay gráfico, crearlo
+                    if (!chartInstances[chartKey]) {
+                        callbackCrear();
+                    }
+                }
+            }
+
             // ======= Gráfico 1: Tareas por día =======
             const dailyMap = {};
             filteredTasks.forEach(t => {
@@ -3527,54 +3558,55 @@
             const dates = Object.keys(dailyMap).sort();
             const createdData = dates.map(d => dailyMap[d].creadas);
             const completedData = dates.map(d => dailyMap[d].completadas);
+            const hayDatosDaily = dates.length > 0;
 
-            const dailyCtx = document.getElementById('reportDailyChart');
-            if (dailyCtx) {
-                if (chartInstances.reportDaily) {
-                    const chart = chartInstances.reportDaily;
-                    chart.data.labels = dates.map(d => formatDateForDisplay(d));
-                    chart.data.datasets[0].data = createdData;
-                    chart.data.datasets[1].data = completedData;
-                    chart.update('none');
-                } else if (dates.length > 0 && typeof Chart !== 'undefined') {
-                    chartInstances.reportDaily = new Chart(dailyCtx, {
-                        type: 'line',
-                        data: {
-                            labels: dates.map(d => formatDateForDisplay(d)),
-                            datasets: [{
-                                label: 'Creadas',
-                                data: createdData,
-                                borderColor: '#1a73e8',
-                                backgroundColor: 'rgba(26,115,232,0.1)',
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: 3
-                            }, {
-                                label: 'Completadas',
-                                data: completedData,
-                                borderColor: '#28a745',
-                                backgroundColor: 'rgba(40,167,69,0.1)',
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: 3
-                            }]
+            manejarSinDatos('reportDailyChart', 'reportDaily', hayDatosDaily, function() {
+                const dailyCtx = document.getElementById('reportDailyChart');
+                if (!dailyCtx) return;
+                chartInstances.reportDaily = new Chart(dailyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: dates.map(d => formatDateForDisplay(d)),
+                        datasets: [{
+                            label: 'Creadas',
+                            data: createdData,
+                            borderColor: '#1a73e8',
+                            backgroundColor: 'rgba(26,115,232,0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3
+                        }, {
+                            label: 'Completadas',
+                            data: completedData,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40,167,69,0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'top' },
-                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
-                            },
-                            scales: {
-                                y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                                x: { ticks: { maxTicksLimit: 20, autoSkip: true } }
-                            }
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: { ticks: { maxTicksLimit: 20, autoSkip: true } }
                         }
-                    });
-                } else if (dates.length === 0) {
-                    dailyCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
-                }
+                    }
+                });
+            });
+
+            // Si ya existe el gráfico, actualizar datos
+            if (chartInstances.reportDaily && hayDatosDaily) {
+                const chart = chartInstances.reportDaily;
+                chart.data.labels = dates.map(d => formatDateForDisplay(d));
+                chart.data.datasets[0].data = createdData;
+                chart.data.datasets[1].data = completedData;
+                chart.update('none');
             }
 
             // ======= Gráfico 2: Distribución por estado =======
@@ -3585,58 +3617,58 @@
             const statusLabels = ['Pendiente', 'En Progreso', 'Completado'];
             const statusData = [estadoCounts.pendiente, estadoCounts['en-progreso'], estadoCounts.completado];
             const criticas = filteredTasks.filter(t => isTaskOverdue(t)).length;
+            const hayDatosStatus = statusData.reduce((a, b) => a + b, 0) > 0 || criticas > 0;
 
-            const statusCtx = document.getElementById('reportStatusChart');
-            if (statusCtx) {
-                if (chartInstances.reportStatus) {
-                    const chart = chartInstances.reportStatus;
-                    const labels = [...statusLabels];
-                    const data = [...statusData];
-                    if (criticas > 0) {
-                        labels.push('🔴 Críticas');
-                        data.push(criticas);
-                    }
-                    chart.data.labels = labels;
-                    chart.data.datasets[0].data = data;
-                    chart.update('none');
-                } else if ((statusData.reduce((a, b) => a + b, 0) > 0 || criticas > 0) && typeof Chart !== 'undefined') {
-                    const labels = [...statusLabels];
-                    const data = [...statusData];
-                    if (criticas > 0) {
-                        labels.push('🔴 Críticas');
-                        data.push(criticas);
-                    }
-                    chartInstances.reportStatus = new Chart(statusCtx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: ['#fecb6e', '#63b3ed', '#68d391', '#fc8181'],
-                                borderWidth: 2,
-                                borderColor: '#fff'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'bottom' },
-                                tooltip: {
-                                    callbacks: {
-                                        label: ctx => {
-                                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                            const pct = total > 0 ? Math.round((ctx.raw / total) * 100) : 0;
-                                            return `${ctx.label}: ${ctx.raw} (${pct}%)`;
-                                        }
+            manejarSinDatos('reportStatusChart', 'reportStatus', hayDatosStatus, function() {
+                const statusCtx = document.getElementById('reportStatusChart');
+                if (!statusCtx) return;
+                const labels = [...statusLabels];
+                const data = [...statusData];
+                if (criticas > 0) {
+                    labels.push('🔴 Críticas');
+                    data.push(criticas);
+                }
+                chartInstances.reportStatus = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#fecb6e', '#63b3ed', '#68d391', '#fc8181'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = total > 0 ? Math.round((ctx.raw / total) * 100) : 0;
+                                        return `${ctx.label}: ${ctx.raw} (${pct}%)`;
                                     }
                                 }
                             }
                         }
-                    });
-                } else if (statusData.reduce((a, b) => a + b, 0) === 0 && criticas === 0) {
-                    statusCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
+                    }
+                });
+            });
+
+            if (chartInstances.reportStatus && hayDatosStatus) {
+                const chart = chartInstances.reportStatus;
+                const labels = [...statusLabels];
+                const data = [...statusData];
+                if (criticas > 0) {
+                    labels.push('🔴 Críticas');
+                    data.push(criticas);
                 }
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.update('none');
             }
 
             // ======= Gráfico 3: Tareas por zona =======
@@ -3657,49 +3689,49 @@
             const enProgresoPorZona = zonas.map(z => zonasMap[z].enProgreso);
             const completadosPorZona = zonas.map(z => zonasMap[z].completado);
             const criticasPorZona = zonas.map(z => zonasMap[z].critica);
+            const hayDatosZona = zonas.length > 0;
 
-            const zonaCtx = document.getElementById('reportZonaChart');
-            if (zonaCtx) {
-                if (chartInstances.reportZona) {
-                    const chart = chartInstances.reportZona;
-                    chart.data.labels = zonas;
-                    chart.data.datasets[0].data = pendientesPorZona;
-                    chart.data.datasets[1].data = enProgresoPorZona;
-                    chart.data.datasets[2].data = completadosPorZona;
-                    chart.data.datasets[3].data = criticasPorZona;
-                    chart.update('none');
-                } else if (zonas.length > 0 && typeof Chart !== 'undefined') {
-                    chartInstances.reportZona = new Chart(zonaCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: zonas,
-                            datasets: [
-                                { label: 'Pendiente', data: pendientesPorZona, backgroundColor: '#fecb6e',
-                                    borderRadius: 4 },
-                                { label: 'En Progreso', data: enProgresoPorZona, backgroundColor: '#63b3ed',
-                                    borderRadius: 4 },
-                                { label: 'Completado', data: completadosPorZona, backgroundColor: '#68d391',
-                                    borderRadius: 4 },
-                                { label: '🔴 Críticas', data: criticasPorZona, backgroundColor: '#fc8181',
-                                    borderRadius: 4 }
-                            ]
+            manejarSinDatos('reportZonaChart', 'reportZona', hayDatosZona, function() {
+                const zonaCtx = document.getElementById('reportZonaChart');
+                if (!zonaCtx) return;
+                chartInstances.reportZona = new Chart(zonaCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: zonas,
+                        datasets: [
+                            { label: 'Pendiente', data: pendientesPorZona, backgroundColor: '#fecb6e',
+                                borderRadius: 4 },
+                            { label: 'En Progreso', data: enProgresoPorZona, backgroundColor: '#63b3ed',
+                                borderRadius: 4 },
+                            { label: 'Completado', data: completadosPorZona, backgroundColor: '#68d391',
+                                borderRadius: 4 },
+                            { label: '🔴 Críticas', data: criticasPorZona, backgroundColor: '#fc8181',
+                                borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'top' },
-                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
-                            },
-                            scales: {
-                                x: { stacked: false },
-                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                            }
+                        scales: {
+                            x: { stacked: false },
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
                         }
-                    });
-                } else if (zonas.length === 0) {
-                    zonaCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos de zonas para el período seleccionado.</p>';
-                }
+                    }
+                });
+            });
+
+            if (chartInstances.reportZona && hayDatosZona) {
+                const chart = chartInstances.reportZona;
+                chart.data.labels = zonas;
+                chart.data.datasets[0].data = pendientesPorZona;
+                chart.data.datasets[1].data = enProgresoPorZona;
+                chart.data.datasets[2].data = completadosPorZona;
+                chart.data.datasets[3].data = criticasPorZona;
+                chart.update('none');
             }
 
             // ======= Gráfico 4: Rendimiento por colaborador =======
@@ -3721,62 +3753,62 @@
                 if (e.total === 0) return 0;
                 return Math.round((e.completadas / e.total) * 100);
             });
+            const hayDatosPerf = perfLabels.length > 0;
 
-            const perfCtx = document.getElementById('reportPerformanceChart');
-            if (perfCtx) {
-                if (chartInstances.reportPerformance) {
-                    const chart = chartInstances.reportPerformance;
-                    chart.data.labels = perfLabels;
-                    chart.data.datasets[0].data = totalData;
-                    chart.data.datasets[1].data = completedDataPerf;
-                    chart.data.datasets[2].data = scoreData;
-                    chart.update('none');
-                } else if (perfLabels.length > 0 && typeof Chart !== 'undefined') {
-                    chartInstances.reportPerformance = new Chart(perfCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: perfLabels,
-                            datasets: [{
-                                label: 'Total tareas',
-                                data: totalData,
-                                backgroundColor: '#63b3ed',
-                                borderRadius: 4
-                            }, {
-                                label: 'Completadas',
-                                data: completedDataPerf,
-                                backgroundColor: '#68d391',
-                                borderRadius: 4
-                            }, {
-                                label: 'Score (%)',
-                                data: scoreData,
-                                backgroundColor: '#f6ad55',
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'top' },
-                                tooltip: {
-                                    callbacks: {
-                                        label: ctx => {
-                                            if (ctx.dataset.label === 'Score (%)') {
-                                                return `${ctx.raw}%`;
-                                            }
-                                            return `${ctx.dataset.label}: ${ctx.raw}`;
+            manejarSinDatos('reportPerformanceChart', 'reportPerformance', hayDatosPerf, function() {
+                const perfCtx = document.getElementById('reportPerformanceChart');
+                if (!perfCtx) return;
+                chartInstances.reportPerformance = new Chart(perfCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: perfLabels,
+                        datasets: [{
+                            label: 'Total tareas',
+                            data: totalData,
+                            backgroundColor: '#63b3ed',
+                            borderRadius: 4
+                        }, {
+                            label: 'Completadas',
+                            data: completedDataPerf,
+                            backgroundColor: '#68d391',
+                            borderRadius: 4
+                        }, {
+                            label: 'Score (%)',
+                            data: scoreData,
+                            backgroundColor: '#f6ad55',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.dataset.label === 'Score (%)') {
+                                            return `${ctx.raw}%`;
                                         }
+                                        return `${ctx.dataset.label}: ${ctx.raw}`;
                                     }
                                 }
-                            },
-                            scales: {
-                                y: { beginAtZero: true }
                             }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
                         }
-                    });
-                } else if (perfLabels.length === 0) {
-                    perfCtx.parentElement.innerHTML = '<p class="text-center" style="padding:20px;color:#999;">No hay datos para el período seleccionado.</p>';
-                }
+                    }
+                });
+            });
+
+            if (chartInstances.reportPerformance && hayDatosPerf) {
+                const chart = chartInstances.reportPerformance;
+                chart.data.labels = perfLabels;
+                chart.data.datasets[0].data = totalData;
+                chart.data.datasets[1].data = completedDataPerf;
+                chart.data.datasets[2].data = scoreData;
+                chart.update('none');
             }
         }
 
