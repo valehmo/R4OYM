@@ -1,312 +1,275 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>📡 SITIOS R4 - Radar Meteorológico</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:12px;min-height:100vh;}
-        .container{max-width:1400px;margin:0 auto;}
-        
-        .main-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .main-header h1 {
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .main-header h1 span {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-        }
-        
-        .control-bar {
-            background: white;
-            border-radius: 20px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .interval-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .interval-control input {
-            width: 80px;
-            padding: 8px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            text-align: center;
-        }
-        .interval-control button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .stop-btn {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .stop-btn.resume {
-            background: linear-gradient(135deg, #28a745, #218838);
-        }
-        .interval-info {
-            font-size: 12px;
-            color: #28a745;
-            background: #e8f5e9;
-            padding: 5px 12px;
-            border-radius: 20px;
-        }
-        
-        .weather-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #f0f0f0;
-            padding: 5px 15px;
-            border-radius: 30px;
-        }
-        .layer-selector {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .layer-selector select {
-            padding: 6px 10px;
-            border-radius: 12px;
-            border: 1px solid #ccc;
-            background: white;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .layer-selector i {
-            color: #667eea;
-        }
-        .weather-btn {
-            background: linear-gradient(135deg, #2196f3, #1976d2);
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-        .weather-btn:hover {
-            transform: scale(1.02);
-        }
-        .weather-btn.active {
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-        }
-        
-        .title-indicator {
-            background: white;
-            border-radius: 20px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .title-badge {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .mapa-container {
-            background: white;
-            border-radius: 20px;
-            padding: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        }
-        .mapa-container h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .map-header-buttons {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-left: auto;
-        }
-        .btn-expand-map {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .map-wrapper {
-            position: relative;
-            height: 550px;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .windy-iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            z-index: 1;
-            display: none;
-            border-radius: 12px;
-            pointer-events: none;
-        }
-        .windy-iframe.active {
-            display: block;
-        }
-        
-        .leaflet-map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            background: transparent !important;
-            background-color: transparent !important;
-        }
-        
-        .leaflet-container {
-            background: transparent !important;
-        }
-        
-        .leaflet-marker-icon {
-            z-index: 10 !important;
-        }
-        
-        /* Hacer el mapa base más transparente para ver Windy */
-        .leaflet-tile-pane {
-            opacity: 0.3 !important;
-        }
-        
-        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;}
-        .stat-card{background:white;border-radius:16px;padding:18px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
-        .stat-card .number{font-size:32px;font-weight:bold;color:#667eea;}
-        .stat-card .label{font-size:12px;color:#666;margin-top:5px;}
-        
-        .legend {
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 10px;
-            position: absolute;
-            bottom: 20px;
-            left: 10px;
-            z-index: 15;
-            pointer-events: none;
-            font-family: monospace;
-            backdrop-filter: blur(4px);
-        }
-        
-        .loading{text-align:center;padding:60px;color:#666;}
-        .spinner{border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;width:45px;height:45px;animation:spin 0.8s linear infinite;margin:0 auto 20px;}
-        @keyframes spin{to{transform:rotate(360deg);}}
-        
-        .mensaje{padding:14px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:10px;position:fixed;bottom:20px;right:20px;z-index:1000;max-width:350px;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn 0.3s ease;}
-        @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-        .error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626;}
-        .exito{background:#ecfdf5;color:#059669;border-left:4px solid #059669;}
-        .warning{background:#fffbeb;color:#d97706;border-left:4px solid #d97706;}
-        
-        .footer{text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-size:11px;}
-        
-        @media (max-width: 768px){
-            .stats{grid-template-columns:repeat(2,1fr);gap:10px;}
-            .map-wrapper { height: 400px; }
-            .control-bar { flex-direction: column; align-items: stretch; }
-            .interval-control { justify-content: center; }
-            .weather-controls { justify-content: center; }
-        }
-        
-        .custom-marker-div { background: transparent !important; border: none !important; }
-        
-        .map-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 20000;
-            cursor: pointer;
-        }
-        .map-modal.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .map-modal .map-container-expanded { width: 95%; height: 90%; background: #1a1a2e; border-radius: 20px; overflow: hidden; position: relative; }
-        .map-modal .map-container-expanded #map-expanded { width: 100%; height: 100%; position: relative; z-index: 2; }
-        .map-modal .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 40px;
-            cursor: pointer;
-            background: rgba(0,0,0,0.5);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 20001;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>📡 SITIOS R4 - Monitor + Radar Meteorológico</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<!-- Chart.js cargado de forma síncrona (bloqueante) para garantizar disponibilidad -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+    --cyan:#0d8fb0;
+    --cyan-bright:#0ea5c9;
+    --amber:#f59e0b;
+    --green:#16a34a;
+    --red:#dc2626;
+    --text:#1e2733;
+    --text-dim:#6b7688;
+    --panel:#ffffff;
+    --panel-2:#f4f6f9;
+    --border:#e2e6ed;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+    font-family:'Rajdhani',sans-serif;
+    background:linear-gradient(135deg,#141a2b 0%,#1c2438 100%);
+    color:var(--text);
+    padding:12px;
+    min-height:100vh;
+}
+.container{max-width:1500px;margin:0 auto;}
+
+.main-header{
+    background:linear-gradient(135deg,#1c2b4a,#243a63);
+    border-radius:16px;
+    padding:18px 22px;
+    margin-bottom:16px;
+    color:#fff;
+    box-shadow:0 8px 24px rgba(0,0,0,0.3);
+}
+.main-header h1{
+    font-family:'JetBrains Mono',monospace;
+    font-size:21px;
+    font-weight:700;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    color:var(--cyan-bright);
+}
+.main-header h1 i{color:var(--amber);}
+.main-header h1 span{
+    background:rgba(255,255,255,0.12);
+    color:#fff;
+    padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;
+}
+.main-header p{font-size:12px;color:#b7c2d8;margin-top:6px;}
+
+.control-bar{
+    background:var(--panel);border-radius:16px;padding:14px 18px;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.15);
+}
+.interval-control{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim);}
+.interval-control input{
+    width:70px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;
+    text-align:center;background:var(--panel-2);color:var(--text);font-family:'JetBrains Mono',monospace;
+}
+.interval-control button{
+    background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));
+    color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;
+}
+.stop-btn{
+    background:linear-gradient(135deg,#c0392b,var(--red));
+    color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;gap:8px;font-size:12px;
+}
+.stop-btn.resume{background:linear-gradient(135deg,#15803d,var(--green));}
+.interval-info{
+    font-size:11px;color:var(--green);background:#eafaf0;
+    padding:4px 10px;border-radius:16px;font-family:'JetBrains Mono',monospace;
+}
+
+.weather-controls{
+    display:flex;align-items:center;gap:10px;background:var(--panel-2);
+    padding:6px 14px;border-radius:20px;flex-wrap:wrap;
+}
+.layer-selector{display:flex;align-items:center;gap:6px;}
+.layer-selector select{
+    padding:6px 10px;border-radius:8px;border:1px solid var(--border);
+    background:#fff;color:var(--text);font-size:12px;cursor:pointer;
+}
+.layer-selector i{color:var(--cyan);}
+.weather-btn{
+    background:linear-gradient(135deg,#1565c0,#1e88e5);color:white;border:none;
+    padding:6px 16px;border-radius:20px;cursor:pointer;font-size:12px;
+    display:flex;align-items:center;gap:6px;font-weight:700;transition:all .15s;
+}
+.weather-btn:hover{filter:brightness(1.08);}
+.weather-btn.active{background:linear-gradient(135deg,#e65100,var(--amber));}
+.opacity-control{display:none;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);}
+.opacity-control.visible{display:flex;}
+.opacity-control input[type=range]{width:80px;accent-color:var(--cyan);}
+
+.title-indicator{
+    background:var(--panel);border-radius:16px;padding:12px 18px;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.15);
+}
+.title-badge{
+    background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;
+    padding:7px 16px;border-radius:20px;font-weight:700;font-size:15px;font-family:'JetBrains Mono',monospace;
+}
+.render-info{font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+
+.mapa-container{
+    background:var(--panel);border-radius:16px;padding:16px;margin-bottom:16px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+.mapa-container h3{
+    font-size:14px;margin-bottom:10px;color:var(--text);display:flex;align-items:center;
+    gap:8px;flex-wrap:wrap;font-weight:600;
+}
+.mapa-container h3 i{color:var(--cyan);}
+.map-header-buttons{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.btn-expand-map{
+    background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;border:none;
+    padding:6px 14px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:700;
+}
+
+.map-wrapper{position:relative;height:600px;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+
+.windy-iframe{
+    position:absolute;top:0;left:0;width:100%;height:100%;border:none;z-index:1;
+    display:none;border-radius:12px;pointer-events:none;
+}
+.windy-iframe.active{display:block;}
+
+.leaflet-map{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;background:transparent !important;}
+.leaflet-container{background:transparent !important;}
+.leaflet-marker-icon{z-index:10 !important;}
+
+/* El mapa se mantiene siempre visible a opacidad completa.
+   Cuando el radar está activo, el usuario controla la mezcla con el slider.
+   IMPORTANTE: solo se atenúa el tile-pane (las teselas), nunca el contenedor
+   del mapa completo, porque el contenedor debe quedar transparente para
+   dejar ver el iframe de Windy que está debajo (z-index:1). */
+.map-wrapper{background:#eef2f6;}
+.map-wrapper.weather-on .leaflet-tile-pane{ opacity: var(--tile-opacity, 0.85); }
+.map-wrapper:not(.weather-on) .leaflet-tile-pane{ opacity:1; }
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;}
+.stat-card{background:var(--panel);border-radius:14px;padding:16px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,0.15);}
+.stat-card .number{font-size:30px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace;}
+.stat-card .label{font-size:11px;color:var(--text-dim);margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;}
+
+.legend{
+    background:rgba(20,26,43,0.88);color:#fff;padding:8px 12px;border-radius:8px;
+    font-size:10px;position:absolute;bottom:20px;left:10px;z-index:15;pointer-events:none;
+    font-family:'JetBrains Mono',monospace;backdrop-filter:blur(4px);
+}
+
+.map-status{
+    position:absolute;top:12px;left:12px;z-index:15;background:rgba(255,255,255,0.92);
+    border-radius:8px;padding:6px 10px;font-size:10px;color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;pointer-events:none;display:flex;align-items:center;gap:6px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+}
+.map-status .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.map-status .dot.busy{background:var(--amber);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+.mensaje{
+    padding:12px 16px;border-radius:10px;font-size:12px;display:flex;align-items:center;gap:10px;
+    position:fixed;bottom:20px;right:20px;z-index:1000;max-width:340px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.3);animation:slideIn .3s ease;font-family:'JetBrains Mono',monospace;
+}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626;}
+.exito{background:#ecfdf5;color:#059669;border-left:4px solid #059669;}
+.warning{background:#fffbeb;color:#d97706;border-left:4px solid #d97706;}
+
+.footer{text-align:center;padding:16px;color:rgba(255,255,255,0.5);font-size:10px;font-family:'JetBrains Mono',monospace;}
+
+@media (max-width:768px){
+    .stats{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .map-wrapper{height:420px;}
+    .control-bar{flex-direction:column;align-items:stretch;}
+    .interval-control{justify-content:center;}
+    .weather-controls{justify-content:center;}
+}
+
+.map-modal{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(5,7,14,0.96);z-index:20000;cursor:pointer;
+}
+.map-modal.active{display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.map-modal .map-container-expanded{width:95%;height:90%;background:#eef2f6;border-radius:16px;overflow:hidden;position:relative;}
+.map-modal .map-container-expanded #map-expanded{width:100%;height:100%;position:relative;z-index:2;}
+.map-modal .close-modal{
+    position:absolute;top:20px;right:30px;color:#fff;font-size:34px;cursor:pointer;
+    background:rgba(0,0,0,0.5);width:46px;height:46px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;z-index:20001;
+}
+
+/* Popup de sitio: botón para abrir la radiografía */
+.popup-sitio .btn-radiografia{
+    margin-top:8px;width:100%;background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));
+    color:#fff;border:none;padding:7px 10px;border-radius:8px;font-weight:700;font-size:11px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.popup-sitio .btn-radiografia:hover{filter:brightness(1.08);}
+
+/* Modal de Radiografía de Sitio */
+.rx-modal{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(10,14,26,0.75);z-index:21000;
+    align-items:center;justify-content:center;padding:20px;
+}
+.rx-modal.active{display:flex;}
+.rx-panel{
+    background:#f7f9fc;border-radius:18px;width:100%;max-width:1100px;max-height:92vh;
+    overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);position:relative;
+}
+.rx-header{
+    background:linear-gradient(135deg,#1c2b4a,#243a63);color:#fff;padding:16px 22px;
+    border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;position:sticky;top:0;z-index:2;flex-wrap:wrap;
+}
+.rx-header h2{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--cyan-bright);}
+.rx-header-actions{display:flex;align-items:center;gap:8px;}
+.rx-btn-refresh{
+    background:rgba(255,255,255,0.12);color:#fff;border:none;padding:6px 12px;
+    border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;
+}
+.rx-btn-close{
+    background:rgba(255,255,255,0.12);color:#fff;border:none;width:32px;height:32px;
+    border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
+}
+.rx-body{padding:20px 22px 26px;}
+.rx-loading{text-align:center;padding:60px 20px;color:var(--text-dim);}
+.spinner{border:3px solid #e2e6ed;border-top:3px solid var(--cyan);border-radius:50%;width:38px;height:38px;animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.rx-error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626;padding:16px;border-radius:10px;font-size:13px;}
+.rx-empty{background:#fffbeb;color:#92400e;border-left:4px solid var(--amber);padding:16px;border-radius:10px;font-size:13px;}
+
+.rx-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.rx-stat-card{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
+.rx-stat-card .num{font-size:22px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace;}
+.rx-stat-card .lbl{font-size:10px;color:var(--text-dim);margin-top:3px;text-transform:uppercase;letter-spacing:0.4px;}
+
+.rx-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.rx-chart-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
+.rx-chart-card.full{grid-column:1 / -1;}
+.rx-chart-card h4{font-size:12px;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;}
+.rx-chart-card .rx-canvas-wrap{position:relative;height:220px;}
+
+.rx-table-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
+.rx-table-card h4{font-size:12px;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;}
+.rx-table{width:100%;border-collapse:collapse;font-size:12px;}
+.rx-table th{text-align:left;padding:8px 10px;color:var(--text-dim);border-bottom:2px solid var(--border);font-weight:600;}
+.rx-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+.rx-table tr:last-child td{border-bottom:none;}
+
+@media (max-width:768px){
+    .rx-stats{grid-template-columns:repeat(2,1fr);}
+    .rx-charts{grid-template-columns:1fr;}
+}
+</style>
 </head>
 <body>
 <div class="map-modal" id="mapModal">
@@ -314,12 +277,25 @@
     <div class="map-container-expanded"><div id="map-expanded"></div></div>
 </div>
 
+<div class="rx-modal" id="radiografiaModal">
+    <div class="rx-panel">
+        <div class="rx-header">
+            <h2 id="radiografiaTitulo"><i class="fas fa-x-ray"></i> Radiografía de Sitio</h2>
+            <div class="rx-header-actions">
+                <button class="rx-btn-refresh" id="rxRefreshBtn"><i class="fas fa-sync"></i> Actualizar</button>
+                <button class="rx-btn-close" onclick="cerrarRadiografia()">&times;</button>
+            </div>
+        </div>
+        <div class="rx-body" id="radiografiaBody"></div>
+    </div>
+</div>
+
 <div class="container">
     <div class="main-header">
-        <h1><i class="fas fa-chart-line"></i> SITIOS R4 <span>Radar Meteorológico</span></h1>
+        <h1><i class="fas fa-satellite-dish"></i> SITIOS R4 <span>Monitor + Radar Meteorológico</span></h1>
         <p><i class="fas fa-cloud-sun"></i> Activa el radar para ver: Lluvia | Tormentas | Viento | Temperatura | Nubes | Satélite</p>
     </div>
-    
+
     <div class="control-bar">
         <div class="interval-control">
             <label><i class="fas fa-clock"></i> Intervalo:</label>
@@ -328,7 +304,7 @@
             <button id="aplicarIntervaloBtn"><i class="fas fa-play-circle"></i> Aplicar</button>
             <div class="interval-info">Actual: <span id="intervaloActual">30</span> seg</div>
         </div>
-        
+
         <div class="weather-controls">
             <div class="layer-selector">
                 <i class="fas fa-layer-group"></i>
@@ -342,64 +318,95 @@
                 </select>
             </div>
             <button id="weatherBtn" class="weather-btn"><i class="fas fa-cloud-rain"></i> Activar Radar</button>
+            <div class="opacity-control" id="opacityControl">
+                <i class="fas fa-adjust"></i>
+                <input type="range" id="tileOpacitySlider" min="30" max="100" value="85">
+            </div>
         </div>
-        
+
         <button id="stopUpdateBtn" class="stop-btn"><i class="fas fa-pause"></i> Pausar</button>
     </div>
-    
+
     <div class="title-indicator">
         <div class="title-badge" id="titleBadge"><i class="fas fa-tab"></i> 📡 Cargando...</div>
+        <div class="render-info" id="renderInfo"></div>
     </div>
-    
+
     <div id="mensajes"></div>
-    
+
     <div class="mapa-container">
         <h3>
             <i class="fas fa-map-marker-alt"></i> Ubicación de Sitios R4
-            <span style="font-size:11px; font-weight:normal; color:#666;" id="mapaInfo"></span>
+            <span style="font-size:11px; font-weight:normal; color:var(--text-dim);" id="mapaInfo"></span>
             <div class="map-header-buttons">
                 <button class="btn-expand-map" id="expandMapBtn"><i class="fas fa-expand"></i> Expandir</button>
             </div>
         </h3>
         <div class="map-wrapper" id="mapWrapper">
-            <iframe id="windyFrame" class="windy-iframe" src="about:blank"></iframe>
+            <iframe id="windyFrame" class="windy-iframe" src="about:blank" allow="geolocation"></iframe>
             <div id="map" class="leaflet-map"></div>
-            <div id="weatherLegend" class="legend" style="display: none;">
+            <div class="map-status" id="mapStatus"><span class="dot" id="mapStatusDot"></span><span id="mapStatusText">Listo</span></div>
+            <div id="weatherLegend" class="legend" style="display:none;">
                 <strong><i class="fas fa-chart-line"></i> Capa activa</strong><br>
                 <span id="legendText">🌧️ Lluvia en tiempo real</span>
             </div>
         </div>
     </div>
-    
+
     <div class="stats" id="statsContainer">
         <div class="stat-card"><div class="number">-</div><div class="label">Total Sitios</div></div>
-        <div class="stat-card"><div class="number" style="color:#28a745;">-</div><div class="label">OK</div></div>
-        <div class="stat-card"><div class="number" style="color:#dc3545;">-</div><div class="label">CAIDO</div></div>
+        <div class="stat-card"><div class="number" style="color:var(--green);">-</div><div class="label">OK</div></div>
+        <div class="stat-card"><div class="number" style="color:var(--red);">-</div><div class="label">CAIDO</div></div>
         <div class="stat-card"><div class="number">-</div><div class="label">Tecnologías</div></div>
     </div>
-    
-    <div class="footer">Base: OYMR4 | Tabla: SITIOS R4 | Datos meteorológicos: Windy.com</div>
+
+    <div class="footer">Base: OYMR4 | Tabla: SITIOS R4 | Datos meteorológicos: Windy.com | v2.1</div>
 </div>
 
 <script>
 // ============================================
-// SITIOS R4 - RADAR METEOROLÓGICO MULTICAPA
-// Sincronizado con el mapa de sitios
-// Sin menú de selección en Windy
+// SITIOS R4 - MONITOR + RADAR METEOROLÓGICO
+// v2.1 - mapa claro sin agrupar, radar corregido
 // ============================================
 const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
 const API_KEY_APPSHEET = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
 const TABLE_NAME = "SITIOS R4";
 
+// --- Tabla de fallas para la "Radiografía de Sitio" ---
+// Columnas reales de FALLAS_CCR: _RowNumber, SITIO, GSM ID, INI AFECTACION,
+// FIN AFECTACION, TIPO DE FALLA, ZONA, AÑO, MES, IDENTIDAD.CCR
+const TABLE_FALLAS = "FALLAS_CCR";
+const CAMPOS_SITIO_FALLA = ['SITIO','Sitio','sitio'];
+const CAMPOS_TIPO_FALLA = ['TIPO DE FALLA','Tipo de Falla','tipo de falla'];
+const CAMPOS_ZONA_FALLA = ['ZONA','Zona','zona'];
+const CAMPOS_GSMID_FALLA = ['GSM ID','GSM Id','Gsm Id','gsm id'];
+const CAMPOS_ANIO_FALLA = ['AÑO','Año','año','ANIO','Anio'];
+const CAMPOS_MES_FALLA = ['MES','Mes','mes'];
+const CAMPOS_FECHA_INICIO_FALLA = ['INI AFECTACION','Ini Afectacion','INI AFECTACIÓN','ini afectacion'];
+const CAMPOS_FECHA_FIN_FALLA = ['FIN AFECTACION','Fin Afectacion','FIN AFECTACIÓN','fin afectacion'];
+// Solo se usa como respaldo si AÑO/MES vienen vacíos en algún registro.
+const FORMATO_FECHA_FALLAS = 'DMY';
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_NOMBRES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+let datosFallasCCR = null;
+let sitioRadiografiaActual = null;
+let chartTipo=null, chartMes=null, chartAnio=null;
+
 let datosOriginales = [];
-let mapa, marcadores, mapExpandido = null;
+let mapa, marcadores, mapExpandido = null, marcadoresExpandido = null;
 let intervaloActualizacion = null;
 let mapViewState = { center: [23.6345, -102.5528], zoom: 5, initialized: false };
 let weatherActivo = false;
 let actualizacionActiva = true;
 let capaActual = "rain";
+let tileOpacity = 0.85;
 
-// Mapeo de capas de Windy
+// Evita recargar el iframe de Windy en cada micro-movimiento del mapa
+let ultimoWindyParams = { lat: null, lon: null, zoom: null, capa: null };
+let radarDebounceTimer = null;
+const RADAR_DEBOUNCE_MS = 600;
+
 const capasWindy = {
     "rain": { overlay: "rain", nombre: "🌧️ Lluvia", desc: "Precipitación en tiempo real" },
     "thunder": { overlay: "thunder", nombre: "⚡ Tormentas", desc: "Tormentas eléctricas" },
@@ -409,409 +416,673 @@ const capasWindy = {
     "satellites": { overlay: "satellites", nombre: "🛰️ Satélite", desc: "Imagen satelital" }
 };
 
-// TAMAÑOS DE ICONOS
 const ICON_SIZE = 10;
 const ICON_BORDER = 1.5;
 
-function obtenerLatitudRaw(f) {
-    const posibles = ['LATITUD', 'Latitud', 'latitud', 'LAT', 'Lat', 'lat', 'LATITUDE', 'Latitude', 'latitude'];
-    for (let campo of posibles) {
-        if (f[campo] !== undefined && f[campo] !== null && f[campo] !== '') {
-            return f[campo];
-        }
-    }
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
+function obtenerLatitudRaw(f){
+    const posibles=['LATITUD','Latitud','latitud','LAT','Lat','lat','LATITUDE','Latitude','latitude'];
+    for(let campo of posibles){ if(f[campo]!==undefined && f[campo]!==null && f[campo]!=='') return f[campo]; }
     return null;
 }
-
-function obtenerLongitudRaw(f) {
-    const posibles = ['LONGITUD', 'Longitud', 'longitud', 'LON', 'Lng', 'lng', 'LONG', 'Long', 'long', 'LONGITUDE', 'Longitude', 'longitude'];
-    for (let campo of posibles) {
-        if (f[campo] !== undefined && f[campo] !== null && f[campo] !== '') {
-            return f[campo];
-        }
-    }
+function obtenerLongitudRaw(f){
+    const posibles=['LONGITUD','Longitud','longitud','LON','Lng','lng','LONG','Long','long','LONGITUDE','Longitude','longitude'];
+    for(let campo of posibles){ if(f[campo]!==undefined && f[campo]!==null && f[campo]!=='') return f[campo]; }
     return null;
 }
-
-function parsearCoordenada(valor) {
-    if (valor === undefined || valor === null || valor === '') return NaN;
-    if (typeof valor === 'number') return valor;
-    let str = String(valor).trim();
-    str = str.replace(',', '.');
-    str = str.replace(/[^0-9.-]/g, '');
-    const num = parseFloat(str);
-    return isNaN(num) ? NaN : num;
+function parsearCoordenada(valor){
+    if(valor===undefined||valor===null||valor==='') return NaN;
+    if(typeof valor==='number') return valor;
+    let str=String(valor).trim().replace(',', '.').replace(/[^0-9.-]/g,'');
+    const num=parseFloat(str);
+    return isNaN(num)?NaN:num;
+}
+function obtenerLatitud(f){ return parsearCoordenada(obtenerLatitudRaw(f)); }
+function obtenerLongitud(f){ return parsearCoordenada(obtenerLongitudRaw(f)); }
+function obtenerSitio(f){ return f.SITIO || f.Sitio || f.sitio || f.NOMBRE || f.nombre || '-'; }
+function obtenerTecnologia(f){ return f.TECNOLOGÍAS || f.TECNOLOGIAS || f.Tecnologias || f.tecnologia || '-'; }
+function obtenerEstado(f){
+    let estado=f.ESTADO || f.Estado || f.estado || '-';
+    if(estado==='Activo'||estado==='activo') return 'OK';
+    if(estado==='Inactivo'||estado==='inactivo'||estado==='Caido'||estado==='caido') return 'CAIDO';
+    return estado==='OK' ? 'OK' : (estado==='CAIDO' ? 'CAIDO' : estado);
 }
 
-function obtenerLatitud(f) {
-    const raw = obtenerLatitudRaw(f);
-    return parsearCoordenada(raw);
+function mostrarMensaje(texto, tipo){
+    const div=document.getElementById('mensajes');
+    let icono='📢';
+    if(tipo==='error') icono='❌';
+    if(tipo==='exito') icono='✅';
+    if(tipo==='warning') icono='⚠️';
+    div.innerHTML=`<div class="mensaje ${tipo}">${icono} ${texto}</div>`;
+    setTimeout(()=>{ if(div.innerHTML.includes(texto)) div.innerHTML=''; }, 4000);
 }
 
-function obtenerLongitud(f) {
-    const raw = obtenerLongitudRaw(f);
-    return parsearCoordenada(raw);
+function setMapStatus(texto, busy){
+    const dot=document.getElementById('mapStatusDot');
+    const txt=document.getElementById('mapStatusText');
+    if(!dot||!txt) return;
+    txt.textContent=texto;
+    dot.classList.toggle('busy', !!busy);
 }
 
-function obtenerSitio(f) { return f.SITIO || f.Sitio || f.sitio || f.NOMBRE || f.nombre || '-'; }
-function obtenerTecnologia(f) { return f.TECNOLOGÍAS || f.TECNOLOGIAS || f.Tecnologias || f.tecnologia || '-'; }
-function obtenerEstado(f) { 
-    let estado = f.ESTADO || f.Estado || f.estado || '-';
-    if (estado === 'Activo' || estado === 'activo') return 'OK';
-    if (estado === 'Inactivo' || estado === 'inactivo' || estado === 'Caido' || estado === 'caido') return 'CAIDO';
-    return estado === 'OK' ? 'OK' : (estado === 'CAIDO' ? 'CAIDO' : estado);
-}
-
-function mostrarMensaje(texto, tipo) {
-    const div = document.getElementById('mensajes');
-    let icono = '📢';
-    if (tipo === 'error') icono = '❌';
-    if (tipo === 'exito') icono = '✅';
-    if (tipo === 'warning') icono = '⚠️';
-    div.innerHTML = `<div class="mensaje ${tipo}">${icono} ${texto}</div>`;
-    setTimeout(() => { if(div.innerHTML.includes(texto)) div.innerHTML = ''; }, 4000);
+function debounce(fn, ms){
+    let t=null;
+    return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), ms); };
 }
 
 // ============================================
-// FUNCIONES DEL RADAR METEOROLÓGICO
+// RADAR METEOROLÓGICO
 // ============================================
-function getWindyUrl() {
-    const center = mapa.getCenter();
-    const lat = center.lat.toFixed(4);
-    const lon = center.lng.toFixed(4);
-    const zoom = mapa.getZoom();
-    const capa = capasWindy[capaActual];
-    
-    // URL SIN menú, SIN marcadores, SIN detalles - solo la capa visual
+function getWindyUrl(){
+    const center=mapa.getCenter();
+    const lat=center.lat.toFixed(3);
+    const lon=center.lng.toFixed(3);
+    const zoom=mapa.getZoom();
+    const capa=capasWindy[capaActual];
     return `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&zoom=${zoom}&level=surface&overlay=${capa.overlay}&menu=false&message=false&marker=false&calendar=now&pressure=false&type=map&location=coordinates&detail=false&metricWind=default&metricTemp=default&radarRange=-1`;
 }
 
-function actualizarCapaRadar() {
-    if (!weatherActivo) return;
-    
-    const windyUrl = getWindyUrl();
-    const windyFrame = document.getElementById('windyFrame');
-    windyFrame.src = windyUrl;
-    
-    // Actualizar leyenda
-    const legendText = document.getElementById('legendText');
-    if (legendText) legendText.innerHTML = `${capasWindy[capaActual].nombre} - ${capasWindy[capaActual].desc}`;
+function radarNecesitaActualizar(){
+    const center=mapa.getCenter();
+    const lat=parseFloat(center.lat.toFixed(2));
+    const lon=parseFloat(center.lng.toFixed(2));
+    const zoom=mapa.getZoom();
+    if(ultimoWindyParams.lat===null) return true;
+    if(ultimoWindyParams.capa!==capaActual) return true;
+    if(ultimoWindyParams.zoom!==zoom) return true;
+    return (Math.abs(ultimoWindyParams.lat-lat)>0.05 || Math.abs(ultimoWindyParams.lon-lon)>0.05);
 }
 
-function cambiarCapa() {
-    const selector = document.getElementById('layerSelect');
-    capaActual = selector.value;
-    if (weatherActivo) {
-        actualizarCapaRadar();
-    }
+function actualizarCapaRadar(forzar){
+    if(!weatherActivo) return;
+    if(!forzar && !radarNecesitaActualizar()) return;
+
+    const center=mapa.getCenter();
+    ultimoWindyParams={ lat: parseFloat(center.lat.toFixed(2)), lon: parseFloat(center.lng.toFixed(2)), zoom: mapa.getZoom(), capa: capaActual };
+
+    const windyFrame=document.getElementById('windyFrame');
+    setMapStatus('Actualizando radar…', true);
+    windyFrame.src=getWindyUrl();
+
+    const legendText=document.getElementById('legendText');
+    if(legendText) legendText.innerHTML=`${capasWindy[capaActual].nombre} - ${capasWindy[capaActual].desc}`;
+}
+
+document.getElementById('windyFrame').addEventListener('load', ()=>{
+    if(weatherActivo) setMapStatus('Listo', false);
+});
+
+function cambiarCapa(){
+    const selector=document.getElementById('layerSelect');
+    capaActual=selector.value;
+    if(weatherActivo) actualizarCapaRadar(true);
     mostrarMensaje(`🔄 Cambiando a: ${capasWindy[capaActual].nombre}`, 'exito');
 }
 
-function activarRadar() {
-    try {
+function aplicarOpacidadTiles(){
+    document.getElementById('mapWrapper').style.setProperty('--tile-opacity', tileOpacity);
+}
+
+function activarRadar(){
+    try{
         mostrarMensaje('🌤️ Activando radar meteorológico...', 'exito');
-        
-        const windyFrame = document.getElementById('windyFrame');
-        const btn = document.getElementById('weatherBtn');
-        
-        const windyUrl = getWindyUrl();
-        windyFrame.src = windyUrl;
+        const windyFrame=document.getElementById('windyFrame');
+        const btn=document.getElementById('weatherBtn');
+
+        weatherActivo=true;
+        ultimoWindyParams={ lat:null, lon:null, zoom:null, capa:null };
         windyFrame.classList.add('active');
-        
-        const legend = document.getElementById('weatherLegend');
-        if (legend) legend.style.display = 'block';
-        
-        weatherActivo = true;
+        actualizarCapaRadar(true);
+
+        document.getElementById('mapWrapper').classList.add('weather-on');
+        document.getElementById('opacityControl').classList.add('visible');
+        aplicarOpacidadTiles();
+
+        const legend=document.getElementById('weatherLegend');
+        if(legend) legend.style.display='block';
+
         btn.classList.add('active');
-        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Desactivar Radar';
-        
+        btn.innerHTML='<i class="fas fa-eye-slash"></i> Desactivar Radar';
+
         mostrarMensaje(`✅ Radar activado - Capa: ${capasWindy[capaActual].nombre}`, 'exito');
-        
-    } catch (error) {
+    }catch(error){
         console.error('Error:', error);
         mostrarMensaje(`⚠️ Error: ${error.message}`, 'warning');
     }
 }
 
-function desactivarRadar() {
-    const windyFrame = document.getElementById('windyFrame');
-    const btn = document.getElementById('weatherBtn');
-    
-    windyFrame.src = 'about:blank';
+function desactivarRadar(){
+    const windyFrame=document.getElementById('windyFrame');
+    const btn=document.getElementById('weatherBtn');
+
+    windyFrame.src='about:blank';
     windyFrame.classList.remove('active');
-    
-    const legend = document.getElementById('weatherLegend');
-    if (legend) legend.style.display = 'none';
-    
-    weatherActivo = false;
+
+    document.getElementById('mapWrapper').classList.remove('weather-on');
+    document.getElementById('opacityControl').classList.remove('visible');
+
+    const legend=document.getElementById('weatherLegend');
+    if(legend) legend.style.display='none';
+
+    weatherActivo=false;
     btn.classList.remove('active');
-    btn.innerHTML = '<i class="fas fa-cloud-rain"></i> Activar Radar';
-    
+    btn.innerHTML='<i class="fas fa-cloud-rain"></i> Activar Radar';
+
     mostrarMensaje('☀️ Radar desactivado', 'exito');
 }
 
-function toggleRadar() {
-    if (!weatherActivo) {
-        activarRadar();
-    } else {
-        desactivarRadar();
-    }
-}
+function toggleRadar(){ weatherActivo ? desactivarRadar() : activarRadar(); }
 
-// Sincronizar Windy cuando se mueve el mapa
-function sincronizarRadar() {
-    if (weatherActivo) {
-        const windyUrl = getWindyUrl();
-        const windyFrame = document.getElementById('windyFrame');
-        if (windyFrame && windyFrame.classList.contains('active')) {
-            windyFrame.src = windyUrl;
-        }
-    }
-}
+const sincronizarRadarDebounced = debounce(()=>{
+    if(weatherActivo) actualizarCapaRadar(false);
+}, RADAR_DEBOUNCE_MS);
 
 // ============================================
-// FUNCIONES PRINCIPALES
+// DATOS
 // ============================================
-async function cargarDatos() {
-    if (!actualizacionActiva) return;
-    
-    try {
-        const response = await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`, {
-            method: 'POST',
-            headers: { 'ApplicationAccessKey': API_KEY_APPSHEET, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
+async function cargarDatos(){
+    if(!actualizacionActiva) return;
+    try{
+        const response=await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`, {
+            method:'POST',
+            headers:{ 'ApplicationAccessKey':API_KEY_APPSHEET, 'Content-Type':'application/json' },
+            body:JSON.stringify({ Action:"Find", Properties:{}, Rows:[] })
         });
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        
-        let registros = [];
-        if (Array.isArray(data)) registros = data;
-        else if (data.Rows && Array.isArray(data.Rows)) registros = data.Rows;
-        else if (data && typeof data === 'object') {
-            for (let key in data) if (Array.isArray(data[key]) && data[key].length > 0) { registros = data[key]; break; }
-            if (registros.length === 0 && (data.SITIO !== undefined)) registros = [data];
+        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data=await response.json();
+
+        let registros=[];
+        if(Array.isArray(data)) registros=data;
+        else if(data.Rows && Array.isArray(data.Rows)) registros=data.Rows;
+        else if(data && typeof data==='object'){
+            for(let key in data){ if(Array.isArray(data[key]) && data[key].length>0){ registros=data[key]; break; } }
+            if(registros.length===0 && (data.SITIO!==undefined)) registros=[data];
         }
-        
-        if (registros.length > 0) {
-            datosOriginales = registros;
+
+        if(registros.length>0){
+            datosOriginales=registros;
             actualizarTituloYStats();
             actualizarMapa();
         }
-    } catch (error) {
+    }catch(error){
         console.error(error);
         mostrarMensaje(`Error: ${error.message}`, 'error');
     }
 }
 
-function actualizarTituloYStats() {
-    const total = datosOriginales.length;
-    const ok = datosOriginales.filter(f => obtenerEstado(f).toUpperCase() === 'OK').length;
-    const caido = total - ok;
-    const tecnologias = new Set(datosOriginales.map(f => obtenerTecnologia(f)));
-    
-    document.title = `📡 ${total} sitios | ${ok} OK | ${caido} CAIDO | R4`;
-    document.getElementById('titleBadge').innerHTML = `<i class="fas fa-tab"></i> 📡 ${total} sitios | ${ok} ✅ | ${caido} ❌`;
-    
-    document.getElementById('statsContainer').innerHTML = `
+function actualizarTituloYStats(){
+    const total=datosOriginales.length;
+    const ok=datosOriginales.filter(f=>obtenerEstado(f).toUpperCase()==='OK').length;
+    const caido=total-ok;
+    const tecnologias=new Set(datosOriginales.map(f=>obtenerTecnologia(f)));
+
+    document.title=`📡 ${total} sitios | ${ok} OK | ${caido} CAIDO | R4`;
+    document.getElementById('titleBadge').innerHTML=`<i class="fas fa-tab"></i> 📡 ${total} sitios | ${ok} ✅ | ${caido} ❌`;
+
+    document.getElementById('statsContainer').innerHTML=`
         <div class="stat-card"><div class="number">${total}</div><div class="label">Total Sitios</div></div>
-        <div class="stat-card"><div class="number" style="color:#28a745;">${ok}</div><div class="label">OK</div></div>
-        <div class="stat-card"><div class="number" style="color:#dc3545;">${caido}</div><div class="label">CAIDO</div></div>
+        <div class="stat-card"><div class="number" style="color:var(--green);">${ok}</div><div class="label">OK</div></div>
+        <div class="stat-card"><div class="number" style="color:var(--red);">${caido}</div><div class="label">CAIDO</div></div>
         <div class="stat-card"><div class="number">${tecnologias.size}</div><div class="label">Tecnologías</div></div>
     `;
 }
 
-function inicializarMapa() {
-    mapa = L.map('map').setView(mapViewState.center, mapViewState.zoom);
-    
+// ============================================
+// MAPA - todos los sitios individuales, sin agrupar
+// Se usa canvas renderer + circleMarker (mucho más rápido que
+// iconos DOM individuales) para mantener fluidez con cientos de sitios.
+// ============================================
+function inicializarMapa(){
+    mapa=L.map('map', { preferCanvas:true }).setView(mapViewState.center, mapViewState.zoom);
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
-        subdomains: 'abcd',
-        maxZoom: 19,
-        opacity: 0.3
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
+        subdomains:'abcd',
+        maxZoom:19
     }).addTo(mapa);
-    
-    mapa.on('moveend', () => { 
-        mapViewState.center = mapa.getCenter(); 
-        mapViewState.zoom = mapa.getZoom(); 
-        mapViewState.initialized = true;
-        sincronizarRadar();
+
+    mapa.on('moveend', ()=>{
+        mapViewState.center=mapa.getCenter();
+        mapViewState.zoom=mapa.getZoom();
+        mapViewState.initialized=true;
+        sincronizarRadarDebounced();
     });
-    mapa.on('zoomend', () => { 
-        mapViewState.zoom = mapa.getZoom(); 
-        mapViewState.initialized = true;
-        sincronizarRadar();
+    mapa.on('zoomend', ()=>{
+        mapViewState.zoom=mapa.getZoom();
+        mapViewState.initialized=true;
+        sincronizarRadarDebounced();
     });
-    marcadores = L.layerGroup().addTo(mapa);
+    mapa.on('movestart zoomstart', ()=> setMapStatus('Moviendo…', true));
+    mapa.on('moveend zoomend', ()=> { if(!weatherActivo) setMapStatus('Listo', false); });
+
+    marcadores=L.layerGroup().addTo(mapa);
 }
 
-function inicializarMapaExpandido() {
-    if (mapExpandido) mapExpandido.remove();
-    mapExpandido = L.map('map-expanded').setView(mapViewState.center, mapViewState.zoom);
+function inicializarMapaExpandido(){
+    if(mapExpandido) mapExpandido.remove();
+    mapExpandido=L.map('map-expanded', { preferCanvas:true }).setView(mapViewState.center, mapViewState.zoom);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OSM', subdomains: 'abcd', maxZoom: 19
+        attribution:'&copy; OSM', subdomains:'abcd', maxZoom:19
     }).addTo(mapExpandido);
+    marcadoresExpandido=L.layerGroup().addTo(mapExpandido);
     return mapExpandido;
 }
 
-function crearPuntoColor(color) {
-    return L.divIcon({
-        html: `<div style="
-            background-color: ${color};
-            width: ${ICON_SIZE}px;
-            height: ${ICON_SIZE}px;
-            border-radius: 50%;
-            border: ${ICON_BORDER}px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            cursor: pointer;
-        "></div>`,
-        iconSize: [ICON_SIZE, ICON_SIZE],
-        className: 'custom-marker-div'
-    });
+function escaparAtributo(str){
+    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function actualizarMapa() {
-    if (!mapa || !marcadores) return;
-    marcadores.clearLayers();
-    
-    const sitiosConCoordenadas = [];
-    datosOriginales.forEach(f => {
-        const lat = obtenerLatitud(f);
-        const lon = obtenerLongitud(f);
-        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+function construirPopup(sitio, tecnologia, esOK, color){
+    const sitioAttr = escaparAtributo(sitio);
+    return `<div class="popup-sitio" style="min-width:190px; font-size:12px; background:white; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+        <strong style="font-size:13px;">📡 ${sitio}</strong><br>
+        🔧 ${tecnologia}<br>
+        <span style="color:${color}; font-weight:bold;">${esOK ? 'OK ✅' : 'CAIDO ❌'}</span>
+        <button class="btn-radiografia" data-sitio="${sitioAttr}"><i class="fas fa-x-ray"></i> Radiografía del Sitio</button>
+    </div>`;
+}
+
+// Delegación de eventos: los popups de Leaflet se insertan/destruyen del DOM
+// dinámicamente, así que el listener se pone a nivel de documento.
+document.addEventListener('click', (e)=>{
+    const btn=e.target.closest('.btn-radiografia');
+    if(btn){ abrirRadiografia(btn.dataset.sitio); }
+});
+
+function agregarSitiosACapa(capaLayerGroup){
+    const sitiosConCoordenadas=[];
+    datosOriginales.forEach(f=>{
+        const lat=obtenerLatitud(f);
+        const lon=obtenerLongitud(f);
+        if(!isNaN(lat) && !isNaN(lon) && lat!==0 && lon!==0){
             sitiosConCoordenadas.push({ f, lat, lon });
         }
     });
-    
-    const okCount = sitiosConCoordenadas.filter(s => obtenerEstado(s.f).toUpperCase() === 'OK').length;
-    const caidoCount = sitiosConCoordenadas.length - okCount;
-    document.getElementById('mapaInfo').innerHTML = `📍 ${sitiosConCoordenadas.length} sitios | 🟢 ${okCount} | 🔴 ${caidoCount}`;
-    
-    sitiosConCoordenadas.forEach(({ f, lat, lon }) => {
-        const estado = obtenerEstado(f);
-        const esOK = estado.toUpperCase() === 'OK';
-        const color = esOK ? '#22c55e' : '#ef4444';
-        
-        const sitio = obtenerSitio(f);
-        const tecnologia = obtenerTecnologia(f);
-        
-        const popup = `<div style="min-width:180px; font-size:12px; background:white; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-            <strong style="font-size:13px;">📡 ${sitio}</strong><br>
-            🔧 ${tecnologia}<br>
-            <span style="color:${color}; font-weight:bold;">${esOK ? 'OK ✅' : 'CAIDO ❌'}</span>
-        </div>`;
-        
-        L.marker([lat, lon], { icon: crearPuntoColor(color) })
-            .bindPopup(popup).addTo(marcadores);
+
+    sitiosConCoordenadas.forEach(({f,lat,lon})=>{
+        const estado=obtenerEstado(f);
+        const esOK=estado.toUpperCase()==='OK';
+        const color=esOK ? '#22c55e' : '#ef4444';
+        const sitio=obtenerSitio(f);
+        const tecnologia=obtenerTecnologia(f);
+
+        L.circleMarker([lat,lon], {
+            radius: ICON_SIZE/2,
+            weight: ICON_BORDER,
+            color:'#ffffff',
+            fillColor: color,
+            fillOpacity: 1
+        }).bindPopup(construirPopup(sitio, tecnologia, esOK, color)).addTo(capaLayerGroup);
     });
-    
-    if (mapViewState.initialized) {
+
+    return sitiosConCoordenadas;
+}
+
+function actualizarMapa(){
+    if(!mapa || !marcadores) return;
+    marcadores.clearLayers();
+
+    const sitiosConCoordenadas=agregarSitiosACapa(marcadores);
+
+    const okCount=sitiosConCoordenadas.filter(s=>obtenerEstado(s.f).toUpperCase()==='OK').length;
+    const caidoCount=sitiosConCoordenadas.length-okCount;
+    document.getElementById('mapaInfo').innerHTML=`📍 ${sitiosConCoordenadas.length} sitios | 🟢 ${okCount} | 🔴 ${caidoCount}`;
+    document.getElementById('renderInfo').textContent=`${sitiosConCoordenadas.length} sitios en el mapa`;
+
+    if(mapViewState.initialized){
         mapa.setView(mapViewState.center, mapViewState.zoom);
-    } else if (sitiosConCoordenadas.length > 0) {
-        const bounds = L.latLngBounds(sitiosConCoordenadas.map(s => [s.lat, s.lon]));
+    }else if(sitiosConCoordenadas.length>0){
+        const bounds=L.latLngBounds(sitiosConCoordenadas.map(s=>[s.lat,s.lon]));
         mapa.fitBounds(bounds);
-        mapViewState.center = mapa.getCenter();
-        mapViewState.zoom = mapa.getZoom();
-        mapViewState.initialized = true;
+        mapViewState.center=mapa.getCenter();
+        mapViewState.zoom=mapa.getZoom();
+        mapViewState.initialized=true;
     }
 }
 
-function actualizarMapaExpandido() {
-    if (!mapExpandido) mapExpandido = inicializarMapaExpandido();
-    mapExpandido.eachLayer(l => { if (l instanceof L.Marker) mapExpandido.removeLayer(l); });
-    
-    datosOriginales.forEach(f => {
-        const lat = obtenerLatitud(f);
-        const lon = obtenerLongitud(f);
-        if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) return;
-        
-        const estado = obtenerEstado(f);
-        const esOK = estado.toUpperCase() === 'OK';
-        const color = esOK ? '#22c55e' : '#ef4444';
-        
-        const sitio = obtenerSitio(f);
-        const tecnologia = obtenerTecnologia(f);
-        
-        const popup = `<div style="min-width:180px; font-size:12px; background:white; border-radius:8px; padding:10px;">
-            <strong>📡 ${sitio}</strong><br>
-            🔧 ${tecnologia}<br>
-            <span style="color:${color};">${esOK ? 'OK ✅' : 'CAIDO ❌'}</span>
-        </div>`;
-        
-        L.marker([lat, lon], { icon: crearPuntoColor(color) })
-            .bindPopup(popup).addTo(mapExpandido);
-    });
-    if (mapViewState.initialized) mapExpandido.setView(mapViewState.center, mapViewState.zoom);
+function actualizarMapaExpandido(){
+    if(!mapExpandido) mapExpandido=inicializarMapaExpandido();
+    marcadoresExpandido.clearLayers();
+    agregarSitiosACapa(marcadoresExpandido);
+    if(mapViewState.initialized) mapExpandido.setView(mapViewState.center, mapViewState.zoom);
 }
 
-function expandirMapa() {
-    const modal = document.getElementById('mapModal');
+function expandirMapa(){
+    const modal=document.getElementById('mapModal');
     modal.classList.add('active');
-    setTimeout(() => {
-        if (!mapExpandido) inicializarMapaExpandido();
+    setTimeout(()=>{
+        if(!mapExpandido) inicializarMapaExpandido();
         actualizarMapaExpandido();
-        if (mapExpandido) mapExpandido.invalidateSize();
+        if(mapExpandido) mapExpandido.invalidateSize();
     }, 100);
 }
 
-function cerrarMapaExpandido() {
+function cerrarMapaExpandido(){
     document.getElementById('mapModal').classList.remove('active');
 }
 
-function reiniciarIntervalo(seg) {
-    if (intervaloActualizacion) clearInterval(intervaloActualizacion);
-    document.getElementById('intervaloActual').innerText = seg;
-    if (actualizacionActiva) {
-        intervaloActualizacion = setInterval(() => cargarDatos(), seg * 1000);
+function reiniciarIntervalo(seg){
+    if(intervaloActualizacion) clearInterval(intervaloActualizacion);
+    document.getElementById('intervaloActual').innerText=seg;
+    if(actualizacionActiva){
+        intervaloActualizacion=setInterval(()=>cargarDatos(), seg*1000);
         mostrarMensaje(`⏱️ Intervalo: ${seg} segundos`, 'exito');
     }
 }
 
-function pausarActualizacion() {
-    if (intervaloActualizacion) {
-        clearInterval(intervaloActualizacion);
-        intervaloActualizacion = null;
-    }
-    actualizacionActiva = false;
-    const btn = document.getElementById('stopUpdateBtn');
-    btn.innerHTML = '<i class="fas fa-play"></i> Reanudar';
+function pausarActualizacion(){
+    if(intervaloActualizacion){ clearInterval(intervaloActualizacion); intervaloActualizacion=null; }
+    actualizacionActiva=false;
+    const btn=document.getElementById('stopUpdateBtn');
+    btn.innerHTML='<i class="fas fa-play"></i> Reanudar';
     btn.classList.add('resume');
     mostrarMensaje('⏸️ Actualización pausada', 'warning');
 }
 
-function reanudarActualizacion() {
-    actualizacionActiva = true;
-    const seg = parseInt(document.getElementById('intervaloSegundos').value);
-    intervaloActualizacion = setInterval(() => cargarDatos(), seg * 1000);
-    const btn = document.getElementById('stopUpdateBtn');
-    btn.innerHTML = '<i class="fas fa-pause"></i> Pausar';
+function reanudarActualizacion(){
+    actualizacionActiva=true;
+    const seg=parseInt(document.getElementById('intervaloSegundos').value);
+    intervaloActualizacion=setInterval(()=>cargarDatos(), seg*1000);
+    const btn=document.getElementById('stopUpdateBtn');
+    btn.innerHTML='<i class="fas fa-pause"></i> Pausar';
     btn.classList.remove('resume');
     cargarDatos();
     mostrarMensaje('▶️ Actualización reanudada', 'exito');
 }
 
-function toggleActualizacion() {
-    if (actualizacionActiva) {
-        pausarActualizacion();
-    } else {
-        reanudarActualizacion();
+function toggleActualizacion(){ actualizacionActiva ? pausarActualizacion() : reanudarActualizacion(); }
+
+// ============================================
+// RADIOGRAFÍA DE SITIO — FALLAS_CCR
+// ============================================
+function obtenerCampo(f, candidatos){
+    for(let c of candidatos){
+        if(f[c]!==undefined && f[c]!==null && f[c]!=='') return f[c];
+    }
+    return null;
+}
+function normalizarTexto(str){ return String(str||'').trim().toUpperCase(); }
+
+function parsearFechaFalla(valor){
+    if(valor===undefined || valor===null || valor==='') return null;
+    if(valor instanceof Date) return isNaN(valor.getTime()) ? null : valor;
+    const str=String(valor).trim();
+    let m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ]?(\d{1,2})?:?(\d{1,2})?/);
+    if(m){ const d=new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]||0), parseInt(m[5]||0)); if(!isNaN(d.getTime())) return d; }
+    m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[, ]*(\d{1,2})?:?(\d{1,2})?/);
+    if(m){
+        let dia, mes;
+        if(FORMATO_FECHA_FALLAS==='MDY'){ mes=parseInt(m[1]); dia=parseInt(m[2]); }
+        else { dia=parseInt(m[1]); mes=parseInt(m[2]); }
+        const d=new Date(parseInt(m[3]), mes-1, dia, parseInt(m[4]||0), parseInt(m[5]||0));
+        if(!isNaN(d.getTime())) return d;
+    }
+    const d2=new Date(str);
+    return isNaN(d2.getTime()) ? null : d2;
+}
+
+function obtenerAnioFalla(f){
+    const valor=obtenerCampo(f, CAMPOS_ANIO_FALLA);
+    if(valor===null) return null;
+    const n=parseInt(String(valor).replace(/[^\d]/g,''));
+    return isNaN(n) ? null : n;
+}
+function obtenerIndiceMesFalla(f){
+    const valor=obtenerCampo(f, CAMPOS_MES_FALLA);
+    if(valor===null) return null;
+    if(typeof valor==='number'){ const n=Math.round(valor); return (n>=1&&n<=12) ? n-1 : null; }
+    const str=normalizarTexto(valor);
+    if(/^\d+$/.test(str)){ const n=parseInt(str); return (n>=1&&n<=12) ? n-1 : null; }
+    const idx=MESES_NOMBRES.findIndex(m=> str===m || str.startsWith(m.substring(0,3)));
+    return idx>=0 ? idx : null;
+}
+function calcularDuracionHoras(f){
+    const ini=parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA));
+    const fin=parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_FIN_FALLA));
+    if(!ini || !fin) return null;
+    const horas=(fin-ini)/(1000*60*60);
+    return (horas>=0) ? horas : null;
+}
+
+async function cargarFallasCCR(forzar){
+    if(datosFallasCCR && !forzar) return datosFallasCCR;
+    const response=await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_FALLAS)}/Action`, {
+        method:'POST',
+        headers:{ 'ApplicationAccessKey':API_KEY_APPSHEET, 'Content-Type':'application/json' },
+        body:JSON.stringify({ Action:"Find", Properties:{}, Rows:[] })
+    });
+    if(!response.ok) throw new Error(`HTTP ${response.status} al leer ${TABLE_FALLAS}`);
+    const data=await response.json();
+    let registros=[];
+    if(Array.isArray(data)) registros=data;
+    else if(data.Rows && Array.isArray(data.Rows)) registros=data.Rows;
+    else if(data && typeof data==='object'){
+        for(let key in data){ if(Array.isArray(data[key]) && data[key].length>0){ registros=data[key]; break; } }
+    }
+    datosFallasCCR=registros;
+    return registros;
+}
+
+async function abrirRadiografia(sitio){
+    // Chart.js ya está cargado de forma síncrona, pero por si acaso verificamos
+    if (typeof Chart === 'undefined') {
+        mostrarMensaje('⚠️ La librería de gráficos no está disponible. Intenta recargar la página.', 'error');
+        return;
+    }
+
+    sitioRadiografiaActual=sitio;
+    const modal=document.getElementById('radiografiaModal');
+    modal.classList.add('active');
+    document.getElementById('radiografiaTitulo').innerHTML=`<i class="fas fa-x-ray"></i> Radiografía — ${sitio}`;
+    document.getElementById('radiografiaBody').innerHTML=`<div class="rx-loading"><div class="spinner"></div>Cargando fallas de ${TABLE_FALLAS}…</div>`;
+    await cargarYRenderizarRadiografia(false);
+}
+
+async function cargarYRenderizarRadiografia(forzar){
+    if(!sitioRadiografiaActual) return;
+    try{
+        const todas=await cargarFallasCCR(forzar);
+        const sitioNorm=normalizarTexto(sitioRadiografiaActual);
+        const fallasSitio=todas.filter(f => normalizarTexto(obtenerCampo(f, CAMPOS_SITIO_FALLA))===sitioNorm);
+        renderRadiografia(sitioRadiografiaActual, fallasSitio);
+    }catch(err){
+        console.error(err);
+        let mensaje = `❌ Error al leer la tabla ${TABLE_FALLAS}: ${err.message}`;
+        if (err.message && err.message.includes('Chart is not defined')) {
+            mensaje = `❌ Error de carga de la librería de gráficos (Chart.js). Verifica tu conexión a internet y recarga la página.`;
+        }
+        document.getElementById('radiografiaBody').innerHTML = `<div class="rx-error">${mensaje}</div>`;
     }
 }
+
+function cerrarRadiografia(){
+    document.getElementById('radiografiaModal').classList.remove('active');
+    [chartTipo, chartMes, chartAnio].forEach(c=>{ if(c) c.destroy(); });
+    chartTipo=chartMes=chartAnio=null;
+    sitioRadiografiaActual=null;
+}
+
+function renderRadiografia(sitio, fallas){
+    const body=document.getElementById('radiografiaBody');
+
+    if(fallas.length===0){
+        body.innerHTML=`<div class="rx-empty">⚠️ No se encontraron registros en ${TABLE_FALLAS} para el sitio "${sitio}". Verifica que el nombre coincida con el campo de sitio en esa tabla.</div>`;
+        return;
+    }
+
+    // --- Agregaciones ---
+    const porTipo={};
+    const porMes=new Array(12).fill(0);
+    const porAnio={};
+    let fechaMasReciente=null;
+    let sumaDuracion=0, cuentaDuracion=0;
+
+    fallas.forEach(f=>{
+        const tipo=obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar';
+        porTipo[tipo]=(porTipo[tipo]||0)+1;
+
+        const mesIdx=obtenerIndiceMesFalla(f);
+        if(mesIdx!==null) porMes[mesIdx]++;
+
+        const anio=obtenerAnioFalla(f);
+        if(anio!==null) porAnio[anio]=(porAnio[anio]||0)+1;
+
+        const fechaIni=parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA));
+        if(fechaIni && (!fechaMasReciente || fechaIni>fechaMasReciente)) fechaMasReciente=fechaIni;
+
+        const duracion=calcularDuracionHoras(f);
+        if(duracion!==null){ sumaDuracion+=duracion; cuentaDuracion++; }
+    });
+
+    const duracionPromedio = cuentaDuracion>0 ? (sumaDuracion/cuentaDuracion) : null;
+    const duracionTexto = duracionPromedio!==null
+        ? (duracionPromedio>=24 ? `${(duracionPromedio/24).toFixed(1)} d` : `${duracionPromedio.toFixed(1)} h`)
+        : '—';
+
+    const tiposOrdenados=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+    const aniosOrdenados=Object.keys(porAnio).map(Number).sort((a,b)=>a-b);
+    const tipoMasFrecuente=tiposOrdenados.length ? tiposOrdenados[0][0] : '-';
+    const anioConMasFallas=aniosOrdenados.length
+        ? aniosOrdenados.reduce((a,b)=> porAnio[a]>=porAnio[b] ? a : b)
+        : '-';
+
+    // --- Tabla de últimos registros ---
+    const recientes=fallas
+        .map(f=>({
+            tipo: obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar',
+            zona: obtenerCampo(f, CAMPOS_ZONA_FALLA) || '—',
+            fecha: parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA))
+        }))
+        .sort((a,b)=>{
+            if(!a.fecha && !b.fecha) return 0;
+            if(!a.fecha) return 1;
+            if(!b.fecha) return -1;
+            return b.fecha-a.fecha;
+        })
+        .slice(0,15);
+
+    const filasTabla=recientes.map(r=>`
+        <tr>
+            <td>${r.fecha ? r.fecha.toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'}) : '—'}</td>
+            <td>${r.tipo}</td>
+            <td>${r.zona}</td>
+        </tr>
+    `).join('');
+
+    body.innerHTML=`
+        <div class="rx-stats">
+            <div class="rx-stat-card"><div class="num">${fallas.length}</div><div class="lbl">Total Fallas</div></div>
+            <div class="rx-stat-card"><div class="num" style="font-size:15px;">${tipoMasFrecuente}</div><div class="lbl">Tipo más frecuente</div></div>
+            <div class="rx-stat-card"><div class="num">${anioConMasFallas}</div><div class="lbl">Año con más fallas</div></div>
+            <div class="rx-stat-card"><div class="num" style="font-size:15px;">${duracionTexto}</div><div class="lbl">Duración promedio</div></div>
+        </div>
+
+        <div class="rx-charts">
+            <div class="rx-chart-card full">
+                <h4><i class="fas fa-chart-bar"></i> Fallas por Tipo</h4>
+                <div class="rx-canvas-wrap"><canvas id="rxChartTipo"></canvas></div>
+            </div>
+            <div class="rx-chart-card">
+                <h4><i class="fas fa-calendar-alt"></i> Fallas por Mes (todos los años)</h4>
+                <div class="rx-canvas-wrap"><canvas id="rxChartMes"></canvas></div>
+            </div>
+            <div class="rx-chart-card">
+                <h4><i class="fas fa-calendar"></i> Fallas por Año</h4>
+                <div class="rx-canvas-wrap"><canvas id="rxChartAnio"></canvas></div>
+            </div>
+        </div>
+
+        <div class="rx-table-card">
+            <h4><i class="fas fa-list"></i> Últimos registros (máx. 15) · último: ${fechaMasReciente ? fechaMasReciente.toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'}) : '—'}</h4>
+            <table class="rx-table">
+                <thead><tr><th>Inicio Afectación</th><th>Tipo de Falla</th><th>Zona</th></tr></thead>
+                <tbody>${filasTabla}</tbody>
+            </table>
+        </div>
+    `;
+
+    // Destruir gráficos anteriores
+    [chartTipo, chartMes, chartAnio].forEach(c => { if (c) c.destroy(); });
+    chartTipo = chartMes = chartAnio = null;
+
+    // Verificar nuevamente (por si acaso)
+    if (typeof Chart === 'undefined') {
+        body.innerHTML += `<div class="rx-error">⚠️ No se pudo cargar la librería de gráficos (Chart.js). Asegúrate de tener conexión a internet y recarga la página.</div>`;
+        return;
+    }
+
+    const paleta=['#0ea5c9','#f59e0b','#dc2626','#16a34a','#8b5cf6','#ec4899','#0d8fb0','#84cc16','#f97316','#6366f1'];
+
+    chartTipo = new Chart(document.getElementById('rxChartTipo'), {
+        type:'bar',
+        data:{
+            labels: tiposOrdenados.map(t=>t[0]),
+            datasets:[{ label:'Fallas', data: tiposOrdenados.map(t=>t[1]), backgroundColor: tiposOrdenados.map((_,i)=>paleta[i%paleta.length]) }]
+        },
+        options:{
+            indexAxis:'y',
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{ display:false } },
+            scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } }
+        }
+    });
+
+    chartMes = new Chart(document.getElementById('rxChartMes'), {
+        type:'bar',
+        data:{
+            labels: MESES_CORTOS,
+            datasets:[{ label:'Fallas', data: porMes, backgroundColor:'#0ea5c9' }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{ display:false } },
+            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+        }
+    });
+
+    chartAnio = new Chart(document.getElementById('rxChartAnio'), {
+        type:'bar',
+        data:{
+            labels: aniosOrdenados.map(String),
+            datasets:[{ label:'Fallas', data: aniosOrdenados.map(a=>porAnio[a]), backgroundColor:'#f59e0b' }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{ display:false } },
+            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+        }
+    });
+}
+
+document.getElementById('rxRefreshBtn').addEventListener('click', ()=>{
+    document.getElementById('radiografiaBody').innerHTML=`<div class="rx-loading"><div class="spinner"></div>Actualizando datos de ${TABLE_FALLAS}…</div>`;
+    cargarYRenderizarRadiografia(true);
+});
 
 // Eventos
 document.getElementById('expandMapBtn').addEventListener('click', expandirMapa);
 document.getElementById('stopUpdateBtn').addEventListener('click', toggleActualizacion);
 document.getElementById('layerSelect').addEventListener('change', cambiarCapa);
 document.getElementById('weatherBtn').addEventListener('click', toggleRadar);
-document.getElementById('aplicarIntervaloBtn').addEventListener('click', () => {
-    let seg = parseInt(document.getElementById('intervaloSegundos').value);
-    if (isNaN(seg) || seg < 5) seg = 5;
-    if (seg > 300) seg = 300;
-    document.getElementById('intervaloSegundos').value = seg;
-    if (actualizacionActiva) {
+document.getElementById('tileOpacitySlider').addEventListener('input', (e)=>{
+    tileOpacity=parseInt(e.target.value)/100;
+    aplicarOpacidadTiles();
+});
+document.getElementById('aplicarIntervaloBtn').addEventListener('click', ()=>{
+    let seg=parseInt(document.getElementById('intervaloSegundos').value);
+    if(isNaN(seg) || seg<5) seg=5;
+    if(seg>300) seg=300;
+    document.getElementById('intervaloSegundos').value=seg;
+    if(actualizacionActiva){
         reiniciarIntervalo(seg);
-    } else {
-        document.getElementById('intervaloActual').innerText = seg;
+    }else{
+        document.getElementById('intervaloActual').innerText=seg;
         mostrarMensaje(`Intervalo guardado: ${seg} segundos (reanudar para aplicar)`, 'exito');
     }
 });
