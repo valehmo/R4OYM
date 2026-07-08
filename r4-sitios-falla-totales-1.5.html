@@ -7,12 +7,11 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<!-- Chart.js cargado de forma síncrona -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* (mismo CSS que antes, sin cambios) */
+/* ===== ESTILOS (sin cambios relevantes) ===== */
 :root{
     --cyan:#0d8fb0;
     --cyan-bright:#0ea5c9;
@@ -207,6 +206,23 @@ body{
 }
 .popup-sitio .btn-radiografia:hover{filter:brightness(1.08);}
 
+/* ===== TOOLTIP DE SITIO (hover en marcador del mapa) ===== */
+.leaflet-tooltip.tooltip-sitio{
+    background:linear-gradient(135deg,#0a0e1a,#151b2e);
+    color:var(--cyan-bright, #22d3ee);
+    border:1px solid var(--cyan, #06b6d4);
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:12px;
+    font-weight:700;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
+    letter-spacing:0.3px;
+}
+.leaflet-tooltip.tooltip-sitio::before{
+    border-top-color:var(--cyan, #06b6d4);
+}
+
+/* ===== MODAL DE RADIOGRAFÍA ===== */
 .rx-modal{
     display:none;position:fixed;top:0;left:0;width:100%;height:100%;
     background:rgba(10,14,26,0.75);z-index:21000;
@@ -214,13 +230,13 @@ body{
 }
 .rx-modal.active{display:flex;}
 .rx-panel{
-    background:#f7f9fc;border-radius:18px;width:100%;max-width:1100px;max-height:92vh;
+    background:#f7f9fc;border-radius:18px;width:100%;max-width:1200px;max-height:92vh;
     overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);position:relative;
 }
 .rx-header{
     background:linear-gradient(135deg,#1c2b4a,#243a63);color:#fff;padding:16px 22px;
     border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;
-    gap:12px;position:sticky;top:0;z-index:2;flex-wrap:wrap;
+    gap:12px;position:sticky;top:0;z-index:10;flex-wrap:wrap;
 }
 .rx-header h2{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--cyan-bright);}
 .rx-header-actions{display:flex;align-items:center;gap:8px;}
@@ -239,7 +255,22 @@ body{
 .rx-error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626;padding:16px;border-radius:10px;font-size:13px;}
 .rx-empty{background:#fffbeb;color:#92400e;border-left:4px solid var(--amber);padding:16px;border-radius:10px;font-size:13px;}
 
-/* Filtros en la radiografía */
+/* ===== PESTAÑAS ===== */
+.rx-tabs{
+    display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--border);
+    flex-wrap:wrap;
+}
+.rx-tab-btn{
+    padding:10px 20px;border:none;background:transparent;font-size:13px;font-weight:600;
+    color:var(--text-dim);cursor:pointer;border-bottom:3px solid transparent;
+    transition:all 0.2s;font-family:'Rajdhani',sans-serif;
+}
+.rx-tab-btn:hover{color:var(--text);background:var(--panel-2);border-radius:8px 8px 0 0;}
+.rx-tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);background:transparent;}
+.rx-tab-content{display:none;}
+.rx-tab-content.active{display:block;}
+
+/* ===== FILTROS ===== */
 .rx-filtros{
     background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:20px;
     display:flex;align-items:center;gap:16px;flex-wrap:wrap;
@@ -259,6 +290,7 @@ body{
 }
 .rx-filtros .btn-limpiar:hover{background:#e2e6ed;}
 
+/* ===== ESTADÍSTICAS Y GRÁFICOS ===== */
 .rx-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
 .rx-stat-card{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
 .rx-stat-card .num{font-size:22px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace;}
@@ -277,32 +309,117 @@ body{
 .rx-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
 .rx-table tr:last-child td{border-bottom:none;}
 
+/* ===== INFO SITIO ===== */
+.rx-info-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;
+    margin-bottom:20px;
+}
+.rx-info-item{
+    background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+.rx-info-item .label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.3px;}
+.rx-info-item .value{font-size:14px;font-weight:600;color:var(--text);margin-top:2px;word-break:break-word;}
+
+.rx-imagenes-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;
+    margin:12px 0 20px;
+}
+.rx-thumb{
+    background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    cursor:pointer;transition:transform 0.15s;
+}
+.rx-thumb:hover{transform:scale(1.03);}
+.rx-thumb img{width:100%;height:100px;object-fit:cover;display:block;}
+.rx-thumb .label{font-size:9px;text-align:center;padding:4px;color:var(--text-dim);}
+
+/* ===== VISITAS ===== */
+.rx-visitas-tabla-wrap{overflow-x:auto;background:#fff;border-radius:12px;padding:10px;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
+.rx-visitas-tabla{width:100%;border-collapse:collapse;font-size:11px;min-width:800px;}
+.rx-visitas-tabla th{text-align:left;padding:8px 6px;color:var(--text-dim);border-bottom:2px solid var(--border);font-weight:600;white-space:nowrap;}
+.rx-visitas-tabla td{padding:8px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.rx-visitas-tabla .thumb-mini{width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #eee;background:#f9f9f9;}
+.rx-visitas-tabla .thumb-mini:hover{opacity:0.8;}
+.rx-visitas-tabla .img-link{
+    display:inline-block;font-size:10px;color:var(--cyan);text-decoration:none;margin-left:4px;
+}
+.rx-visitas-tabla .img-link:hover{text-decoration:underline;}
+.rx-visitas-tabla .img-placeholder{
+    display:inline-block;background:#f0f0f0;color:#999;padding:2px 6px;border-radius:4px;font-size:10px;
+}
+.rx-visitas-tabla .img-loading{
+    display:inline-block;width:50px;height:50px;background:#eaeaea;border-radius:4px;animation:pulse-loading 1s infinite;
+}
+@keyframes pulse-loading{0%,100%{opacity:0.4;}50%{opacity:0.8;}}
+
+/* ===== DASHBOARD AÑOS VISITAS ===== */
+.rx-year-dashboard{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;
+    margin-bottom:16px;
+}
+.rx-year-card{
+    background:#fff;border-radius:8px;padding:8px;text-align:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06);cursor:pointer;border:2px solid transparent;
+    transition:all 0.15s;
+}
+.rx-year-card:hover{background:var(--panel-2);}
+.rx-year-card.active{ border-color:var(--cyan); background:var(--cyan); color:#fff; }
+.rx-year-card.active .num{color:#fff;}
+.rx-year-card .num{font-size:18px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace;}
+.rx-year-card .lbl{font-size:9px;color:var(--text-dim);}
+.rx-year-card.active .lbl{color:rgba(255,255,255,0.8);}
+
+/* ===== LIGHTBOX ===== */
+.rx-lightbox{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.85);z-index:99999;align-items:center;justify-content:center;
+}
+.rx-lightbox.active{display:flex;}
+.rx-lightbox img{max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+.rx-lightbox .close-lb{
+    position:absolute;top:20px;right:30px;color:#fff;font-size:40px;cursor:pointer;
+    background:rgba(0,0,0,0.3);width:50px;height:50px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;transition:0.2s;
+}
+.rx-lightbox .close-lb:hover{background:rgba(255,255,255,0.2);}
+
 @media (max-width:768px){
     .rx-stats{grid-template-columns:repeat(2,1fr);}
     .rx-charts{grid-template-columns:1fr;}
     .rx-filtros{flex-direction:column;align-items:stretch;}
+    .rx-info-grid{grid-template-columns:1fr 1fr;}
+    .rx-year-dashboard{grid-template-columns:repeat(auto-fill,minmax(60px,1fr));}
 }
 </style>
 </head>
 <body>
+
+<!-- Modal de mapa expandido -->
 <div class="map-modal" id="mapModal">
     <div class="close-modal" onclick="cerrarMapaExpandido()">&times;</div>
     <div class="map-container-expanded"><div id="map-expanded"></div></div>
 </div>
 
+<!-- Lightbox para imágenes -->
+<div class="rx-lightbox" id="rxLightbox" onclick="cerrarLightbox()">
+    <span class="close-lb">&times;</span>
+    <img id="rxLightboxImg" src="" alt="Imagen ampliada">
+</div>
+
+<!-- Modal de Radiografía -->
 <div class="rx-modal" id="radiografiaModal">
     <div class="rx-panel">
         <div class="rx-header">
             <h2 id="radiografiaTitulo"><i class="fas fa-x-ray"></i> Radiografía de Sitio</h2>
             <div class="rx-header-actions">
                 <button class="rx-btn-refresh" id="rxRefreshBtn"><i class="fas fa-sync"></i> Actualizar</button>
-                <button class="rx-btn-close" onclick="cerrarRadiografia()">&times;</button>
+                <button class="rx-btn-close" id="rxCloseBtn">&times;</button>
             </div>
         </div>
         <div class="rx-body" id="radiografiaBody"></div>
     </div>
 </div>
 
+<!-- Contenedor principal -->
 <div class="container">
     <div class="main-header">
         <h1><i class="fas fa-satellite-dish"></i> SITIOS R4 <span>Monitor + Radar Meteorológico</span></h1>
@@ -373,24 +490,34 @@ body{
         <div class="stat-card"><div class="number">-</div><div class="label">Tecnologías</div></div>
     </div>
 
-    <div class="footer">Base: OYMR4 | Tabla: SITIOS R4 | Datos meteorológicos: Windy.com | v2.1</div>
+    <div class="footer">Base: OYMR4 | Tabla principal: SITIOS R4 | Info: SITIOS | v2.8</div>
 </div>
 
 <script>
-// ============================================
-// SITIOS R4 - MONITOR + RADAR METEOROLÓGICO
-// v2.1 - mapa claro sin agrupar, radar corregido, filtros en radiografía
-// ============================================
+// ============================================================
+// SITIOS R4 - v2.8 - MANEJO DE URLs DE IMÁGENES (file:// / http)
+// ============================================================
 const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
 const API_KEY_APPSHEET = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
-const TABLE_NAME = "SITIOS R4";
 
-// --- Tabla de fallas para la "Radiografía de Sitio" ---
+const TABLE_NAME_PRINCIPAL = "SITIOS R4";
+const TABLE_NAME_INFO = "SITIOS";
 const TABLE_FALLAS = "FALLAS_CCR";
+const TABLE_VISITAS = "VISITAS";
+
+// Campos de la tabla SITIOS (INFO)
+const CAMPOS_INFO_SITIO = [
+    'ID', 'NOMBRE', 'RNC', 'ID_U850', 'FECHA_OPERACION_U850',
+    'ID_SAO', 'FECHA_OPERACION_SAO', 'ID_GSM1900', 'FECHA_OPERACION_GSM1900',
+    'ID_GSM850', 'FECHA_OPERACION_GSM850', 'IDU1900', 'FECHA_OPERACION_U1900',
+    'LTE', 'FECHA_OPERACION_LTE', 'DIRECCION', 'GRUPO_OYM'
+];
+const CAMPOS_IMG = ['IMG1','IMG2','IMG3','IMG4','IMG5','IMG6','IMG7','IMG8','IMG9','IMG10'];
+
+// Fallas
 const CAMPOS_SITIO_FALLA = ['SITIO','Sitio','sitio'];
 const CAMPOS_TIPO_FALLA = ['TIPO DE FALLA','Tipo de Falla','tipo de falla'];
 const CAMPOS_ZONA_FALLA = ['ZONA','Zona','zona'];
-const CAMPOS_GSMID_FALLA = ['GSM ID','GSM Id','Gsm Id','gsm id'];
 const CAMPOS_ANIO_FALLA = ['AÑO','Año','año','ANIO','Anio'];
 const CAMPOS_MES_FALLA = ['MES','Mes','mes'];
 const CAMPOS_FECHA_INICIO_FALLA = ['INI AFECTACION','Ini Afectacion','INI AFECTACIÓN','ini afectacion'];
@@ -399,10 +526,15 @@ const FORMATO_FECHA_FALLAS = 'DMY';
 const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MESES_NOMBRES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
+// Variables globales
 let datosFallasCCR = null;
+let datosVisitas = null;
+let datosSitiosInfo = null;
 let sitioRadiografiaActual = null;
 let chartTipo=null, chartMes=null, chartAnio=null;
 let fallasSitioCompleto = [];
+let fallasSitioFiltradas = [];
+let visitasSitioCompleto = [];
 
 let datosOriginales = [];
 let mapa, marcadores, mapExpandido = null, marcadoresExpandido = null;
@@ -414,7 +546,6 @@ let capaActual = "rain";
 let tileOpacity = 0.85;
 
 let ultimoWindyParams = { lat: null, lon: null, zoom: null, capa: null };
-let radarDebounceTimer = null;
 const RADAR_DEBOUNCE_MS = 600;
 
 const capasWindy = {
@@ -429,489 +560,632 @@ const capasWindy = {
 const ICON_SIZE = 10;
 const ICON_BORDER = 1.5;
 
-// ============================================
+// Caché para imágenes descargadas
+const imageCache = new Map();
+
+// ============================================================
 // FUNCIONES AUXILIARES
-// ============================================
-function obtenerLatitudRaw(f){
-    const posibles=['LATITUD','Latitud','latitud','LAT','Lat','lat','LATITUDE','Latitude','latitude'];
-    for(let campo of posibles){ if(f[campo]!==undefined && f[campo]!==null && f[campo]!=='') return f[campo]; }
+// ============================================================
+function encontrarCampo(objeto, patrones) {
+    const claves = Object.keys(objeto);
+    for (let patron of patrones) {
+        const p = patron.toLowerCase().trim();
+        for (let clave of claves) {
+            if (clave.toLowerCase().trim() === p) return objeto[clave];
+        }
+    }
+    for (let patron of patrones) {
+        const p = patron.toLowerCase().trim();
+        for (let clave of claves) {
+            if (clave.toLowerCase().includes(p)) return objeto[clave];
+        }
+    }
     return null;
 }
-function obtenerLongitudRaw(f){
-    const posibles=['LONGITUD','Longitud','longitud','LON','Lng','lng','LONG','Long','long','LONGITUDE','Longitude','longitude'];
-    for(let campo of posibles){ if(f[campo]!==undefined && f[campo]!==null && f[campo]!=='') return f[campo]; }
-    return null;
+
+function obtenerLatitudRaw(f) {
+    return encontrarCampo(f, ['latitud', 'latitude', 'lat', 'LAT', 'Lat', 'LATITUD', 'LATITUDE']);
 }
-function parsearCoordenada(valor){
-    if(valor===undefined||valor===null||valor==='') return NaN;
-    if(typeof valor==='number') return valor;
-    let str=String(valor).trim().replace(',', '.').replace(/[^0-9.-]/g,'');
-    const num=parseFloat(str);
-    return isNaN(num)?NaN:num;
+function obtenerLongitudRaw(f) {
+    return encontrarCampo(f, ['longitud', 'longitude', 'lon', 'lng', 'LONG', 'Long', 'LONGITUD', 'LONGITUDE']);
 }
-function obtenerLatitud(f){ return parsearCoordenada(obtenerLatitudRaw(f)); }
-function obtenerLongitud(f){ return parsearCoordenada(obtenerLongitudRaw(f)); }
-function obtenerSitio(f){ return f.SITIO || f.Sitio || f.sitio || f.NOMBRE || f.nombre || '-'; }
-function obtenerTecnologia(f){ return f.TECNOLOGÍAS || f.TECNOLOGIAS || f.Tecnologias || f.tecnologia || '-'; }
-function obtenerEstado(f){
-    let estado=f.ESTADO || f.Estado || f.estado || '-';
-    if(estado==='Activo'||estado==='activo') return 'OK';
-    if(estado==='Inactivo'||estado==='inactivo'||estado==='Caido'||estado==='caido') return 'CAIDO';
-    return estado==='OK' ? 'OK' : (estado==='CAIDO' ? 'CAIDO' : estado);
+function parsearCoordenada(v) {
+    if (v === undefined || v === null || v === '') return NaN;
+    if (typeof v === 'number') return v;
+    let s = String(v).trim().replace(',', '.').replace(/[^0-9.-]/g, '');
+    const n = parseFloat(s);
+    return isNaN(n) ? NaN : n;
+}
+function obtenerLatitud(f) { return parsearCoordenada(obtenerLatitudRaw(f)); }
+function obtenerLongitud(f) { return parsearCoordenada(obtenerLongitudRaw(f)); }
+function obtenerSitio(f) { return f.NOMBRE || f.nombre || f.SITIO || f.Sitio || f.sitio || '-'; }
+function obtenerTecnologia(f) { return f.TECNOLOGÍAS || f.TECNOLOGIAS || f.Tecnologias || f.tecnologia || '-'; }
+function obtenerEstado(f) {
+    let e = f.ESTADO || f.Estado || f.estado || '-';
+    if (e === 'Activo' || e === 'activo') return 'OK';
+    if (e === 'Inactivo' || e === 'inactivo' || e === 'Caido' || e === 'caido') return 'CAIDO';
+    return e === 'OK' ? 'OK' : (e === 'CAIDO' ? 'CAIDO' : e);
 }
 
-function mostrarMensaje(texto, tipo){
-    const div=document.getElementById('mensajes');
-    let icono='📢';
-    if(tipo==='error') icono='❌';
-    if(tipo==='exito') icono='✅';
-    if(tipo==='warning') icono='⚠️';
-    div.innerHTML=`<div class="mensaje ${tipo}">${icono} ${texto}</div>`;
-    setTimeout(()=>{ if(div.innerHTML.includes(texto)) div.innerHTML=''; }, 4000);
+function mostrarMensaje(texto, tipo) {
+    const div = document.getElementById('mensajes');
+    let icono = '📢';
+    if (tipo === 'error') icono = '❌';
+    if (tipo === 'exito') icono = '✅';
+    if (tipo === 'warning') icono = '⚠️';
+    div.innerHTML = `<div class="mensaje ${tipo}">${icono} ${texto}</div>`;
+    setTimeout(() => { if (div.innerHTML.includes(texto)) div.innerHTML = ''; }, 4000);
 }
 
-function setMapStatus(texto, busy){
-    const dot=document.getElementById('mapStatusDot');
-    const txt=document.getElementById('mapStatusText');
-    if(!dot||!txt) return;
-    txt.textContent=texto;
+function setMapStatus(texto, busy) {
+    const dot = document.getElementById('mapStatusDot');
+    const txt = document.getElementById('mapStatusText');
+    if (!dot || !txt) return;
+    txt.textContent = texto;
     dot.classList.toggle('busy', !!busy);
 }
 
-function debounce(fn, ms){
-    let t=null;
-    return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), ms); };
+function debounce(fn, ms) { let t = null; return function (...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); }; }
+
+// ============================================================
+// DESCARGA DE IMÁGENES (con manejo de URLs file://)
+// ============================================================
+function extraerUrlImagen(valor, tableName) {
+    // Si es un objeto, intentar extraer la URL
+    if (valor && typeof valor === 'object') {
+        if (valor.url) return valor.url;
+        if (valor.Url) return valor.Url;
+        return null;
+    }
+    if (typeof valor === 'string') {
+        const v = valor.trim();
+        if (v === '' || v === '—') return null;
+        // Si es una URL http o https, devolverla tal cual
+        if (v.startsWith('http://') || v.startsWith('https://')) {
+            return v;
+        }
+        // Si es file://, no es accesible desde el navegador
+        if (v.startsWith('file://')) {
+            return null;
+        }
+        // AppSheet: las columnas Imagen/Archivo regresan una RUTA RELATIVA
+        // (ej. "VISITAS_Images/1699999999_foto.jpg"), no una URL completa.
+        // Hay que reconstruirla con el endpoint oficial gettablefileurl.
+        if (tableName) {
+            return `https://www.appsheet.com/template/gettablefileurl?appName=${encodeURIComponent(APP_ID)}&tableName=${encodeURIComponent(tableName)}&fileName=${encodeURIComponent(v)}`;
+        }
+        return null;
+    }
+    return null;
 }
 
-// ============================================
-// RADAR METEOROLÓGICO
-// ============================================
-function getWindyUrl(){
-    const center=mapa.getCenter();
-    const lat=center.lat.toFixed(3);
-    const lon=center.lng.toFixed(3);
-    const zoom=mapa.getZoom();
-    const capa=capasWindy[capaActual];
-    return `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&zoom=${zoom}&level=surface&overlay=${capa.overlay}&menu=false&message=false&marker=false&calendar=now&pressure=false&type=map&location=coordinates&detail=false&metricWind=default&metricTemp=default&radarRange=-1`;
+async function descargarImagen(url) {
+    if (!url) return null;
+    // Verificar caché
+    if (imageCache.has(url)) {
+        return imageCache.get(url);
+    }
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'ApplicationAccessKey': API_KEY_APPSHEET
+            }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        // Convertir a base64
+        const reader = new FileReader();
+        const base64 = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+        imageCache.set(url, base64);
+        return base64;
+    } catch (error) {
+        console.warn('Error descargando imagen:', error);
+        return null;
+    }
 }
 
-function radarNecesitaActualizar(){
-    const center=mapa.getCenter();
-    const lat=parseFloat(center.lat.toFixed(2));
-    const lon=parseFloat(center.lng.toFixed(2));
-    const zoom=mapa.getZoom();
-    if(ultimoWindyParams.lat===null) return true;
-    if(ultimoWindyParams.capa!==capaActual) return true;
-    if(ultimoWindyParams.zoom!==zoom) return true;
-    return (Math.abs(ultimoWindyParams.lat-lat)>0.05 || Math.abs(ultimoWindyParams.lon-lon)>0.05);
+// ============================================================
+// RADAR (sin cambios)
+// ============================================================
+function getWindyUrl() {
+    const c = mapa.getCenter();
+    const capa = capasWindy[capaActual];
+    return `https://embed.windy.com/embed2.html?lat=${c.lat.toFixed(3)}&lon=${c.lng.toFixed(3)}&zoom=${mapa.getZoom()}&level=surface&overlay=${capa.overlay}&menu=false&message=false&marker=false&calendar=now&pressure=false&type=map&location=coordinates&detail=false&metricWind=default&metricTemp=default&radarRange=-1`;
 }
-
-function actualizarCapaRadar(forzar){
-    if(!weatherActivo) return;
-    if(!forzar && !radarNecesitaActualizar()) return;
-
-    const center=mapa.getCenter();
-    ultimoWindyParams={ lat: parseFloat(center.lat.toFixed(2)), lon: parseFloat(center.lng.toFixed(2)), zoom: mapa.getZoom(), capa: capaActual };
-
-    const windyFrame=document.getElementById('windyFrame');
+function radarNecesitaActualizar() {
+    const c = mapa.getCenter();
+    const lat = parseFloat(c.lat.toFixed(2)), lon = parseFloat(c.lng.toFixed(2)), z = mapa.getZoom();
+    if (ultimoWindyParams.lat === null) return true;
+    if (ultimoWindyParams.capa !== capaActual) return true;
+    if (ultimoWindyParams.zoom !== z) return true;
+    return (Math.abs(ultimoWindyParams.lat - lat) > 0.05 || Math.abs(ultimoWindyParams.lon - lon) > 0.05);
+}
+function actualizarCapaRadar(forzar) {
+    if (!weatherActivo) return;
+    if (!forzar && !radarNecesitaActualizar()) return;
+    const c = mapa.getCenter();
+    ultimoWindyParams = { lat: parseFloat(c.lat.toFixed(2)), lon: parseFloat(c.lng.toFixed(2)), zoom: mapa.getZoom(), capa: capaActual };
+    const frame = document.getElementById('windyFrame');
     setMapStatus('Actualizando radar…', true);
-    windyFrame.src=getWindyUrl();
-
-    const legendText=document.getElementById('legendText');
-    if(legendText) legendText.innerHTML=`${capasWindy[capaActual].nombre} - ${capasWindy[capaActual].desc}`;
+    frame.src = getWindyUrl();
+    const lt = document.getElementById('legendText');
+    if (lt) lt.innerHTML = `${capasWindy[capaActual].nombre} - ${capasWindy[capaActual].desc}`;
 }
-
-document.getElementById('windyFrame').addEventListener('load', ()=>{
-    if(weatherActivo) setMapStatus('Listo', false);
-});
-
-function cambiarCapa(){
-    const selector=document.getElementById('layerSelect');
-    capaActual=selector.value;
-    if(weatherActivo) actualizarCapaRadar(true);
+document.getElementById('windyFrame').addEventListener('load', () => { if (weatherActivo) setMapStatus('Listo', false); });
+function cambiarCapa() {
+    capaActual = document.getElementById('layerSelect').value;
+    if (weatherActivo) actualizarCapaRadar(true);
     mostrarMensaje(`🔄 Cambiando a: ${capasWindy[capaActual].nombre}`, 'exito');
 }
-
-function aplicarOpacidadTiles(){
-    document.getElementById('mapWrapper').style.setProperty('--tile-opacity', tileOpacity);
-}
-
-function activarRadar(){
-    try{
-        mostrarMensaje('🌤️ Activando radar meteorológico...', 'exito');
-        const windyFrame=document.getElementById('windyFrame');
-        const btn=document.getElementById('weatherBtn');
-
-        weatherActivo=true;
-        ultimoWindyParams={ lat:null, lon:null, zoom:null, capa:null };
-        windyFrame.classList.add('active');
+function aplicarOpacidadTiles() { document.getElementById('mapWrapper').style.setProperty('--tile-opacity', tileOpacity); }
+function activarRadar() {
+    try {
+        mostrarMensaje('🌤️ Activando radar...', 'exito');
+        weatherActivo = true;
+        ultimoWindyParams = { lat: null, lon: null, zoom: null, capa: null };
+        const frame = document.getElementById('windyFrame');
+        frame.classList.add('active');
         actualizarCapaRadar(true);
-
         document.getElementById('mapWrapper').classList.add('weather-on');
         document.getElementById('opacityControl').classList.add('visible');
         aplicarOpacidadTiles();
-
-        const legend=document.getElementById('weatherLegend');
-        if(legend) legend.style.display='block';
-
+        document.getElementById('weatherLegend').style.display = 'block';
+        const btn = document.getElementById('weatherBtn');
         btn.classList.add('active');
-        btn.innerHTML='<i class="fas fa-eye-slash"></i> Desactivar Radar';
-
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Desactivar Radar';
         mostrarMensaje(`✅ Radar activado - Capa: ${capasWindy[capaActual].nombre}`, 'exito');
-    }catch(error){
-        console.error('Error:', error);
-        mostrarMensaje(`⚠️ Error: ${error.message}`, 'warning');
-    }
+    } catch (e) { console.error(e); mostrarMensaje(`⚠️ Error: ${e.message}`, 'warning'); }
 }
-
-function desactivarRadar(){
-    const windyFrame=document.getElementById('windyFrame');
-    const btn=document.getElementById('weatherBtn');
-
-    windyFrame.src='about:blank';
-    windyFrame.classList.remove('active');
-
+function desactivarRadar() {
+    const frame = document.getElementById('windyFrame');
+    frame.src = 'about:blank';
+    frame.classList.remove('active');
     document.getElementById('mapWrapper').classList.remove('weather-on');
     document.getElementById('opacityControl').classList.remove('visible');
-
-    const legend=document.getElementById('weatherLegend');
-    if(legend) legend.style.display='none';
-
-    weatherActivo=false;
+    document.getElementById('weatherLegend').style.display = 'none';
+    weatherActivo = false;
+    const btn = document.getElementById('weatherBtn');
     btn.classList.remove('active');
-    btn.innerHTML='<i class="fas fa-cloud-rain"></i> Activar Radar';
-
+    btn.innerHTML = '<i class="fas fa-cloud-rain"></i> Activar Radar';
     mostrarMensaje('☀️ Radar desactivado', 'exito');
 }
+function toggleRadar() { weatherActivo ? desactivarRadar() : activarRadar(); }
+const sincronizarRadarDebounced = debounce(() => { if (weatherActivo) actualizarCapaRadar(false); }, RADAR_DEBOUNCE_MS);
 
-function toggleRadar(){ weatherActivo ? desactivarRadar() : activarRadar(); }
-
-const sincronizarRadarDebounced = debounce(()=>{
-    if(weatherActivo) actualizarCapaRadar(false);
-}, RADAR_DEBOUNCE_MS);
-
-// ============================================
-// DATOS
-// ============================================
-async function cargarDatos(){
-    if(!actualizacionActiva) return;
-    try{
-        const response=await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`, {
-            method:'POST',
-            headers:{ 'ApplicationAccessKey':API_KEY_APPSHEET, 'Content-Type':'application/json' },
-            body:JSON.stringify({ Action:"Find", Properties:{}, Rows:[] })
+// ============================================================
+// DATOS PRINCIPALES (SITIOS R4)
+// ============================================================
+async function cargarDatosPrincipales() {
+    if (!actualizacionActiva) return;
+    try {
+        const r = await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME_PRINCIPAL)}/Action`, {
+            method: 'POST',
+            headers: { 'ApplicationAccessKey': API_KEY_APPSHEET, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
         });
-        if(!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data=await response.json();
-
-        let registros=[];
-        if(Array.isArray(data)) registros=data;
-        else if(data.Rows && Array.isArray(data.Rows)) registros=data.Rows;
-        else if(data && typeof data==='object'){
-            for(let key in data){ if(Array.isArray(data[key]) && data[key].length>0){ registros=data[key]; break; } }
-            if(registros.length===0 && (data.SITIO!==undefined)) registros=[data];
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        let registros = [];
+        if (Array.isArray(data)) registros = data;
+        else if (data.Rows && Array.isArray(data.Rows)) registros = data.Rows;
+        else if (data && typeof data === 'object') {
+            for (let k in data) { if (Array.isArray(data[k]) && data[k].length > 0) { registros = data[k]; break; } }
+            if (registros.length === 0 && (data.SITIO !== undefined)) registros = [data];
         }
-
-        if(registros.length>0){
-            datosOriginales=registros;
+        if (registros.length > 0) {
+            datosOriginales = registros;
             actualizarTituloYStats();
             actualizarMapa();
+        } else {
+            mostrarMensaje(`⚠️ No se encontraron registros en la tabla ${TABLE_NAME_PRINCIPAL}`, 'warning');
         }
-    }catch(error){
-        console.error(error);
-        mostrarMensaje(`Error: ${error.message}`, 'error');
+    } catch (e) {
+        console.error(e);
+        mostrarMensaje(`Error al cargar ${TABLE_NAME_PRINCIPAL}: ${e.message}`, 'error');
     }
 }
 
-function actualizarTituloYStats(){
-    const total=datosOriginales.length;
-    const ok=datosOriginales.filter(f=>obtenerEstado(f).toUpperCase()==='OK').length;
-    const caido=total-ok;
-    const tecnologias=new Set(datosOriginales.map(f=>obtenerTecnologia(f)));
+async function cargarDatosInfo() {
+    if (datosSitiosInfo) return datosSitiosInfo;
+    try {
+        const r = await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME_INFO)}/Action`, {
+            method: 'POST',
+            headers: { 'ApplicationAccessKey': API_KEY_APPSHEET, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        let registros = [];
+        if (Array.isArray(data)) registros = data;
+        else if (data.Rows && Array.isArray(data.Rows)) registros = data.Rows;
+        else if (data && typeof data === 'object') {
+            for (let k in data) { if (Array.isArray(data[k]) && data[k].length > 0) { registros = data[k]; break; } }
+        }
+        datosSitiosInfo = registros;
+        return registros;
+    } catch (e) {
+        console.error(e);
+        mostrarMensaje(`Error al cargar ${TABLE_NAME_INFO}: ${e.message}`, 'error');
+        return [];
+    }
+}
 
-    document.title=`📡 ${total} sitios | ${ok} OK | ${caido} CAIDO | R4`;
-    document.getElementById('titleBadge').innerHTML=`<i class="fas fa-tab"></i> 📡 ${total} sitios | ${ok} ✅ | ${caido} ❌`;
-
-    document.getElementById('statsContainer').innerHTML=`
+function actualizarTituloYStats() {
+    const total = datosOriginales.length;
+    const ok = datosOriginales.filter(f => obtenerEstado(f).toUpperCase() === 'OK').length;
+    const caido = total - ok;
+    const tec = new Set(datosOriginales.map(f => obtenerTecnologia(f)));
+    document.title = `📡 ${total} sitios | ${ok} OK | ${caido} CAIDO | R4`;
+    document.getElementById('titleBadge').innerHTML = `<i class="fas fa-tab"></i> 📡 ${total} sitios | ${ok} ✅ | ${caido} ❌`;
+    document.getElementById('statsContainer').innerHTML = `
         <div class="stat-card"><div class="number">${total}</div><div class="label">Total Sitios</div></div>
         <div class="stat-card"><div class="number" style="color:var(--green);">${ok}</div><div class="label">OK</div></div>
         <div class="stat-card"><div class="number" style="color:var(--red);">${caido}</div><div class="label">CAIDO</div></div>
-        <div class="stat-card"><div class="number">${tecnologias.size}</div><div class="label">Tecnologías</div></div>
+        <div class="stat-card"><div class="number">${tec.size}</div><div class="label">Tecnologías</div></div>
     `;
 }
 
-// ============================================
+// ============================================================
 // MAPA
-// ============================================
-function inicializarMapa(){
-    mapa=L.map('map', { preferCanvas:true }).setView(mapViewState.center, mapViewState.zoom);
-
+// ============================================================
+function inicializarMapa() {
+    mapa = L.map('map', { preferCanvas: true }).setView(mapViewState.center, mapViewState.zoom);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
-        subdomains:'abcd',
-        maxZoom:19
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 19
     }).addTo(mapa);
 
-    mapa.on('moveend', ()=>{
-        mapViewState.center=mapa.getCenter();
-        mapViewState.zoom=mapa.getZoom();
-        mapViewState.initialized=true;
+    mapa.on('moveend', () => {
+        mapViewState.center = mapa.getCenter();
+        mapViewState.zoom = mapa.getZoom();
+        mapViewState.initialized = true;
         sincronizarRadarDebounced();
     });
-    mapa.on('zoomend', ()=>{
-        mapViewState.zoom=mapa.getZoom();
-        mapViewState.initialized=true;
+    mapa.on('zoomend', () => {
+        mapViewState.zoom = mapa.getZoom();
+        mapViewState.initialized = true;
         sincronizarRadarDebounced();
     });
-    mapa.on('movestart zoomstart', ()=> setMapStatus('Moviendo…', true));
-    mapa.on('moveend zoomend', ()=> { if(!weatherActivo) setMapStatus('Listo', false); });
+    mapa.on('movestart zoomstart', () => setMapStatus('Moviendo…', true));
+    mapa.on('moveend zoomend', () => { if (!weatherActivo) setMapStatus('Listo', false); });
 
-    marcadores=L.layerGroup().addTo(mapa);
+    marcadores = L.layerGroup().addTo(mapa);
 }
-
-function inicializarMapaExpandido(){
-    if(mapExpandido) mapExpandido.remove();
-    mapExpandido=L.map('map-expanded', { preferCanvas:true }).setView(mapViewState.center, mapViewState.zoom);
+function inicializarMapaExpandido() {
+    if (mapExpandido) mapExpandido.remove();
+    mapExpandido = L.map('map-expanded', { preferCanvas: true }).setView(mapViewState.center, mapViewState.zoom);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution:'&copy; OSM', subdomains:'abcd', maxZoom:19
+        attribution: '&copy; OSM',
+        subdomains: 'abcd',
+        maxZoom: 19
     }).addTo(mapExpandido);
-    marcadoresExpandido=L.layerGroup().addTo(mapExpandido);
+    marcadoresExpandido = L.layerGroup().addTo(mapExpandido);
     return mapExpandido;
 }
-
-function escaparAtributo(str){
-    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function construirPopup(sitio, tecnologia, esOK, color){
-    const sitioAttr = escaparAtributo(sitio);
+function escaparAtributo(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function construirPopup(sitio, tecnologia, esOK, color) {
+    const sa = escaparAtributo(sitio);
     return `<div class="popup-sitio" style="min-width:190px; font-size:12px; background:white; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
         <strong style="font-size:13px;">📡 ${sitio}</strong><br>
         🔧 ${tecnologia}<br>
         <span style="color:${color}; font-weight:bold;">${esOK ? 'OK ✅' : 'CAIDO ❌'}</span>
-        <button class="btn-radiografia" data-sitio="${sitioAttr}"><i class="fas fa-x-ray"></i> Radiografía del Sitio</button>
+        <button class="btn-radiografia" data-sitio="${sa}"><i class="fas fa-x-ray"></i> Radiografía del Sitio</button>
     </div>`;
 }
-
-document.addEventListener('click', (e)=>{
-    const btn=e.target.closest('.btn-radiografia');
-    if(btn){ abrirRadiografia(btn.dataset.sitio); }
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-radiografia');
+    if (btn) abrirRadiografia(btn.dataset.sitio);
 });
-
-function agregarSitiosACapa(capaLayerGroup){
-    const sitiosConCoordenadas=[];
-    datosOriginales.forEach(f=>{
-        const lat=obtenerLatitud(f);
-        const lon=obtenerLongitud(f);
-        if(!isNaN(lat) && !isNaN(lon) && lat!==0 && lon!==0){
-            sitiosConCoordenadas.push({ f, lat, lon });
+function agregarSitiosACapa(capa) {
+    const coords = [];
+    datosOriginales.forEach(f => {
+        const lat = obtenerLatitud(f);
+        const lon = obtenerLongitud(f);
+        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+            coords.push({ f, lat, lon });
         }
     });
-
-    sitiosConCoordenadas.forEach(({f,lat,lon})=>{
-        const estado=obtenerEstado(f);
-        const esOK=estado.toUpperCase()==='OK';
-        const color=esOK ? '#22c55e' : '#ef4444';
-        const sitio=obtenerSitio(f);
-        const tecnologia=obtenerTecnologia(f);
-
-        L.circleMarker([lat,lon], {
-            radius: ICON_SIZE/2,
-            weight: ICON_BORDER,
-            color:'#ffffff',
-            fillColor: color,
-            fillOpacity: 1
-        }).bindPopup(construirPopup(sitio, tecnologia, esOK, color)).addTo(capaLayerGroup);
+    coords.forEach(({ f, lat, lon }) => {
+        const estado = obtenerEstado(f);
+        const esOK = estado.toUpperCase() === 'OK';
+        const color = esOK ? '#22c55e' : '#ef4444';
+        const sitio = obtenerSitio(f);
+        const tec = obtenerTecnologia(f);
+        L.circleMarker([lat, lon], { radius: ICON_SIZE / 2, weight: ICON_BORDER, color: '#ffffff', fillColor: color, fillOpacity: 1 })
+            .bindTooltip(sitio, { direction: 'top', offset: [0, -ICON_SIZE / 2], sticky: false, className: 'tooltip-sitio' })
+            .bindPopup(construirPopup(sitio, tec, esOK, color))
+            .addTo(capa);
     });
-
-    return sitiosConCoordenadas;
+    return coords;
 }
-
-function actualizarMapa(){
-    if(!mapa || !marcadores) return;
+function actualizarMapa() {
+    if (!mapa || !marcadores) return;
     marcadores.clearLayers();
+    const coords = agregarSitiosACapa(marcadores);
+    const ok = coords.filter(s => obtenerEstado(s.f).toUpperCase() === 'OK').length;
+    const ca = coords.length - ok;
 
-    const sitiosConCoordenadas=agregarSitiosACapa(marcadores);
+    let info = `📍 ${coords.length} sitios con coordenadas | 🟢 ${ok} | 🔴 ${ca}`;
+    if (coords.length === 0) {
+        info += ' ⚠️ Sin coordenadas válidas. Verifica los campos LATITUD/LONGITUD en la tabla SITIOS R4.';
+    }
+    document.getElementById('mapaInfo').innerHTML = info;
+    document.getElementById('renderInfo').textContent = `${datosOriginales.length} sitios totales, ${coords.length} con coordenadas`;
 
-    const okCount=sitiosConCoordenadas.filter(s=>obtenerEstado(s.f).toUpperCase()==='OK').length;
-    const caidoCount=sitiosConCoordenadas.length-okCount;
-    document.getElementById('mapaInfo').innerHTML=`📍 ${sitiosConCoordenadas.length} sitios | 🟢 ${okCount} | 🔴 ${caidoCount}`;
-    document.getElementById('renderInfo').textContent=`${sitiosConCoordenadas.length} sitios en el mapa`;
-
-    if(mapViewState.initialized){
+    if (mapViewState.initialized) {
         mapa.setView(mapViewState.center, mapViewState.zoom);
-    }else if(sitiosConCoordenadas.length>0){
-        const bounds=L.latLngBounds(sitiosConCoordenadas.map(s=>[s.lat,s.lon]));
+    } else if (coords.length > 0) {
+        const bounds = L.latLngBounds(coords.map(s => [s.lat, s.lon]));
         mapa.fitBounds(bounds);
-        mapViewState.center=mapa.getCenter();
-        mapViewState.zoom=mapa.getZoom();
-        mapViewState.initialized=true;
+        mapViewState.center = mapa.getCenter();
+        mapViewState.zoom = mapa.getZoom();
+        mapViewState.initialized = true;
+    } else {
+        setMapStatus('⚠️ Sin coordenadas', false);
     }
 }
-
-function actualizarMapaExpandido(){
-    if(!mapExpandido) mapExpandido=inicializarMapaExpandido();
+function actualizarMapaExpandido() {
+    if (!mapExpandido) mapExpandido = inicializarMapaExpandido();
     marcadoresExpandido.clearLayers();
     agregarSitiosACapa(marcadoresExpandido);
-    if(mapViewState.initialized) mapExpandido.setView(mapViewState.center, mapViewState.zoom);
+    if (mapViewState.initialized) mapExpandido.setView(mapViewState.center, mapViewState.zoom);
 }
-
-function expandirMapa(){
-    const modal=document.getElementById('mapModal');
-    modal.classList.add('active');
-    setTimeout(()=>{
-        if(!mapExpandido) inicializarMapaExpandido();
+function expandirMapa() {
+    document.getElementById('mapModal').classList.add('active');
+    setTimeout(() => {
+        if (!mapExpandido) inicializarMapaExpandido();
         actualizarMapaExpandido();
-        if(mapExpandido) mapExpandido.invalidateSize();
+        if (mapExpandido) mapExpandido.invalidateSize();
     }, 100);
 }
+function cerrarMapaExpandido() { document.getElementById('mapModal').classList.remove('active'); }
 
-function cerrarMapaExpandido(){
-    document.getElementById('mapModal').classList.remove('active');
-}
-
-function reiniciarIntervalo(seg){
-    if(intervaloActualizacion) clearInterval(intervaloActualizacion);
-    document.getElementById('intervaloActual').innerText=seg;
-    if(actualizacionActiva){
-        intervaloActualizacion=setInterval(()=>cargarDatos(), seg*1000);
+function reiniciarIntervalo(seg) {
+    if (intervaloActualizacion) clearInterval(intervaloActualizacion);
+    document.getElementById('intervaloActual').innerText = seg;
+    if (actualizacionActiva) {
+        intervaloActualizacion = setInterval(() => cargarDatosPrincipales(), seg * 1000);
         mostrarMensaje(`⏱️ Intervalo: ${seg} segundos`, 'exito');
     }
 }
-
-function pausarActualizacion(){
-    if(intervaloActualizacion){ clearInterval(intervaloActualizacion); intervaloActualizacion=null; }
-    actualizacionActiva=false;
-    const btn=document.getElementById('stopUpdateBtn');
-    btn.innerHTML='<i class="fas fa-play"></i> Reanudar';
+function pausarActualizacion() {
+    if (intervaloActualizacion) { clearInterval(intervaloActualizacion); intervaloActualizacion = null; }
+    actualizacionActiva = false;
+    const btn = document.getElementById('stopUpdateBtn');
+    btn.innerHTML = '<i class="fas fa-play"></i> Reanudar';
     btn.classList.add('resume');
     mostrarMensaje('⏸️ Actualización pausada', 'warning');
 }
-
-function reanudarActualizacion(){
-    actualizacionActiva=true;
-    const seg=parseInt(document.getElementById('intervaloSegundos').value);
-    intervaloActualizacion=setInterval(()=>cargarDatos(), seg*1000);
-    const btn=document.getElementById('stopUpdateBtn');
-    btn.innerHTML='<i class="fas fa-pause"></i> Pausar';
+function reanudarActualizacion() {
+    actualizacionActiva = true;
+    const seg = parseInt(document.getElementById('intervaloSegundos').value);
+    intervaloActualizacion = setInterval(() => cargarDatosPrincipales(), seg * 1000);
+    const btn = document.getElementById('stopUpdateBtn');
+    btn.innerHTML = '<i class="fas fa-pause"></i> Pausar';
     btn.classList.remove('resume');
-    cargarDatos();
+    cargarDatosPrincipales();
     mostrarMensaje('▶️ Actualización reanudada', 'exito');
 }
+function toggleActualizacion() { actualizacionActiva ? pausarActualizacion() : reanudarActualizacion(); }
 
-function toggleActualizacion(){ actualizacionActiva ? pausarActualizacion() : reanudarActualizacion(); }
-
-// ============================================
-// RADIOGRAFÍA DE SITIO — FALLAS_CCR (CON FILTROS)
-// ============================================
-function obtenerCampo(f, candidatos){
-    for(let c of candidatos){
-        if(f[c]!==undefined && f[c]!==null && f[c]!=='') return f[c];
+// ============================================================
+// RADIOGRAFÍA
+// ============================================================
+function obtenerCampo(f, candidatos) {
+    for (let c of candidatos) {
+        if (f[c] !== undefined && f[c] !== null && f[c] !== '') return f[c];
     }
     return null;
 }
-function normalizarTexto(str){ return String(str||'').trim().toUpperCase(); }
+function normalizarTexto(s) { return String(s || '').trim().toUpperCase(); }
 
-function parsearFechaFalla(valor){
-    if(valor===undefined || valor===null || valor==='') return null;
-    if(valor instanceof Date) return isNaN(valor.getTime()) ? null : valor;
-    const str=String(valor).trim();
-    let m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ]?(\d{1,2})?:?(\d{1,2})?/);
-    if(m){ const d=new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]), parseInt(m[4]||0), parseInt(m[5]||0)); if(!isNaN(d.getTime())) return d; }
-    m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[, ]*(\d{1,2})?:?(\d{1,2})?/);
-    if(m){
+// Fallas
+function parsearFechaFalla(v) {
+    if (v === undefined || v === null || v === '') return null;
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+    const s = String(v).trim();
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ]?(\d{1,2})?:?(\d{1,2})?/);
+    if (m) { const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]), parseInt(m[4] || 0), parseInt(m[5] || 0)); if (!isNaN(d.getTime())) return d; }
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[, ]*(\d{1,2})?:?(\d{1,2})?/);
+    if (m) {
         let dia, mes;
-        if(FORMATO_FECHA_FALLAS==='MDY'){ mes=parseInt(m[1]); dia=parseInt(m[2]); }
-        else { dia=parseInt(m[1]); mes=parseInt(m[2]); }
-        const d=new Date(parseInt(m[3]), mes-1, dia, parseInt(m[4]||0), parseInt(m[5]||0));
-        if(!isNaN(d.getTime())) return d;
+        if (FORMATO_FECHA_FALLAS === 'MDY') { mes = parseInt(m[1]); dia = parseInt(m[2]); }
+        else { dia = parseInt(m[1]); mes = parseInt(m[2]); }
+        const d = new Date(parseInt(m[3]), mes - 1, dia, parseInt(m[4] || 0), parseInt(m[5] || 0));
+        if (!isNaN(d.getTime())) return d;
     }
-    const d2=new Date(str);
+    const d2 = new Date(s);
     return isNaN(d2.getTime()) ? null : d2;
 }
-
-function obtenerAnioFalla(f){
-    const valor=obtenerCampo(f, CAMPOS_ANIO_FALLA);
-    if(valor===null) return null;
-    const n=parseInt(String(valor).replace(/[^\d]/g,''));
+function obtenerAnioFalla(f) {
+    const v = obtenerCampo(f, CAMPOS_ANIO_FALLA);
+    if (v === null) return null;
+    const n = parseInt(String(v).replace(/[^\d]/g, ''));
     return isNaN(n) ? null : n;
 }
-function obtenerIndiceMesFalla(f){
-    const valor=obtenerCampo(f, CAMPOS_MES_FALLA);
-    if(valor===null) return null;
-    if(typeof valor==='number'){ const n=Math.round(valor); return (n>=1&&n<=12) ? n-1 : null; }
-    const str=normalizarTexto(valor);
-    if(/^\d+$/.test(str)){ const n=parseInt(str); return (n>=1&&n<=12) ? n-1 : null; }
-    const idx=MESES_NOMBRES.findIndex(m=> str===m || str.startsWith(m.substring(0,3)));
-    return idx>=0 ? idx : null;
+function obtenerIndiceMesFalla(f) {
+    const v = obtenerCampo(f, CAMPOS_MES_FALLA);
+    if (v === null) return null;
+    if (typeof v === 'number') { const n = Math.round(v); return (n >= 1 && n <= 12) ? n - 1 : null; }
+    const s = normalizarTexto(v);
+    if (/^\d+$/.test(s)) { const n = parseInt(s); return (n >= 1 && n <= 12) ? n - 1 : null; }
+    const idx = MESES_NOMBRES.findIndex(m => s === m || s.startsWith(m.substring(0, 3)));
+    return idx >= 0 ? idx : null;
 }
-function calcularDuracionHoras(f){
-    const ini=parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA));
-    const fin=parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_FIN_FALLA));
-    if(!ini || !fin) return null;
-    const horas=(fin-ini)/(1000*60*60);
-    return (horas>=0) ? horas : null;
+function calcularDuracionHoras(f) {
+    const ini = parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA));
+    const fin = parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_FIN_FALLA));
+    if (!ini || !fin) return null;
+    const h = (fin - ini) / (1000 * 60 * 60);
+    return h >= 0 ? h : null;
 }
 
-async function cargarFallasCCR(forzar){
-    if(datosFallasCCR && !forzar) return datosFallasCCR;
-    const response=await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_FALLAS)}/Action`, {
-        method:'POST',
-        headers:{ 'ApplicationAccessKey':API_KEY_APPSHEET, 'Content-Type':'application/json' },
-        body:JSON.stringify({ Action:"Find", Properties:{}, Rows:[] })
+async function cargarFallasCCR(forzar) {
+    if (datosFallasCCR && !forzar) return datosFallasCCR;
+    const r = await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_FALLAS)}/Action`, {
+        method: 'POST',
+        headers: { 'ApplicationAccessKey': API_KEY_APPSHEET, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
     });
-    if(!response.ok) throw new Error(`HTTP ${response.status} al leer ${TABLE_FALLAS}`);
-    const data=await response.json();
-    let registros=[];
-    if(Array.isArray(data)) registros=data;
-    else if(data.Rows && Array.isArray(data.Rows)) registros=data.Rows;
-    else if(data && typeof data==='object'){
-        for(let key in data){ if(Array.isArray(data[key]) && data[key].length>0){ registros=data[key]; break; } }
+    if (!r.ok) throw new Error(`HTTP ${r.status} al leer ${TABLE_FALLAS}`);
+    const data = await r.json();
+    let reg = [];
+    if (Array.isArray(data)) reg = data;
+    else if (data.Rows && Array.isArray(data.Rows)) reg = data.Rows;
+    else if (data && typeof data === 'object') {
+        for (let k in data) { if (Array.isArray(data[k]) && data[k].length > 0) { reg = data[k]; break; } }
     }
-    datosFallasCCR=registros;
-    return registros;
+    datosFallasCCR = reg;
+    return reg;
 }
 
-async function abrirRadiografia(sitio){
+// Visitas
+async function cargarVisitas(forzar) {
+    if (datosVisitas && !forzar) return datosVisitas;
+    const r = await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_VISITAS)}/Action`, {
+        method: 'POST',
+        headers: { 'ApplicationAccessKey': API_KEY_APPSHEET, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status} al leer ${TABLE_VISITAS}`);
+    const data = await r.json();
+    let reg = [];
+    if (Array.isArray(data)) reg = data;
+    else if (data.Rows && Array.isArray(data.Rows)) reg = data.Rows;
+    else if (data && typeof data === 'object') {
+        for (let k in data) { if (Array.isArray(data[k]) && data[k].length > 0) { reg = data[k]; break; } }
+    }
+    datosVisitas = reg;
+    return reg;
+}
+
+// --- Abrir radiografía ---
+async function abrirRadiografia(sitio) {
     if (typeof Chart === 'undefined') {
-        mostrarMensaje('⚠️ La librería de gráficos no está disponible. Intenta recargar la página.', 'error');
+        mostrarMensaje('⚠️ Librería de gráficos no disponible. Recarga.', 'error');
         return;
     }
-
-    sitioRadiografiaActual=sitio;
-    const modal=document.getElementById('radiografiaModal');
+    sitioRadiografiaActual = sitio;
+    const modal = document.getElementById('radiografiaModal');
     modal.classList.add('active');
-    document.getElementById('radiografiaTitulo').innerHTML=`<i class="fas fa-x-ray"></i> Radiografía — ${sitio}`;
-    document.getElementById('radiografiaBody').innerHTML=`<div class="rx-loading"><div class="spinner"></div>Cargando fallas de ${TABLE_FALLAS}…</div>`;
+    document.getElementById('radiografiaTitulo').innerHTML = `<i class="fas fa-x-ray"></i> Radiografía — ${sitio}`;
+    document.getElementById('radiografiaBody').innerHTML = `<div class="rx-loading"><div class="spinner"></div>Cargando datos…</div>`;
     await cargarYRenderizarRadiografia(false);
 }
 
-async function cargarYRenderizarRadiografia(forzar){
-    if(!sitioRadiografiaActual) return;
-    try{
-        const todas=await cargarFallasCCR(forzar);
-        const sitioNorm=normalizarTexto(sitioRadiografiaActual);
-        const fallasSitio=todas.filter(f => normalizarTexto(obtenerCampo(f, CAMPOS_SITIO_FALLA))===sitioNorm);
-        fallasSitioCompleto = fallasSitio;
-        // Renderizar directamente con todos los datos (sin filtros)
-        renderRadiografia(sitioRadiografiaActual, fallasSitioCompleto);
-        // Una vez que los filtros estén creados, asignamos eventos y ya están en 'todos'
-        // No es necesario llamar a aplicarFiltros aquí porque ya mostramos todos
-    }catch(err){
-        console.error(err);
-        let mensaje = `❌ Error al leer la tabla ${TABLE_FALLAS}: ${err.message}`;
-        if (err.message && err.message.includes('Chart is not defined')) {
-            mensaje = `❌ Error de carga de librería de gráficos. Verifica tu conexión.`;
+async function cargarYRenderizarRadiografia(forzar) {
+    if (!sitioRadiografiaActual) return;
+    try {
+        const [fallas, visitas, sitiosInfo] = await Promise.all([
+            cargarFallasCCR(forzar),
+            cargarVisitas(forzar),
+            cargarDatosInfo()
+        ]);
+        if (datosOriginales.length === 0) {
+            await cargarDatosPrincipales();
         }
-        document.getElementById('radiografiaBody').innerHTML = `<div class="rx-error">${mensaje}</div>`;
+        const sitioNorm = normalizarTexto(sitioRadiografiaActual);
+        const fallasSitio = fallas.filter(f => normalizarTexto(obtenerCampo(f, CAMPOS_SITIO_FALLA)) === sitioNorm);
+        fallasSitioCompleto = fallasSitio;
+        const visitasSitio = visitas.filter(v => normalizarTexto(v.SITIO || v.sitio || '') === sitioNorm);
+        visitasSitioCompleto = visitasSitio;
+
+        window.__visitasSitio = visitasSitio;
+        window.__fallasSitio = fallasSitio;
+        window.__sitiosInfo = sitiosInfo;
+
+        renderRadiografiaCompleta(sitioRadiografiaActual, fallasSitio, visitasSitio, sitiosInfo);
+    } catch (err) {
+        console.error(err);
+        let msg = `❌ Error al cargar datos: ${err.message}`;
+        if (err.message && err.message.includes('Chart is not defined')) msg = '❌ Error de gráficos. Recarga.';
+        document.getElementById('radiografiaBody').innerHTML = `<div class="rx-error">${msg}</div>`;
     }
 }
 
-function aplicarFiltros(){
+function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
+    const body = document.getElementById('radiografiaBody');
+
+    let html = `
+        <div class="rx-tabs">
+            <button class="rx-tab-btn active" data-tab="tab-fallas">🔴 Fallas</button>
+            <button class="rx-tab-btn" data-tab="tab-info">📋 Info del Sitio</button>
+            <button class="rx-tab-btn" data-tab="tab-visitas">📅 Visitas (${visitas.length})</button>
+        </div>
+        <div id="tab-fallas" class="rx-tab-content active">${renderFallasContent(sitio, fallas)}</div>
+        <div id="tab-info" class="rx-tab-content">${renderInfoContent(sitio, sitiosInfo)}</div>
+        <div id="tab-visitas" class="rx-tab-content">${renderVisitasContent(visitas)}</div>
+    `;
+    body.innerHTML = html;
+
+    document.querySelectorAll('.rx-tab-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.rx-tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.rx-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(this.dataset.tab).classList.add('active');
+            if (this.dataset.tab === 'tab-visitas') {
+                const añoSel = document.getElementById('rxFiltroAnioVisitas');
+                if (añoSel) aplicarFiltroVisitas(añoSel.value);
+                // Cargar imágenes de la tabla
+                cargarImagenesVisitas();
+            }
+        });
+    });
+
+    if (fallas.length > 0) {
+        inicializarGraficosFallas(fallas);
+    }
+}
+
+// ============================================================
+// FALLAS (sin cambios)
+// ============================================================
+function renderFallasContent(sitio, fallas) {
+    if (!fallas || fallas.length === 0) {
+        return `<div class="rx-empty">⚠️ No se encontraron registros en ${TABLE_FALLAS} para "${sitio}".</div>`;
+    }
+    const aniosUnicos = [...new Set(fallas.map(f => obtenerAnioFalla(f)).filter(a => a !== null))].sort((a, b) => a - b);
+    const tiposUnicos = [...new Set(fallas.map(f => obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar'))].sort();
+    const opcionesAnio = aniosUnicos.map(a => `<option value="${a}">${a}</option>`).join('');
+    const opcionesTipo = tiposUnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+
+    return `
+        <div class="rx-filtros">
+            <label><i class="fas fa-calendar"></i> Año:
+                <select id="rxFiltroAnio"><option value="todos">Todos</option>${opcionesAnio}</select>
+            </label>
+            <label><i class="fas fa-tag"></i> Tipo:
+                <select id="rxFiltroTipo"><option value="todos">Todos</option>${opcionesTipo}</select>
+            </label>
+            <button class="btn-limpiar" id="rxLimpiarFiltros"><i class="fas fa-undo"></i> Limpiar</button>
+        </div>
+        <div id="rxFallasStats"></div>
+        <div id="rxFallasCharts"></div>
+        <div id="rxFallasTable"></div>
+    `;
+}
+
+function inicializarGraficosFallas(fallas) {
+    aplicarFiltrosFallas(fallas);
+    document.getElementById('rxFiltroAnio').addEventListener('change', () => aplicarFiltrosFallas(fallas));
+    document.getElementById('rxFiltroTipo').addEventListener('change', () => aplicarFiltrosFallas(fallas));
+    document.getElementById('rxLimpiarFiltros').addEventListener('click', () => {
+        document.getElementById('rxFiltroAnio').value = 'todos';
+        document.getElementById('rxFiltroTipo').value = 'todos';
+        aplicarFiltrosFallas(fallas);
+    });
+}
+
+function aplicarFiltrosFallas(fallas) {
     const anioSel = document.getElementById('rxFiltroAnio').value;
     const tipoSel = document.getElementById('rxFiltroTipo').value;
-
-    const fallasFiltradas = fallasSitioCompleto.filter(f => {
+    const filtradas = fallas.filter(f => {
         let ok = true;
         if (anioSel !== 'todos') {
             const anio = obtenerAnioFalla(f);
@@ -923,154 +1197,63 @@ function aplicarFiltros(){
         }
         return ok;
     });
-
-    renderRadiografia(sitioRadiografiaActual, fallasFiltradas);
+    actualizarFallasVisual(filtradas);
 }
 
-function cerrarRadiografia(){
-    document.getElementById('radiografiaModal').classList.remove('active');
-    [chartTipo, chartMes, chartAnio].forEach(c=>{ if(c) c.destroy(); });
-    chartTipo=chartMes=chartAnio=null;
-    sitioRadiografiaActual=null;
-    fallasSitioCompleto = [];
-}
+function actualizarFallasVisual(fallas) {
+    const porTipo = {}, porMes = new Array(12).fill(0), porAnio = {};
+    let fechaMasReciente = null, sumaDuracion = 0, cuentaDuracion = 0;
+    fallas.forEach(f => {
+        const tipo = obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar';
+        porTipo[tipo] = (porTipo[tipo] || 0) + 1;
+        const mesIdx = obtenerIndiceMesFalla(f);
+        if (mesIdx !== null) porMes[mesIdx]++;
+        const anio = obtenerAnioFalla(f);
+        if (anio !== null) porAnio[anio] = (porAnio[anio] || 0) + 1;
+        const fi = parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA));
+        if (fi && (!fechaMasReciente || fi > fechaMasReciente)) fechaMasReciente = fi;
+        const dur = calcularDuracionHoras(f);
+        if (dur !== null) { sumaDuracion += dur; cuentaDuracion++; }
+    });
+    const duracionProm = cuentaDuracion > 0 ? (sumaDuracion / cuentaDuracion) : null;
+    const duracionTxt = duracionProm !== null ? (duracionProm >= 24 ? `${(duracionProm / 24).toFixed(1)} d` : `${duracionProm.toFixed(1)} h`) : '—';
+    const tiposOrd = Object.entries(porTipo).sort((a, b) => b[1] - a[1]);
+    const aniosOrd = Object.keys(porAnio).map(Number).sort((a, b) => a - b);
+    const tipoMasFrec = tiposOrd.length ? tiposOrd[0][0] : '-';
+    const anioMasFallas = aniosOrd.length ? aniosOrd.reduce((a, b) => porAnio[a] >= porAnio[b] ? a : b) : '-';
 
-function renderRadiografia(sitio, fallas){
-    const body=document.getElementById('radiografiaBody');
+    const recientes = fallas.map(f => ({
+        tipo: obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar',
+        zona: obtenerCampo(f, CAMPOS_ZONA_FALLA) || '—',
+        fecha: parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA))
+    })).sort((a, b) => {
+        if (!a.fecha && !b.fecha) return 0;
+        if (!a.fecha) return 1;
+        if (!b.fecha) return -1;
+        return b.fecha - a.fecha;
+    }).slice(0, 15);
 
-    // Si no hay fallas, mostrar mensaje apropiado
-    if(fallas.length===0 && fallasSitioCompleto.length===0){
-        body.innerHTML=`<div class="rx-empty">⚠️ No se encontraron registros en ${TABLE_FALLAS} para el sitio "${sitio}". Verifica que el nombre coincida con el campo de sitio en esa tabla.</div>`;
-        return;
-    }
+    const filasTabla = recientes.map(r => `
+        <tr><td>${r.fecha ? r.fecha.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td><td>${r.tipo}</td><td>${r.zona}</td></tr>
+    `).join('');
 
-    if(fallas.length===0 && fallasSitioCompleto.length>0){
-        body.innerHTML = `
-            <div class="rx-filtros">
-                <label><i class="fas fa-calendar"></i> Año:
-                    <select id="rxFiltroAnio"><option value="todos">Todos</option></select>
-                </label>
-                <label><i class="fas fa-tag"></i> Tipo:
-                    <select id="rxFiltroTipo"><option value="todos">Todos</option></select>
-                </label>
-                <button class="btn-limpiar" id="rxLimpiarFiltros"><i class="fas fa-undo"></i> Limpiar</button>
-            </div>
-            <div class="rx-empty">⚠️ No hay fallas que coincidan con los filtros seleccionados.</div>
-        `;
-        // Llenar selectores con valores únicos de fallasSitioCompleto
-        const aniosUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerAnioFalla(f)).filter(a => a !== null))].sort((a,b)=>a-b);
-        const tiposUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar'))].sort();
-        const selAnio = document.getElementById('rxFiltroAnio');
-        const selTipo = document.getElementById('rxFiltroTipo');
-        aniosUnicos.forEach(a => selAnio.innerHTML += `<option value="${a}">${a}</option>`);
-        tiposUnicos.forEach(t => selTipo.innerHTML += `<option value="${t}">${t}</option>`);
-        // Eventos
-        selAnio.addEventListener('change', aplicarFiltros);
-        selTipo.addEventListener('change', aplicarFiltros);
-        document.getElementById('rxLimpiarFiltros').addEventListener('click', ()=>{
-            document.getElementById('rxFiltroAnio').value = 'todos';
-            document.getElementById('rxFiltroTipo').value = 'todos';
-            aplicarFiltros();
-        });
-        return;
-    }
-
-    // Construir filtros
-    const aniosUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerAnioFalla(f)).filter(a => a !== null))].sort((a,b)=>a-b);
-    const tiposUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar'))].sort();
-
-    let filtrosHTML = `
-        <div class="rx-filtros">
-            <label><i class="fas fa-calendar"></i> Año:
-                <select id="rxFiltroAnio">
-                    <option value="todos">Todos</option>
-                    ${aniosUnicos.map(a => `<option value="${a}">${a}</option>`).join('')}
-                </select>
-            </label>
-            <label><i class="fas fa-tag"></i> Tipo:
-                <select id="rxFiltroTipo">
-                    <option value="todos">Todos</option>
-                    ${tiposUnicos.map(t => `<option value="${t}">${t}</option>`).join('')}
-                </select>
-            </label>
-            <button class="btn-limpiar" id="rxLimpiarFiltros"><i class="fas fa-undo"></i> Limpiar</button>
+    const statsHTML = `
+        <div class="rx-stats">
+            <div class="rx-stat-card"><div class="num">${fallas.length}</div><div class="lbl">Total Fallas</div></div>
+            <div class="rx-stat-card"><div class="num" style="font-size:15px;">${tipoMasFrec}</div><div class="lbl">Tipo más frecuente</div></div>
+            <div class="rx-stat-card"><div class="num">${anioMasFallas}</div><div class="lbl">Año con más fallas</div></div>
+            <div class="rx-stat-card"><div class="num" style="font-size:15px;">${duracionTxt}</div><div class="lbl">Duración promedio</div></div>
         </div>
     `;
 
-    // --- Agregaciones sobre fallas (ya filtradas) ---
-    const porTipo={};
-    const porMes=new Array(12).fill(0);
-    const porAnio={};
-    let fechaMasReciente=null;
-    let sumaDuracion=0, cuentaDuracion=0;
-
-    fallas.forEach(f=>{
-        const tipo=obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar';
-        porTipo[tipo]=(porTipo[tipo]||0)+1;
-
-        const mesIdx=obtenerIndiceMesFalla(f);
-        if(mesIdx!==null) porMes[mesIdx]++;
-
-        const anio=obtenerAnioFalla(f);
-        if(anio!==null) porAnio[anio]=(porAnio[anio]||0)+1;
-
-        const fechaIni=parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA));
-        if(fechaIni && (!fechaMasReciente || fechaIni>fechaMasReciente)) fechaMasReciente=fechaIni;
-
-        const duracion=calcularDuracionHoras(f);
-        if(duracion!==null){ sumaDuracion+=duracion; cuentaDuracion++; }
-    });
-
-    const duracionPromedio = cuentaDuracion>0 ? (sumaDuracion/cuentaDuracion) : null;
-    const duracionTexto = duracionPromedio!==null
-        ? (duracionPromedio>=24 ? `${(duracionPromedio/24).toFixed(1)} d` : `${duracionPromedio.toFixed(1)} h`)
-        : '—';
-
-    const tiposOrdenados=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
-    const aniosOrdenados=Object.keys(porAnio).map(Number).sort((a,b)=>a-b);
-    const tipoMasFrecuente=tiposOrdenados.length ? tiposOrdenados[0][0] : '-';
-    const anioConMasFallas=aniosOrdenados.length
-        ? aniosOrdenados.reduce((a,b)=> porAnio[a]>=porAnio[b] ? a : b)
-        : '-';
-
-    // Tabla de últimos registros
-    const recientes=fallas
-        .map(f=>({
-            tipo: obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar',
-            zona: obtenerCampo(f, CAMPOS_ZONA_FALLA) || '—',
-            fecha: parsearFechaFalla(obtenerCampo(f, CAMPOS_FECHA_INICIO_FALLA))
-        }))
-        .sort((a,b)=>{
-            if(!a.fecha && !b.fecha) return 0;
-            if(!a.fecha) return 1;
-            if(!b.fecha) return -1;
-            return b.fecha-a.fecha;
-        })
-        .slice(0,15);
-
-    const filasTabla=recientes.map(r=>`
-        <tr>
-            <td>${r.fecha ? r.fecha.toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'}) : '—'}</td>
-            <td>${r.tipo}</td>
-            <td>${r.zona}</td>
-        </tr>
-    `).join('');
-
-    body.innerHTML = filtrosHTML + `
-        <div class="rx-stats">
-            <div class="rx-stat-card"><div class="num">${fallas.length}</div><div class="lbl">Total Fallas</div></div>
-            <div class="rx-stat-card"><div class="num" style="font-size:15px;">${tipoMasFrecuente}</div><div class="lbl">Tipo más frecuente</div></div>
-            <div class="rx-stat-card"><div class="num">${anioConMasFallas}</div><div class="lbl">Año con más fallas</div></div>
-            <div class="rx-stat-card"><div class="num" style="font-size:15px;">${duracionTexto}</div><div class="lbl">Duración promedio</div></div>
-        </div>
-
+    const chartsHTML = `
         <div class="rx-charts">
             <div class="rx-chart-card full">
                 <h4><i class="fas fa-chart-bar"></i> Fallas por Tipo</h4>
                 <div class="rx-canvas-wrap"><canvas id="rxChartTipo"></canvas></div>
             </div>
             <div class="rx-chart-card">
-                <h4><i class="fas fa-calendar-alt"></i> Fallas por Mes (todos los años)</h4>
+                <h4><i class="fas fa-calendar-alt"></i> Fallas por Mes</h4>
                 <div class="rx-canvas-wrap"><canvas id="rxChartMes"></canvas></div>
             </div>
             <div class="rx-chart-card">
@@ -1078,9 +1261,11 @@ function renderRadiografia(sitio, fallas){
                 <div class="rx-canvas-wrap"><canvas id="rxChartAnio"></canvas></div>
             </div>
         </div>
+    `;
 
+    const tableHTML = `
         <div class="rx-table-card">
-            <h4><i class="fas fa-list"></i> Últimos registros (máx. 15) · último: ${fechaMasReciente ? fechaMasReciente.toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'}) : '—'}</h4>
+            <h4><i class="fas fa-list"></i> Últimos registros (máx. 15) · último: ${fechaMasReciente ? fechaMasReciente.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</h4>
             <table class="rx-table">
                 <thead><tr><th>Inicio Afectación</th><th>Tipo de Falla</th><th>Zona</th></tr></thead>
                 <tbody>${filasTabla}</tbody>
@@ -1088,100 +1273,426 @@ function renderRadiografia(sitio, fallas){
         </div>
     `;
 
-    // Destruir gráficos anteriores
+    document.getElementById('rxFallasStats').innerHTML = statsHTML;
+    document.getElementById('rxFallasCharts').innerHTML = chartsHTML;
+    document.getElementById('rxFallasTable').innerHTML = tableHTML;
+
     [chartTipo, chartMes, chartAnio].forEach(c => { if (c) c.destroy(); });
     chartTipo = chartMes = chartAnio = null;
+    if (typeof Chart === 'undefined') return;
 
-    if (typeof Chart === 'undefined') {
-        body.innerHTML += `<div class="rx-error">⚠️ No se pudo cargar la librería de gráficos.</div>`;
-        return;
-    }
-
-    const paleta=['#0ea5c9','#f59e0b','#dc2626','#16a34a','#8b5cf6','#ec4899','#0d8fb0','#84cc16','#f97316','#6366f1'];
+    const paleta = ['#0ea5c9', '#f59e0b', '#dc2626', '#16a34a', '#8b5cf6', '#ec4899', '#0d8fb0', '#84cc16', '#f97316', '#6366f1'];
 
     chartTipo = new Chart(document.getElementById('rxChartTipo'), {
-        type:'bar',
-        data:{
-            labels: tiposOrdenados.map(t=>t[0]),
-            datasets:[{ label:'Fallas', data: tiposOrdenados.map(t=>t[1]), backgroundColor: tiposOrdenados.map((_,i)=>paleta[i%paleta.length]) }]
+        type: 'bar',
+        data: {
+            labels: tiposOrd.map(t => t[0]),
+            datasets: [{ label: 'Fallas', data: tiposOrd.map(t => t[1]), backgroundColor: tiposOrd.map((_, i) => paleta[i % paleta.length]) }]
         },
-        options:{
-            indexAxis:'y',
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ display:false } },
-            scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } }
-        }
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 
     chartMes = new Chart(document.getElementById('rxChartMes'), {
-        type:'bar',
-        data:{
-            labels: MESES_CORTOS,
-            datasets:[{ label:'Fallas', data: porMes, backgroundColor:'#0ea5c9' }]
-        },
-        options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ display:false } },
-            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
-        }
+        type: 'bar',
+        data: { labels: MESES_CORTOS, datasets: [{ label: 'Fallas', data: porMes, backgroundColor: '#0ea5c9' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 
     chartAnio = new Chart(document.getElementById('rxChartAnio'), {
-        type:'bar',
-        data:{
-            labels: aniosOrdenados.map(String),
-            datasets:[{ label:'Fallas', data: aniosOrdenados.map(a=>porAnio[a]), backgroundColor:'#f59e0b' }]
-        },
-        options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ display:false } },
-            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
-        }
-    });
-
-    // Asignar eventos a los filtros (después de crearlos)
-    document.getElementById('rxFiltroAnio').addEventListener('change', aplicarFiltros);
-    document.getElementById('rxFiltroTipo').addEventListener('change', aplicarFiltros);
-    document.getElementById('rxLimpiarFiltros').addEventListener('click', ()=>{
-        document.getElementById('rxFiltroAnio').value = 'todos';
-        document.getElementById('rxFiltroTipo').value = 'todos';
-        aplicarFiltros();
+        type: 'bar',
+        data: { labels: aniosOrd.map(String), datasets: [{ label: 'Fallas', data: aniosOrd.map(a => porAnio[a]), backgroundColor: '#f59e0b' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 }
 
-// Evento del botón actualizar
-document.getElementById('rxRefreshBtn').addEventListener('click', ()=>{
-    document.getElementById('radiografiaBody').innerHTML=`<div class="rx-loading"><div class="spinner"></div>Actualizando datos de ${TABLE_FALLAS}…</div>`;
+// ============================================================
+// INFO DEL SITIO
+// ============================================================
+function renderInfoContent(sitio, sitiosInfo) {
+    if (!sitiosInfo || sitiosInfo.length === 0) {
+        return `<div class="rx-empty">⚠️ No se pudo cargar la tabla SITIOS. Intenta recargar.</div>`;
+    }
+    const sitioNorm = normalizarTexto(sitio);
+    let sitioData = null;
+
+    sitioData = sitiosInfo.find(f => normalizarTexto(f.NOMBRE || f.nombre || '') === sitioNorm);
+    if (!sitioData) {
+        sitioData = sitiosInfo.find(f => normalizarTexto(f.SITIO || f.Sitio || f.sitio || '') === sitioNorm);
+    }
+
+    if (!sitioData) {
+        return `
+            <div class="rx-empty">
+                ⚠️ No se encontró información del sitio en la tabla SITIOS.<br>
+                <small>Busqué por los campos <strong>NOMBRE</strong> y <strong>SITIO</strong> con el valor "${sitio}".</small>
+                <br><br>
+                <button onclick="recargarInfoSitio()" style="padding:6px 16px; background:var(--cyan); color:#fff; border:none; border-radius:8px; cursor:pointer;">
+                    <i class="fas fa-sync"></i> Recargar tabla SITIOS
+                </button>
+            </div>
+        `;
+    }
+
+    let camposHTML = '';
+    CAMPOS_INFO_SITIO.forEach(campo => {
+        const valor = sitioData[campo] !== undefined ? sitioData[campo] : '—';
+        camposHTML += `
+            <div class="rx-info-item">
+                <div class="label">${campo}</div>
+                <div class="value">${valor}</div>
+            </div>
+        `;
+    });
+
+    let imagenesHTML = '<h4 style="font-size:13px; color:var(--text-dim); margin:16px 0 10px;"><i class="fas fa-images"></i> Imágenes del Sitio</h4>';
+    imagenesHTML += '<div class="rx-imagenes-grid">';
+    CAMPOS_IMG.forEach(imgKey => {
+        const url = sitioData[imgKey];
+        if (url && typeof url === 'string' && url.startsWith('http')) {
+            imagenesHTML += `
+                <div class="rx-thumb" data-src="${url}">
+                    <img src="${url}" alt="${imgKey}" loading="lazy" onerror="this.style.display='none'">
+                    <div class="label">${imgKey}</div>
+                </div>
+            `;
+        }
+    });
+    imagenesHTML += '</div>';
+
+    return `
+        <div class="rx-info-grid">${camposHTML}</div>
+        ${imagenesHTML}
+        <div style="font-size:11px; color:var(--text-dim); margin-top:12px;">Mostrando datos de la tabla <strong>SITIOS</strong></div>
+    `;
+}
+
+function recargarInfoSitio() {
+    mostrarMensaje('🔄 Recargando tabla SITIOS...', 'exito');
+    datosSitiosInfo = null;
+    cargarDatosInfo().then(sitiosInfo => {
+        if (sitioRadiografiaActual) {
+            const infoCont = document.getElementById('tab-info');
+            if (infoCont) {
+                infoCont.innerHTML = renderInfoContent(sitioRadiografiaActual, sitiosInfo);
+            }
+        }
+    });
+}
+
+// ============================================================
+// VISITAS - CON MANEJO DE URLs file://
+// ============================================================
+function renderVisitasContent(visitas) {
+    if (!visitas || visitas.length === 0) {
+        return `<div class="rx-empty">⚠️ No se encontraron visitas para este sitio en la tabla ${TABLE_VISITAS}.</div>`;
+    }
+
+    // Ordenar de más reciente a más antigua por FECHA
+    const visitasOrdenadas = [...visitas].sort((a, b) => {
+        const fechaA = a.FECHA ? new Date(a.FECHA) : null;
+        const fechaB = b.FECHA ? new Date(b.FECHA) : null;
+        if (!fechaA && !fechaB) return 0;
+        if (!fechaA) return 1;
+        if (!fechaB) return -1;
+        return fechaB - fechaA;
+    });
+
+    // Extraer años únicos
+    const añosSet = new Set();
+    visitasOrdenadas.forEach(v => {
+        if (v.FECHA) {
+            const d = new Date(v.FECHA);
+            if (!isNaN(d.getTime())) añosSet.add(d.getFullYear());
+        }
+        if (v.AÑO) añosSet.add(parseInt(v.AÑO));
+    });
+    const años = Array.from(añosSet).sort((a, b) => b - a);
+
+    // Dashboard años
+    let dashboardHTML = '<div class="rx-year-dashboard">';
+    dashboardHTML += `<div class="rx-year-card active" data-year="todos">
+        <div class="num">${visitasOrdenadas.length}</div>
+        <div class="lbl">Todas</div>
+    </div>`;
+    años.forEach(año => {
+        const count = visitasOrdenadas.filter(v => {
+            if (v.FECHA) {
+                const d = new Date(v.FECHA);
+                if (!isNaN(d.getTime())) return d.getFullYear() === año;
+            }
+            return parseInt(v.AÑO) === año;
+        }).length;
+        dashboardHTML += `<div class="rx-year-card" data-year="${año}">
+            <div class="num">${count}</div>
+            <div class="lbl">${año}</div>
+        </div>`;
+    });
+    dashboardHTML += '</div>';
+
+    // Selector
+    let selectHTML = `
+        <div class="rx-filtros" style="margin-top:0;">
+            <label><i class="fas fa-calendar"></i> Filtrar por año:
+                <select id="rxFiltroAnioVisitas">
+                    <option value="todos">Todos</option>
+                    ${años.map(a => `<option value="${a}">${a}</option>`).join('')}
+                </select>
+            </label>
+            <button class="btn-limpiar" id="rxLimpiarFiltroVisitas"><i class="fas fa-undo"></i> Mostrar todos</button>
+        </div>
+    `;
+
+    // Tabla
+    const tablaHTML = `
+        <div id="rxVisitasTablaContainer">
+            ${generarTablaVisitas(visitasOrdenadas, 'todos')}
+        </div>
+        <div style="font-size:10px; color:var(--text-dim); margin-top:8px;">💡 Haz clic en las imágenes para ampliarlas, o en el icono 🔗 para abrir en nueva pestaña.</div>
+    `;
+
+    return dashboardHTML + selectHTML + tablaHTML;
+}
+
+function generarTablaVisitas(visitas, añoFiltro) {
+    let filtradas = visitas;
+    if (añoFiltro !== 'todos') {
+        filtradas = visitas.filter(v => {
+            if (v.FECHA) {
+                const d = new Date(v.FECHA);
+                if (!isNaN(d.getTime())) return d.getFullYear() === parseInt(añoFiltro);
+            }
+            return parseInt(v.AÑO) === parseInt(añoFiltro);
+        });
+    }
+
+    if (filtradas.length === 0) {
+        return `<div class="rx-empty" style="margin:10px 0;">⚠️ No hay visitas para el año seleccionado.</div>`;
+    }
+
+    const camposVisita = [
+        'FOLIO.ENTRADA', 'PERSONAL', 'ZONA', 'ID', 'SITIO', 'EQUIPO.NO.TELCEL',
+        'EQUIPO EN TORRE', 'EQUIPO EN PISO', 'FECHA', 'FOTOS', 'OPERADORES', 'OTRO',
+        'IMAGEN1', 'IMAGEN2', 'IMAGEN3', 'IMAGEN4', 'FOTO_MEDIDOR', 'NUM.MEDIDOR',
+        'REPORTE.TELESITES', 'LIMPIEZA', 'PREDIO', 'TORRE', 'NOTAS.OYM',
+        'FOTO.LIMPIEZA', 'FOTO.PREDIO', 'FOTO.TORRE', 'SEMANA', 'AÑO'
+    ];
+
+    // Solo estos campos contienen imágenes/archivos de AppSheet.
+    // El resto son texto normal y NUNCA deben tratarse como ruta de imagen.
+    const CAMPOS_IMAGEN_VISITA = new Set([
+        'IMAGEN1', 'IMAGEN2', 'IMAGEN3', 'IMAGEN4', 'FOTO_MEDIDOR',
+        'FOTO.LIMPIEZA', 'FOTO.PREDIO', 'FOTO.TORRE'
+    ]);
+
+    let tablaHTML = `
+        <div class="rx-visitas-tabla-wrap">
+            <table class="rx-visitas-tabla" id="visitasTabla">
+                <thead><tr>${camposVisita.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+                <tbody>
+    `;
+
+    filtradas.forEach((v, idx) => {
+        tablaHTML += '<tr>';
+        camposVisita.forEach(campo => {
+            let valor = v[campo] !== undefined ? v[campo] : '—';
+            const esCampoImagen = CAMPOS_IMAGEN_VISITA.has(campo);
+            let url = null;
+            if (esCampoImagen) {
+                // Prioridad 1: columna virtual "<CAMPO>_URL" creada en AppSheet
+                // (ya viene firmada correctamente por el servidor de AppSheet)
+                const valorUrlVirtual = v[campo + '_URL'];
+                if (typeof valorUrlVirtual === 'string' && (valorUrlVirtual.startsWith('http://') || valorUrlVirtual.startsWith('https://'))) {
+                    url = valorUrlVirtual;
+                } else {
+                    // Prioridad 2: intento directo (solo funciona si "Require Image
+                    // and File URL Signing" está desactivado en AppSheet)
+                    url = extraerUrlImagen(valor, TABLE_VISITAS);
+                }
+            }
+            if (url) {
+                // Es una URL válida (http/https) o ruta reconstruida de AppSheet
+                const cellId = `img-${idx}-${campo}`;
+                tablaHTML += `<td id="${cellId}">
+                    <div class="img-loading" style="width:50px;height:50px;"></div>
+                </td>`;
+                window._imagenesPendientes = window._imagenesPendientes || [];
+                window._imagenesPendientes.push({ cellId, url });
+            } else if (esCampoImagen && typeof valor === 'string' && valor.startsWith('file://')) {
+                // Ruta local no accesible
+                tablaHTML += `<td>
+                    <span class="img-placeholder" title="Imagen no disponible (ruta local)">📁</span>
+                    <span style="font-size:9px; color:#999;">local</span>
+                </td>`;
+            } else if (esCampoImagen && (valor === '—' || valor === '' || valor === null)) {
+                // Campo de imagen sin valor: mostrar guion simple, no error
+                tablaHTML += `<td style="color:#ccc;">—</td>`;
+            } else {
+                tablaHTML += `<td>${valor}</td>`;
+            }
+        });
+        tablaHTML += '</tr>';
+    });
+
+    tablaHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    return tablaHTML;
+}
+
+// Función para cargar imágenes pendientes
+async function cargarImagenesVisitas() {
+    const pendientes = window._imagenesPendientes || [];
+    if (pendientes.length === 0) return;
+
+    for (let item of pendientes) {
+        const cell = document.getElementById(item.cellId);
+        if (!cell) continue;
+        const base64 = await descargarImagen(item.url);
+        if (base64) {
+            cell.innerHTML = `
+                <img src="${base64}" class="thumb-mini" data-src="${base64}" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #eee;">
+            `;
+        } else {
+            cell.innerHTML = `
+                <span class="img-placeholder">❌ Error</span>
+            `;
+        }
+    }
+    window._imagenesPendientes = [];
+}
+
+function aplicarFiltroVisitas(año) {
+    const container = document.getElementById('rxVisitasTablaContainer');
+    if (!container) return;
+
+    document.querySelectorAll('.rx-year-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.year === año);
+    });
+    const select = document.getElementById('rxFiltroAnioVisitas');
+    if (select) select.value = año;
+
+    const visitas = window.__visitasSitio || [];
+    const visitasOrdenadas = [...visitas].sort((a, b) => {
+        const fechaA = a.FECHA ? new Date(a.FECHA) : null;
+        const fechaB = b.FECHA ? new Date(b.FECHA) : null;
+        if (!fechaA && !fechaB) return 0;
+        if (!fechaA) return 1;
+        if (!fechaB) return -1;
+        return fechaB - fechaA;
+    });
+    window._imagenesPendientes = [];
+    container.innerHTML = generarTablaVisitas(visitasOrdenadas, año);
+    cargarImagenesVisitas();
+}
+
+function initVisitasEvents() {
+    document.querySelectorAll('.rx-year-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const año = this.dataset.year;
+            aplicarFiltroVisitas(año);
+        });
+    });
+
+    const select = document.getElementById('rxFiltroAnioVisitas');
+    if (select) {
+        select.addEventListener('change', function() {
+            aplicarFiltroVisitas(this.value);
+        });
+    }
+
+    const limpiarBtn = document.getElementById('rxLimpiarFiltroVisitas');
+    if (limpiarBtn) {
+        limpiarBtn.addEventListener('click', function() {
+            aplicarFiltroVisitas('todos');
+        });
+    }
+}
+
+// ============================================================
+// LIGHTBOX
+// ============================================================
+function abrirLightbox(src) {
+    const lb = document.getElementById('rxLightbox');
+    const img = document.getElementById('rxLightboxImg');
+    img.src = src;
+    lb.classList.add('active');
+}
+function cerrarLightbox() {
+    document.getElementById('rxLightbox').classList.remove('active');
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarLightbox(); });
+
+document.addEventListener('click', function (e) {
+    const target = e.target.closest('.rx-thumb, .thumb-mini, .rx-info-imagen');
+    if (target && target.tagName === 'IMG') {
+        const src = target.dataset.src || target.src;
+        if (src && src !== '#' && src !== '') abrirLightbox(src);
+    }
+});
+
+// ============================================================
+// BOTONES DE RADIOGRAFÍA
+// ============================================================
+document.getElementById('rxRefreshBtn').addEventListener('click', () => {
+    document.getElementById('radiografiaBody').innerHTML = `<div class="rx-loading"><div class="spinner"></div>Actualizando datos…</div>`;
+    datosFallasCCR = null;
+    datosVisitas = null;
+    datosSitiosInfo = null;
     cargarYRenderizarRadiografia(true);
 });
 
-// Eventos generales
+document.getElementById('rxCloseBtn').addEventListener('click', cerrarRadiografia);
+document.getElementById('radiografiaModal').addEventListener('click', function (e) {
+    if (e.target === this) cerrarRadiografia();
+});
+
+function cerrarRadiografia() {
+    const modal = document.getElementById('radiografiaModal');
+    modal.classList.remove('active');
+    [chartTipo, chartMes, chartAnio].forEach(c => { if (c) { c.destroy(); c = null; } });
+    chartTipo = chartMes = chartAnio = null;
+    sitioRadiografiaActual = null;
+    fallasSitioCompleto = [];
+    fallasSitioFiltradas = [];
+    visitasSitioCompleto = [];
+    document.getElementById('radiografiaBody').innerHTML = '';
+}
+
+// ============================================================
+// EVENTOS GENERALES
+// ============================================================
 document.getElementById('expandMapBtn').addEventListener('click', expandirMapa);
 document.getElementById('stopUpdateBtn').addEventListener('click', toggleActualizacion);
 document.getElementById('layerSelect').addEventListener('change', cambiarCapa);
 document.getElementById('weatherBtn').addEventListener('click', toggleRadar);
-document.getElementById('tileOpacitySlider').addEventListener('input', (e)=>{
-    tileOpacity=parseInt(e.target.value)/100;
+document.getElementById('tileOpacitySlider').addEventListener('input', (e) => {
+    tileOpacity = parseInt(e.target.value) / 100;
     aplicarOpacidadTiles();
 });
-document.getElementById('aplicarIntervaloBtn').addEventListener('click', ()=>{
-    let seg=parseInt(document.getElementById('intervaloSegundos').value);
-    if(isNaN(seg) || seg<5) seg=5;
-    if(seg>300) seg=300;
-    document.getElementById('intervaloSegundos').value=seg;
-    if(actualizacionActiva){
-        reiniciarIntervalo(seg);
-    }else{
-        document.getElementById('intervaloActual').innerText=seg;
-        mostrarMensaje(`Intervalo guardado: ${seg} segundos (reanudar para aplicar)`, 'exito');
-    }
+document.getElementById('aplicarIntervaloBtn').addEventListener('click', () => {
+    let seg = parseInt(document.getElementById('intervaloSegundos').value);
+    if (isNaN(seg) || seg < 5) seg = 5;
+    if (seg > 300) seg = 300;
+    document.getElementById('intervaloSegundos').value = seg;
+    if (actualizacionActiva) reiniciarIntervalo(seg);
+    else { document.getElementById('intervaloActual').innerText = seg; mostrarMensaje(`Intervalo guardado: ${seg}s (reanudar para aplicar)`, 'exito'); }
 });
 
+// Sobrescribir para inicializar eventos de visitas
+const originalRender = renderRadiografiaCompleta;
+renderRadiografiaCompleta = function(sitio, fallas, visitas, sitiosInfo) {
+    originalRender(sitio, fallas, visitas, sitiosInfo);
+    setTimeout(() => {
+        initVisitasEvents();
+        cargarImagenesVisitas();
+    }, 150);
+};
+
+// Inicialización
 inicializarMapa();
-cargarDatos();
+cargarDatosPrincipales();
 reiniciarIntervalo(30);
 </script>
 </body>
