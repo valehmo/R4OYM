@@ -7,13 +7,12 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-<!-- Chart.js cargado de forma síncrona (bloqueante) para garantizar disponibilidad -->
+<!-- Chart.js cargado de forma síncrona -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* (mismo CSS que antes, sin cambios) */
 :root{
     --cyan:#0d8fb0;
     --cyan-bright:#0ea5c9;
@@ -143,11 +142,6 @@ body{
 .leaflet-container{background:transparent !important;}
 .leaflet-marker-icon{z-index:10 !important;}
 
-/* El mapa se mantiene siempre visible a opacidad completa.
-   Cuando el radar está activo, el usuario controla la mezcla con el slider.
-   IMPORTANTE: solo se atenúa el tile-pane (las teselas), nunca el contenedor
-   del mapa completo, porque el contenedor debe quedar transparente para
-   dejar ver el iframe de Windy que está debajo (z-index:1). */
 .map-wrapper{background:#eef2f6;}
 .map-wrapper.weather-on .leaflet-tile-pane{ opacity: var(--tile-opacity, 0.85); }
 .map-wrapper:not(.weather-on) .leaflet-tile-pane{ opacity:1; }
@@ -206,7 +200,6 @@ body{
     display:flex;align-items:center;justify-content:center;z-index:20001;
 }
 
-/* Popup de sitio: botón para abrir la radiografía */
 .popup-sitio .btn-radiografia{
     margin-top:8px;width:100%;background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));
     color:#fff;border:none;padding:7px 10px;border-radius:8px;font-weight:700;font-size:11px;
@@ -214,7 +207,6 @@ body{
 }
 .popup-sitio .btn-radiografia:hover{filter:brightness(1.08);}
 
-/* Modal de Radiografía de Sitio */
 .rx-modal{
     display:none;position:fixed;top:0;left:0;width:100%;height:100%;
     background:rgba(10,14,26,0.75);z-index:21000;
@@ -247,6 +239,26 @@ body{
 .rx-error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626;padding:16px;border-radius:10px;font-size:13px;}
 .rx-empty{background:#fffbeb;color:#92400e;border-left:4px solid var(--amber);padding:16px;border-radius:10px;font-size:13px;}
 
+/* Filtros en la radiografía */
+.rx-filtros{
+    background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:20px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+.rx-filtros label{
+    font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px;
+}
+.rx-filtros select{
+    padding:6px 10px;border-radius:8px;border:1px solid var(--border);
+    background:#fff;color:var(--text);font-size:12px;cursor:pointer;
+}
+.rx-filtros .btn-limpiar{
+    background:var(--panel-2);border:1px solid var(--border);padding:6px 14px;
+    border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-dim);
+    display:flex;align-items:center;gap:6px;
+}
+.rx-filtros .btn-limpiar:hover{background:#e2e6ed;}
+
 .rx-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
 .rx-stat-card{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
 .rx-stat-card .num{font-size:22px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace;}
@@ -268,6 +280,7 @@ body{
 @media (max-width:768px){
     .rx-stats{grid-template-columns:repeat(2,1fr);}
     .rx-charts{grid-template-columns:1fr;}
+    .rx-filtros{flex-direction:column;align-items:stretch;}
 }
 </style>
 </head>
@@ -366,15 +379,13 @@ body{
 <script>
 // ============================================
 // SITIOS R4 - MONITOR + RADAR METEOROLÓGICO
-// v2.1 - mapa claro sin agrupar, radar corregido
+// v2.1 - mapa claro sin agrupar, radar corregido, filtros en radiografía
 // ============================================
 const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
 const API_KEY_APPSHEET = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
 const TABLE_NAME = "SITIOS R4";
 
 // --- Tabla de fallas para la "Radiografía de Sitio" ---
-// Columnas reales de FALLAS_CCR: _RowNumber, SITIO, GSM ID, INI AFECTACION,
-// FIN AFECTACION, TIPO DE FALLA, ZONA, AÑO, MES, IDENTIDAD.CCR
 const TABLE_FALLAS = "FALLAS_CCR";
 const CAMPOS_SITIO_FALLA = ['SITIO','Sitio','sitio'];
 const CAMPOS_TIPO_FALLA = ['TIPO DE FALLA','Tipo de Falla','tipo de falla'];
@@ -384,7 +395,6 @@ const CAMPOS_ANIO_FALLA = ['AÑO','Año','año','ANIO','Anio'];
 const CAMPOS_MES_FALLA = ['MES','Mes','mes'];
 const CAMPOS_FECHA_INICIO_FALLA = ['INI AFECTACION','Ini Afectacion','INI AFECTACIÓN','ini afectacion'];
 const CAMPOS_FECHA_FIN_FALLA = ['FIN AFECTACION','Fin Afectacion','FIN AFECTACIÓN','fin afectacion'];
-// Solo se usa como respaldo si AÑO/MES vienen vacíos en algún registro.
 const FORMATO_FECHA_FALLAS = 'DMY';
 const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MESES_NOMBRES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -392,6 +402,7 @@ const MESES_NOMBRES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO',
 let datosFallasCCR = null;
 let sitioRadiografiaActual = null;
 let chartTipo=null, chartMes=null, chartAnio=null;
+let fallasSitioCompleto = [];
 
 let datosOriginales = [];
 let mapa, marcadores, mapExpandido = null, marcadoresExpandido = null;
@@ -402,7 +413,6 @@ let actualizacionActiva = true;
 let capaActual = "rain";
 let tileOpacity = 0.85;
 
-// Evita recargar el iframe de Windy en cada micro-movimiento del mapa
 let ultimoWindyParams = { lat: null, lon: null, zoom: null, capa: null };
 let radarDebounceTimer = null;
 const RADAR_DEBOUNCE_MS = 600;
@@ -631,9 +641,7 @@ function actualizarTituloYStats(){
 }
 
 // ============================================
-// MAPA - todos los sitios individuales, sin agrupar
-// Se usa canvas renderer + circleMarker (mucho más rápido que
-// iconos DOM individuales) para mantener fluidez con cientos de sitios.
+// MAPA
 // ============================================
 function inicializarMapa(){
     mapa=L.map('map', { preferCanvas:true }).setView(mapViewState.center, mapViewState.zoom);
@@ -685,8 +693,6 @@ function construirPopup(sitio, tecnologia, esOK, color){
     </div>`;
 }
 
-// Delegación de eventos: los popups de Leaflet se insertan/destruyen del DOM
-// dinámicamente, así que el listener se pone a nivel de documento.
 document.addEventListener('click', (e)=>{
     const btn=e.target.closest('.btn-radiografia');
     if(btn){ abrirRadiografia(btn.dataset.sitio); }
@@ -796,7 +802,7 @@ function reanudarActualizacion(){
 function toggleActualizacion(){ actualizacionActiva ? pausarActualizacion() : reanudarActualizacion(); }
 
 // ============================================
-// RADIOGRAFÍA DE SITIO — FALLAS_CCR
+// RADIOGRAFÍA DE SITIO — FALLAS_CCR (CON FILTROS)
 // ============================================
 function obtenerCampo(f, candidatos){
     for(let c of candidatos){
@@ -867,7 +873,6 @@ async function cargarFallasCCR(forzar){
 }
 
 async function abrirRadiografia(sitio){
-    // Chart.js ya está cargado de forma síncrona, pero por si acaso verificamos
     if (typeof Chart === 'undefined') {
         mostrarMensaje('⚠️ La librería de gráficos no está disponible. Intenta recargar la página.', 'error');
         return;
@@ -887,15 +892,39 @@ async function cargarYRenderizarRadiografia(forzar){
         const todas=await cargarFallasCCR(forzar);
         const sitioNorm=normalizarTexto(sitioRadiografiaActual);
         const fallasSitio=todas.filter(f => normalizarTexto(obtenerCampo(f, CAMPOS_SITIO_FALLA))===sitioNorm);
-        renderRadiografia(sitioRadiografiaActual, fallasSitio);
+        fallasSitioCompleto = fallasSitio;
+        // Renderizar directamente con todos los datos (sin filtros)
+        renderRadiografia(sitioRadiografiaActual, fallasSitioCompleto);
+        // Una vez que los filtros estén creados, asignamos eventos y ya están en 'todos'
+        // No es necesario llamar a aplicarFiltros aquí porque ya mostramos todos
     }catch(err){
         console.error(err);
         let mensaje = `❌ Error al leer la tabla ${TABLE_FALLAS}: ${err.message}`;
         if (err.message && err.message.includes('Chart is not defined')) {
-            mensaje = `❌ Error de carga de la librería de gráficos (Chart.js). Verifica tu conexión a internet y recarga la página.`;
+            mensaje = `❌ Error de carga de librería de gráficos. Verifica tu conexión.`;
         }
         document.getElementById('radiografiaBody').innerHTML = `<div class="rx-error">${mensaje}</div>`;
     }
+}
+
+function aplicarFiltros(){
+    const anioSel = document.getElementById('rxFiltroAnio').value;
+    const tipoSel = document.getElementById('rxFiltroTipo').value;
+
+    const fallasFiltradas = fallasSitioCompleto.filter(f => {
+        let ok = true;
+        if (anioSel !== 'todos') {
+            const anio = obtenerAnioFalla(f);
+            if (anio !== parseInt(anioSel)) ok = false;
+        }
+        if (tipoSel !== 'todos') {
+            const tipo = obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar';
+            if (tipo !== tipoSel) ok = false;
+        }
+        return ok;
+    });
+
+    renderRadiografia(sitioRadiografiaActual, fallasFiltradas);
 }
 
 function cerrarRadiografia(){
@@ -903,17 +932,72 @@ function cerrarRadiografia(){
     [chartTipo, chartMes, chartAnio].forEach(c=>{ if(c) c.destroy(); });
     chartTipo=chartMes=chartAnio=null;
     sitioRadiografiaActual=null;
+    fallasSitioCompleto = [];
 }
 
 function renderRadiografia(sitio, fallas){
     const body=document.getElementById('radiografiaBody');
 
-    if(fallas.length===0){
+    // Si no hay fallas, mostrar mensaje apropiado
+    if(fallas.length===0 && fallasSitioCompleto.length===0){
         body.innerHTML=`<div class="rx-empty">⚠️ No se encontraron registros en ${TABLE_FALLAS} para el sitio "${sitio}". Verifica que el nombre coincida con el campo de sitio en esa tabla.</div>`;
         return;
     }
 
-    // --- Agregaciones ---
+    if(fallas.length===0 && fallasSitioCompleto.length>0){
+        body.innerHTML = `
+            <div class="rx-filtros">
+                <label><i class="fas fa-calendar"></i> Año:
+                    <select id="rxFiltroAnio"><option value="todos">Todos</option></select>
+                </label>
+                <label><i class="fas fa-tag"></i> Tipo:
+                    <select id="rxFiltroTipo"><option value="todos">Todos</option></select>
+                </label>
+                <button class="btn-limpiar" id="rxLimpiarFiltros"><i class="fas fa-undo"></i> Limpiar</button>
+            </div>
+            <div class="rx-empty">⚠️ No hay fallas que coincidan con los filtros seleccionados.</div>
+        `;
+        // Llenar selectores con valores únicos de fallasSitioCompleto
+        const aniosUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerAnioFalla(f)).filter(a => a !== null))].sort((a,b)=>a-b);
+        const tiposUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar'))].sort();
+        const selAnio = document.getElementById('rxFiltroAnio');
+        const selTipo = document.getElementById('rxFiltroTipo');
+        aniosUnicos.forEach(a => selAnio.innerHTML += `<option value="${a}">${a}</option>`);
+        tiposUnicos.forEach(t => selTipo.innerHTML += `<option value="${t}">${t}</option>`);
+        // Eventos
+        selAnio.addEventListener('change', aplicarFiltros);
+        selTipo.addEventListener('change', aplicarFiltros);
+        document.getElementById('rxLimpiarFiltros').addEventListener('click', ()=>{
+            document.getElementById('rxFiltroAnio').value = 'todos';
+            document.getElementById('rxFiltroTipo').value = 'todos';
+            aplicarFiltros();
+        });
+        return;
+    }
+
+    // Construir filtros
+    const aniosUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerAnioFalla(f)).filter(a => a !== null))].sort((a,b)=>a-b);
+    const tiposUnicos = [...new Set(fallasSitioCompleto.map(f => obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar'))].sort();
+
+    let filtrosHTML = `
+        <div class="rx-filtros">
+            <label><i class="fas fa-calendar"></i> Año:
+                <select id="rxFiltroAnio">
+                    <option value="todos">Todos</option>
+                    ${aniosUnicos.map(a => `<option value="${a}">${a}</option>`).join('')}
+                </select>
+            </label>
+            <label><i class="fas fa-tag"></i> Tipo:
+                <select id="rxFiltroTipo">
+                    <option value="todos">Todos</option>
+                    ${tiposUnicos.map(t => `<option value="${t}">${t}</option>`).join('')}
+                </select>
+            </label>
+            <button class="btn-limpiar" id="rxLimpiarFiltros"><i class="fas fa-undo"></i> Limpiar</button>
+        </div>
+    `;
+
+    // --- Agregaciones sobre fallas (ya filtradas) ---
     const porTipo={};
     const porMes=new Array(12).fill(0);
     const porAnio={};
@@ -949,7 +1033,7 @@ function renderRadiografia(sitio, fallas){
         ? aniosOrdenados.reduce((a,b)=> porAnio[a]>=porAnio[b] ? a : b)
         : '-';
 
-    // --- Tabla de últimos registros ---
+    // Tabla de últimos registros
     const recientes=fallas
         .map(f=>({
             tipo: obtenerCampo(f, CAMPOS_TIPO_FALLA) || 'Sin clasificar',
@@ -972,7 +1056,7 @@ function renderRadiografia(sitio, fallas){
         </tr>
     `).join('');
 
-    body.innerHTML=`
+    body.innerHTML = filtrosHTML + `
         <div class="rx-stats">
             <div class="rx-stat-card"><div class="num">${fallas.length}</div><div class="lbl">Total Fallas</div></div>
             <div class="rx-stat-card"><div class="num" style="font-size:15px;">${tipoMasFrecuente}</div><div class="lbl">Tipo más frecuente</div></div>
@@ -1008,9 +1092,8 @@ function renderRadiografia(sitio, fallas){
     [chartTipo, chartMes, chartAnio].forEach(c => { if (c) c.destroy(); });
     chartTipo = chartMes = chartAnio = null;
 
-    // Verificar nuevamente (por si acaso)
     if (typeof Chart === 'undefined') {
-        body.innerHTML += `<div class="rx-error">⚠️ No se pudo cargar la librería de gráficos (Chart.js). Asegúrate de tener conexión a internet y recarga la página.</div>`;
+        body.innerHTML += `<div class="rx-error">⚠️ No se pudo cargar la librería de gráficos.</div>`;
         return;
     }
 
@@ -1058,14 +1141,24 @@ function renderRadiografia(sitio, fallas){
             scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
         }
     });
+
+    // Asignar eventos a los filtros (después de crearlos)
+    document.getElementById('rxFiltroAnio').addEventListener('change', aplicarFiltros);
+    document.getElementById('rxFiltroTipo').addEventListener('change', aplicarFiltros);
+    document.getElementById('rxLimpiarFiltros').addEventListener('click', ()=>{
+        document.getElementById('rxFiltroAnio').value = 'todos';
+        document.getElementById('rxFiltroTipo').value = 'todos';
+        aplicarFiltros();
+    });
 }
 
+// Evento del botón actualizar
 document.getElementById('rxRefreshBtn').addEventListener('click', ()=>{
     document.getElementById('radiografiaBody').innerHTML=`<div class="rx-loading"><div class="spinner"></div>Actualizando datos de ${TABLE_FALLAS}…</div>`;
     cargarYRenderizarRadiografia(true);
 });
 
-// Eventos
+// Eventos generales
 document.getElementById('expandMapBtn').addEventListener('click', expandirMapa);
 document.getElementById('stopUpdateBtn').addEventListener('click', toggleActualizacion);
 document.getElementById('layerSelect').addEventListener('change', cambiarCapa);
