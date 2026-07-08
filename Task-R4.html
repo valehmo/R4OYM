@@ -206,6 +206,22 @@ body{
 }
 .popup-sitio .btn-radiografia:hover{filter:brightness(1.08);}
 
+/* ===== TOOLTIP DE SITIO (hover en marcador del mapa) ===== */
+.leaflet-tooltip.tooltip-sitio{
+    background:linear-gradient(135deg,#0a0e1a,#151b2e);
+    color:var(--cyan-bright, #22d3ee);
+    border:1px solid var(--cyan, #06b6d4);
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:12px;
+    font-weight:700;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
+    letter-spacing:0.3px;
+}
+.leaflet-tooltip.tooltip-sitio::before{
+    border-top-color:var(--cyan, #06b6d4);
+}
+
 /* ===== MODAL DE RADIOGRAFÍA ===== */
 .rx-modal{
     display:none;position:fixed;top:0;left:0;width:100%;height:100%;
@@ -881,6 +897,7 @@ function agregarSitiosACapa(capa) {
         const sitio = obtenerSitio(f);
         const tec = obtenerTecnologia(f);
         L.circleMarker([lat, lon], { radius: ICON_SIZE / 2, weight: ICON_BORDER, color: '#ffffff', fillColor: color, fillOpacity: 1 })
+            .bindTooltip(sitio, { direction: 'top', offset: [0, -ICON_SIZE / 2], sticky: false, className: 'tooltip-sitio' })
             .bindPopup(construirPopup(sitio, tec, esOK, color))
             .addTo(capa);
     });
@@ -1479,14 +1496,24 @@ function generarTablaVisitas(visitas, añoFiltro) {
         camposVisita.forEach(campo => {
             let valor = v[campo] !== undefined ? v[campo] : '—';
             const esCampoImagen = CAMPOS_IMAGEN_VISITA.has(campo);
-            // Solo intentar extraer URL de imagen si el campo es realmente de imagen
-            const url = esCampoImagen ? extraerUrlImagen(valor, TABLE_VISITAS) : null;
+            let url = null;
+            if (esCampoImagen) {
+                // Prioridad 1: columna virtual "<CAMPO>_URL" creada en AppSheet
+                // (ya viene firmada correctamente por el servidor de AppSheet)
+                const valorUrlVirtual = v[campo + '_URL'];
+                if (typeof valorUrlVirtual === 'string' && (valorUrlVirtual.startsWith('http://') || valorUrlVirtual.startsWith('https://'))) {
+                    url = valorUrlVirtual;
+                } else {
+                    // Prioridad 2: intento directo (solo funciona si "Require Image
+                    // and File URL Signing" está desactivado en AppSheet)
+                    url = extraerUrlImagen(valor, TABLE_VISITAS);
+                }
+            }
             if (url) {
                 // Es una URL válida (http/https) o ruta reconstruida de AppSheet
                 const cellId = `img-${idx}-${campo}`;
                 tablaHTML += `<td id="${cellId}">
                     <div class="img-loading" style="width:50px;height:50px;"></div>
-                    <a href="${url}" target="_blank" class="img-link" title="Abrir imagen original"><i class="fas fa-external-link-alt"></i></a>
                 </td>`;
                 window._imagenesPendientes = window._imagenesPendientes || [];
                 window._imagenesPendientes.push({ cellId, url });
@@ -1526,12 +1553,10 @@ async function cargarImagenesVisitas() {
         if (base64) {
             cell.innerHTML = `
                 <img src="${base64}" class="thumb-mini" data-src="${base64}" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #eee;">
-                <a href="${item.url}" target="_blank" class="img-link" title="Abrir imagen original"><i class="fas fa-external-link-alt"></i></a>
             `;
         } else {
             cell.innerHTML = `
                 <span class="img-placeholder">❌ Error</span>
-                <a href="${item.url}" target="_blank" class="img-link" title="Abrir imagen original"><i class="fas fa-external-link-alt"></i></a>
             `;
         }
     }
