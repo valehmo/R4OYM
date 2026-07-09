@@ -124,6 +124,39 @@ body{
 }
 .mapa-container h3 i{color:var(--cyan);}
 .map-header-buttons{display:flex;align-items:center;gap:10px;margin-left:auto;}
+
+.mapa-filtros{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    margin-bottom:12px;padding:10px 12px;background:var(--panel-2);
+    border-radius:12px;border:1px solid var(--border);
+}
+.filtro-busqueda{position:relative;display:flex;align-items:center;flex:1;min-width:200px;}
+.filtro-busqueda i.fa-search{position:absolute;left:10px;color:var(--text-dim);font-size:12px;}
+.filtro-busqueda input{
+    width:100%;padding:8px 30px;border:1px solid var(--border);border-radius:20px;
+    font-size:12px;background:#fff;color:var(--text);
+}
+.filtro-busqueda input:focus{outline:none;border-color:var(--cyan);}
+.filtro-busqueda .limpiar-busqueda{
+    position:absolute;right:8px;background:none;border:none;color:var(--text-dim);
+    cursor:pointer;font-size:13px;padding:2px 4px;display:none;
+}
+.filtro-busqueda .limpiar-busqueda.visible{display:block;}
+.filtro-estado-grupo{display:flex;gap:6px;flex-wrap:wrap;}
+.filtro-estado-btn{
+    background:#fff;border:1px solid var(--border);color:var(--text-dim);
+    padding:7px 14px;border-radius:20px;font-size:11.5px;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;
+}
+.filtro-estado-btn:hover{border-color:var(--cyan);color:var(--text);}
+.filtro-estado-btn.active{color:#fff;border-color:transparent;}
+.filtro-estado-btn.active[data-estado="todos"]{background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));}
+.filtro-estado-btn.active[data-estado="ok"]{background:linear-gradient(135deg,#15803d,var(--green));}
+.filtro-estado-btn.active[data-estado="caido"]{background:linear-gradient(135deg,#c0392b,var(--red));}
+.filtro-estado-btn .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.filtro-estado-btn[data-estado="ok"] .dot{background:var(--green);}
+.filtro-estado-btn[data-estado="caido"] .dot{background:var(--red);}
+.filtro-estado-btn.active .dot{background:#fff;}
 .btn-expand-map{
     background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;border:none;
     padding:6px 14px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:700;
@@ -269,6 +302,33 @@ body{
 .rx-tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);background:transparent;}
 .rx-tab-content{display:none;}
 .rx-tab-content.active{display:block;}
+
+/* ===== MONITOREO DE TRÁFICO Y USUARIOS ===== */
+.mon-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.mon-ip-badge{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+.mon-ip-badge i{color:var(--cyan);}
+.mon-btn{background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.mon-btn:hover{filter:brightness(1.08);}
+.mon-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.mon-btn.secondary{background:var(--panel-2);color:var(--text);border:1px solid var(--border);}
+.mon-status-dot{width:9px;height:9px;border-radius:50%;background:#9ca3af;display:inline-block;}
+.mon-status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green);}
+.mon-status-dot.offline{background:var(--red);box-shadow:0 0 6px var(--red);}
+.mon-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.mon-card{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.mon-card .mon-label{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+.mon-card .mon-value{font-size:20px;font-weight:800;color:var(--text);}
+.mon-card.ok .mon-value{color:var(--green);}
+.mon-card.bad .mon-value{color:var(--red);}
+.mon-card .mon-sub{font-size:10.5px;color:var(--text-dim);margin-top:2px;}
+.mon-chart-wrap{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;}
+.mon-manual-ip{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+.mon-manual-ip input{padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;width:150px;}
+.mon-details{margin-top:10px;}
+.mon-details summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:8px;}
+.mon-details-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;font-size:11.5px;}
+.mon-details-grid div{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;}
+.mon-last-update{font-size:10.5px;color:var(--text-dim);margin-top:6px;}
 
 /* ===== FILTROS ===== */
 .rx-filtros{
@@ -472,6 +532,20 @@ body{
                 <button class="btn-expand-map" id="expandMapBtn"><i class="fas fa-expand"></i> Expandir</button>
             </div>
         </h3>
+
+        <div class="mapa-filtros">
+            <div class="filtro-busqueda">
+                <i class="fas fa-search"></i>
+                <input type="text" id="buscarSitioInput" placeholder="Buscar sitio…" list="listaSitiosR4" autocomplete="off">
+                <datalist id="listaSitiosR4"></datalist>
+                <button type="button" class="limpiar-busqueda" id="limpiarBusquedaBtn" title="Limpiar búsqueda"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="filtro-estado-grupo">
+                <button class="filtro-estado-btn active" data-estado="todos"><i class="fas fa-globe"></i> Todos</button>
+                <button class="filtro-estado-btn" data-estado="ok"><span class="dot"></span> OK</button>
+                <button class="filtro-estado-btn" data-estado="caido"><span class="dot"></span> Caídos</button>
+            </div>
+        </div>
         <div class="map-wrapper" id="mapWrapper">
             <iframe id="windyFrame" class="windy-iframe" src="about:blank" allow="geolocation"></iframe>
             <div id="map" class="leaflet-map"></div>
@@ -504,6 +578,22 @@ const TABLE_NAME_PRINCIPAL = "SITIOS R4";
 const TABLE_NAME_INFO = "SITIOS";
 const TABLE_FALLAS = "FALLAS_CCR";
 const TABLE_VISITAS = "VISITAS";
+
+// ============================================================
+// MONITOREO DE TRÁFICO Y USUARIOS CONECTADOS (servidor Python / VPN)
+// ============================================================
+const MONITOR_SERVER = 'http://10.96.180.102:3000';
+const MONITOR_PING_ENDPOINT = `${MONITOR_SERVER}/api/ping`;
+const MONITOR_USUARIOS_ENDPOINT = `${MONITOR_SERVER}/api/usuarios`;
+const MONITOR_IPCOUNTERS_ENDPOINT = `${MONITOR_SERVER}/api/ipcounters`;
+const MONITOR_GETSTAT_ENDPOINT = `${MONITOR_SERVER}/api/getstat`;
+const MONITOR_PROCESSING_ENDPOINT = `${MONITOR_SERVER}/api/processing`;
+const MONITOR_START_ENDPOINT = `${MONITOR_SERVER}/api/start_monitor`;
+const MONITOR_STOP_ENDPOINT = `${MONITOR_SERVER}/api/stop_monitor`;
+const MONITOR_TIMEOUT_MS = 4000;
+const MONITOR_REFRESH_MS = 60000;
+// Posibles nombres del campo IP en la tabla SITIOS (variantes de mayúsculas/formato)
+const CAMPOS_IP_LTE = ['IP_LTE_TELECOMM', 'IP LTE TELECOMM', 'IP_LTE_TELECOM', 'IP LTE TELECOM', 'IP_LTE'];
 
 // Campos de la tabla SITIOS (INFO)
 const CAMPOS_INFO_SITIO = [
@@ -544,6 +634,10 @@ let weatherActivo = false;
 let actualizacionActiva = true;
 let capaActual = "rain";
 let tileOpacity = 0.85;
+
+// Filtro de estado (todos/ok/caido) y búsqueda de sitio en el mapa
+let filtroEstadoMapa = 'todos';
+let filtroBusquedaMapa = '';
 
 let ultimoWindyParams = { lat: null, lon: null, zoom: null, capa: null };
 const RADAR_DEBOUNCE_MS = 600;
@@ -827,6 +921,14 @@ function actualizarTituloYStats() {
         <div class="stat-card"><div class="number" style="color:var(--red);">${caido}</div><div class="label">CAIDO</div></div>
         <div class="stat-card"><div class="number">${tec.size}</div><div class="label">Tecnologías</div></div>
     `;
+    actualizarListaSitiosDatalist();
+}
+
+function actualizarListaSitiosDatalist() {
+    const datalist = document.getElementById('listaSitiosR4');
+    if (!datalist) return;
+    const nombres = [...new Set(datosOriginales.map(f => obtenerSitio(f)).filter(n => n && n !== '-'))].sort();
+    datalist.innerHTML = nombres.map(n => `<option value="${escaparAtributo(n)}"></option>`).join('');
 }
 
 // ============================================================
@@ -881,9 +983,26 @@ document.addEventListener('click', (e) => {
     const btn = e.target.closest('.btn-radiografia');
     if (btn) abrirRadiografia(btn.dataset.sitio);
 });
+function sitioCoincideFiltros(f) {
+    // Filtro por estado (OK / CAIDO / todos)
+    if (filtroEstadoMapa !== 'todos') {
+        const estado = obtenerEstado(f).toUpperCase();
+        const esOK = estado === 'OK';
+        if (filtroEstadoMapa === 'ok' && !esOK) return false;
+        if (filtroEstadoMapa === 'caido' && esOK) return false;
+    }
+    // Filtro por texto de búsqueda (nombre del sitio)
+    if (filtroBusquedaMapa) {
+        const nombreNorm = normalizarTexto(obtenerSitio(f));
+        if (!nombreNorm.includes(filtroBusquedaMapa)) return false;
+    }
+    return true;
+}
+
 function agregarSitiosACapa(capa) {
     const coords = [];
     datosOriginales.forEach(f => {
+        if (!sitioCoincideFiltros(f)) return;
         const lat = obtenerLatitud(f);
         const lon = obtenerLongitud(f);
         if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
@@ -910,9 +1029,10 @@ function actualizarMapa() {
     const ok = coords.filter(s => obtenerEstado(s.f).toUpperCase() === 'OK').length;
     const ca = coords.length - ok;
 
-    let info = `📍 ${coords.length} sitios con coordenadas | 🟢 ${ok} | 🔴 ${ca}`;
+    const hayFiltroActivo = filtroEstadoMapa !== 'todos' || filtroBusquedaMapa !== '';
+    let info = `📍 ${coords.length}${hayFiltroActivo ? ` de ${datosOriginales.length}` : ''} sitios con coordenadas | 🟢 ${ok} | 🔴 ${ca}`;
     if (coords.length === 0) {
-        info += ' ⚠️ Sin coordenadas válidas. Verifica los campos LATITUD/LONGITUD en la tabla SITIOS R4.';
+        info += hayFiltroActivo ? ' ⚠️ Ningún sitio coincide con el filtro/búsqueda.' : ' ⚠️ Sin coordenadas válidas. Verifica los campos LATITUD/LONGITUD en la tabla SITIOS R4.';
     }
     document.getElementById('mapaInfo').innerHTML = info;
     document.getElementById('renderInfo').textContent = `${datosOriginales.length} sitios totales, ${coords.length} con coordenadas`;
@@ -1116,10 +1236,12 @@ function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
             <button class="rx-tab-btn active" data-tab="tab-fallas">🔴 Fallas</button>
             <button class="rx-tab-btn" data-tab="tab-info">📋 Info del Sitio</button>
             <button class="rx-tab-btn" data-tab="tab-visitas">📅 Visitas (${visitas.length})</button>
+            <button class="rx-tab-btn" data-tab="tab-monitoreo">📶 Monitoreo</button>
         </div>
         <div id="tab-fallas" class="rx-tab-content active">${renderFallasContent(sitio, fallas)}</div>
         <div id="tab-info" class="rx-tab-content">${renderInfoContent(sitio, sitiosInfo)}</div>
         <div id="tab-visitas" class="rx-tab-content">${renderVisitasContent(visitas)}</div>
+        <div id="tab-monitoreo" class="rx-tab-content">${renderMonitoreoContent(sitio, sitiosInfo)}</div>
     `;
     body.innerHTML = html;
 
@@ -1135,12 +1257,22 @@ function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
                 // Cargar imágenes de la tabla
                 cargarImagenesVisitas();
             }
+            if (this.dataset.tab === 'tab-monitoreo' && monitoreoChart) {
+                // La pestaña estaba oculta (display:none): el canvas necesita
+                // recalcular su tamaño para dibujarse bien al volver a mostrarse.
+                monitoreoChart.resize();
+            }
         });
     });
 
     if (fallas.length > 0) {
         inicializarGraficosFallas(fallas);
     }
+
+    // El monitoreo arranca una sola vez al abrir la radiografía y sigue
+    // corriendo en segundo plano aunque el usuario cambie de pestaña,
+    // para no perder datos ni reiniciar la actualización automática.
+    iniciarMonitoreoTab();
 }
 
 // ============================================================
@@ -1541,6 +1673,370 @@ function generarTablaVisitas(visitas, añoFiltro) {
     return tablaHTML;
 }
 
+// ============================================================
+// MONITOREO DE TRÁFICO Y USUARIOS CONECTADOS
+// Conecta al servidor Python (VPN) usando el campo IP_LTE_TELECOMM
+// de la tabla SITIOS, siguiendo el mismo patrón de endpoints que
+// usa el dashboard BBVA (/api/ping, /api/usuarios, /api/ipcounters).
+// ============================================================
+let monitoreoInterval = null;
+let monitoreoChart = null;
+let monitoreoIpActual = null;
+let monitoreoHistorial = { labels: [], g4: [], g5: [] };
+
+function buscarIPSitio(sitioData) {
+    if (!sitioData) return null;
+    // Búsqueda directa por las variantes conocidas del nombre de campo
+    for (const campo of CAMPOS_IP_LTE) {
+        if (sitioData[campo] && String(sitioData[campo]).trim() !== '') {
+            return String(sitioData[campo]).trim();
+        }
+    }
+    // Búsqueda flexible por si el campo viene con otra capitalización
+    const claves = Object.keys(sitioData);
+    const claveEncontrada = claves.find(k => normalizarTexto(k).replace(/[\s_]/g, '') === 'iplteTelecomm'.replace(/[\s_]/g, ''));
+    if (claveEncontrada && sitioData[claveEncontrada]) {
+        return String(sitioData[claveEncontrada]).trim();
+    }
+    return null;
+}
+
+function renderMonitoreoContent(sitio, sitiosInfo) {
+    const sitioNorm = normalizarTexto(sitio);
+    let sitioData = null;
+    if (sitiosInfo && sitiosInfo.length > 0) {
+        sitioData = sitiosInfo.find(f => normalizarTexto(f.NOMBRE || f.nombre || '') === sitioNorm)
+            || sitiosInfo.find(f => normalizarTexto(f.SITIO || f.Sitio || f.sitio || '') === sitioNorm);
+    }
+    const ipDetectada = buscarIPSitio(sitioData);
+
+    return `
+        <div class="mon-toolbar">
+            <div class="mon-ip-badge" id="monIpBadge">
+                <i class="fas fa-network-wired"></i>
+                <span>IP_LTE_TELECOMM: ${ipDetectada ? ipDetectada : '<span style="color:var(--red);">No encontrada</span>'}</span>
+            </div>
+            <button class="mon-btn" id="monRefreshBtn"><i class="fas fa-sync"></i> Actualizar</button>
+            <button class="mon-btn secondary" id="monToggleAutoBtn"><i class="fas fa-pause"></i> Auto: ON</button>
+            <span id="monRefreshEstado" style="font-size:11px; color:var(--text-dim);"></span>
+        </div>
+
+        ${!ipDetectada ? `
+        <div class="rx-empty" style="margin-bottom:14px;">
+            ⚠️ No se encontró el campo <strong>IP_LTE_TELECOMM</strong> en la tabla SITIOS para este sitio.
+            Puedes capturar la IP manualmente para monitorear:
+            <div class="mon-manual-ip">
+                <input type="text" id="monManualIp" placeholder="Ej. 10.113.116.44">
+                <button class="mon-btn" id="monManualIpBtn"><i class="fas fa-play"></i> Conectar</button>
+            </div>
+        </div>` : ''}
+
+        <div class="mon-cards">
+            <div class="mon-card" id="monCardPing">
+                <div class="mon-label">Estado</div>
+                <div class="mon-value"><span class="mon-status-dot" id="monStatusDot"></span></div>
+                <div class="mon-sub" id="monLatencia">—</div>
+            </div>
+            <div class="mon-card" id="monCard4g">
+                <div class="mon-label">Usuarios 4G</div>
+                <div class="mon-value" id="monUsuarios4g">—</div>
+            </div>
+            <div class="mon-card" id="monCard5g">
+                <div class="mon-label">Usuarios 5G</div>
+                <div class="mon-value" id="monUsuarios5g">—</div>
+            </div>
+            <div class="mon-card" id="monCardDown">
+                <div class="mon-label">Tráfico Bajada</div>
+                <div class="mon-value" id="monBpsIn">—</div>
+                <div class="mon-sub">Mbps</div>
+            </div>
+            <div class="mon-card" id="monCardUp">
+                <div class="mon-label">Tráfico Subida</div>
+                <div class="mon-value" id="monBpsOut">—</div>
+                <div class="mon-sub">Mbps</div>
+            </div>
+        </div>
+
+        <div class="mon-chart-wrap">
+            <canvas id="monChartUsuarios" height="90"></canvas>
+        </div>
+
+        <details class="mon-details">
+            <summary><i class="fas fa-chevron-right"></i> Detalles avanzados (GetStat / Processing)</summary>
+            <div class="mon-details-grid" id="monDetallesGrid">
+                <div style="grid-column:1/-1; color:var(--text-dim);">Sin datos aún. Se cargan al actualizar.</div>
+            </div>
+        </details>
+
+        <div class="mon-last-update" id="monUltimaActualizacion">
+            Conectando a ${MONITOR_SERVER} (requiere VPN activa)…
+        </div>
+    `;
+}
+
+function iniciarMonitoreoTab() {
+    detenerMonitoreoTab();
+
+    const sitiosInfo = window.__sitiosInfo || [];
+    const sitioNorm = normalizarTexto(sitioRadiografiaActual);
+    const sitioData = sitiosInfo.find(f => normalizarTexto(f.NOMBRE || f.nombre || '') === sitioNorm)
+        || sitiosInfo.find(f => normalizarTexto(f.SITIO || f.Sitio || f.sitio || '') === sitioNorm);
+    const ip = buscarIPSitio(sitioData);
+
+    monitoreoHistorial = { labels: [], g4: [], g5: [] };
+    inicializarChartMonitoreo();
+
+    const btnRefresh = document.getElementById('monRefreshBtn');
+    const btnToggle = document.getElementById('monToggleAutoBtn');
+    const btnManual = document.getElementById('monManualIpBtn');
+
+    if (btnRefresh) btnRefresh.addEventListener('click', () => { if (monitoreoIpActual) actualizarMonitoreo(monitoreoIpActual); });
+    if (btnToggle) btnToggle.addEventListener('click', toggleAutoMonitoreo);
+    if (btnManual) {
+        btnManual.addEventListener('click', () => {
+            const val = (document.getElementById('monManualIp').value || '').trim();
+            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!ipPattern.test(val)) { mostrarMensaje('⚠️ IP inválida', 'error'); return; }
+            monitoreoIpActual = val;
+            document.getElementById('monIpBadge').innerHTML = `<i class="fas fa-network-wired"></i><span>IP manual: ${val}</span>`;
+            avisarInicioMonitoreoServidor(val);
+            actualizarMonitoreo(val);
+            monitoreoInterval = setInterval(() => actualizarMonitoreo(val), MONITOR_REFRESH_MS);
+        });
+    }
+
+    if (ip) {
+        monitoreoIpActual = ip;
+        avisarInicioMonitoreoServidor(ip);
+        actualizarMonitoreo(ip);
+        monitoreoInterval = setInterval(() => actualizarMonitoreo(ip), MONITOR_REFRESH_MS);
+    }
+}
+
+function detenerMonitoreoTab() {
+    if (monitoreoInterval) {
+        clearInterval(monitoreoInterval);
+        monitoreoInterval = null;
+    }
+}
+
+// Avisa al servidor Python que empiece a atender esta IP (limpia cualquier
+// bandera de "detenido" que hubiera quedado de una sesión anterior).
+function avisarInicioMonitoreoServidor(ip) {
+    if (!ip) return;
+    fetch(`${MONITOR_START_ENDPOINT}?ip=${encodeURIComponent(ip)}`).catch(() => {});
+}
+
+// Avisa al servidor Python que deje de monitorear esta IP (se llama al
+// cerrar la ventana de Radiografía / pestaña de Monitoreo). Usa sendBeacon
+// cuando está disponible porque es más confiable para avisos de "cierre".
+function avisarFinMonitoreoServidor(ip) {
+    if (!ip) return;
+    const url = `${MONITOR_STOP_ENDPOINT}?ip=${encodeURIComponent(ip)}`;
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+    } else {
+        fetch(url, { keepalive: true }).catch(() => {});
+    }
+}
+
+// Respaldo por si el usuario cierra o recarga la pestaña del navegador
+// completa mientras el monitoreo de un sitio sigue activo.
+window.addEventListener('beforeunload', () => {
+    if (monitoreoIpActual) avisarFinMonitoreoServidor(monitoreoIpActual);
+});
+
+function toggleAutoMonitoreo() {
+    const btn = document.getElementById('monToggleAutoBtn');
+    if (monitoreoInterval) {
+        clearInterval(monitoreoInterval);
+        monitoreoInterval = null;
+        if (btn) btn.innerHTML = '<i class="fas fa-play"></i> Auto: OFF';
+    } else if (monitoreoIpActual) {
+        actualizarMonitoreo(monitoreoIpActual);
+        monitoreoInterval = setInterval(() => actualizarMonitoreo(monitoreoIpActual), MONITOR_REFRESH_MS);
+        if (btn) btn.innerHTML = '<i class="fas fa-pause"></i> Auto: ON';
+    }
+}
+
+function inicializarChartMonitoreo() {
+    const canvas = document.getElementById('monChartUsuarios');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (monitoreoChart) { monitoreoChart.destroy(); monitoreoChart = null; }
+    monitoreoChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                { label: '4G', data: [], borderColor: '#0d8fb0', backgroundColor: 'rgba(13,143,176,0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 },
+                { label: '5G', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+            scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
+        }
+    });
+}
+
+async function fetchMonitorPing(ip) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MONITOR_TIMEOUT_MS);
+    try {
+        const res = await fetch(`${MONITOR_PING_ENDPOINT}?ip=${encodeURIComponent(ip)}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error('http-' + res.status);
+        const data = await res.json();
+        return { online: data.online === true, latency: data.latencia_ms ?? null, ok: true };
+    } catch (e) {
+        clearTimeout(timeoutId);
+        return { online: false, latency: null, ok: false, err: e.name || 'error' };
+    }
+}
+
+async function fetchMonitorUsuarios(ip) {
+    try {
+        const res = await fetch(`${MONITOR_USUARIOS_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        if (!res.ok) throw new Error('http-' + res.status);
+        const data = await res.json();
+        return { g4: data.usuarios_4g ?? 0, g5: data.usuarios_5g ?? 0, ok: true };
+    } catch (e) { return { g4: null, g5: null, ok: false, err: e.name || 'error' }; }
+}
+
+async function fetchMonitorIpCounters(ip) {
+    try {
+        const res = await fetch(`${MONITOR_IPCOUNTERS_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        if (!res.ok) throw new Error('http-' + res.status);
+        const data = await res.json();
+        return { ...data, ok: true };
+    } catch (e) { return { error: true, ok: false, err: e.name || 'error' }; }
+}
+
+async function fetchMonitorGetstat(ip) {
+    try {
+        const res = await fetch(`${MONITOR_GETSTAT_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        const data = await res.json();
+        return data;
+    } catch { return { error: true }; }
+}
+
+async function fetchMonitorProcessing(ip) {
+    try {
+        const res = await fetch(`${MONITOR_PROCESSING_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        const data = await res.json();
+        return data;
+    } catch { return { error: true }; }
+}
+
+async function actualizarMonitoreo(ip) {
+    const estadoEl = document.getElementById('monRefreshEstado');
+    if (estadoEl) estadoEl.textContent = 'Actualizando…';
+
+    const [ping, usuarios, ipc] = await Promise.all([
+        fetchMonitorPing(ip),
+        fetchMonitorUsuarios(ip),
+        fetchMonitorIpCounters(ip)
+    ]);
+
+    // Si TODAS las llamadas fallan a nivel de red (no de datos), casi seguro es CORS.
+    // El servidor Python puede estar respondiendo bien (se ve en su consola) pero el
+    // navegador bloquea la lectura de la respuesta por falta de encabezados CORS.
+    const todasFallaron = ping.ok === false && usuarios.ok === false && ipc.ok === false;
+    let corsBanner = document.getElementById('monCorsBanner');
+    if (todasFallaron) {
+        if (!corsBanner) {
+            corsBanner = document.createElement('div');
+            corsBanner.id = 'monCorsBanner';
+            corsBanner.className = 'rx-empty';
+            corsBanner.style.marginBottom = '14px';
+            corsBanner.style.borderLeft = '4px solid var(--red)';
+            corsBanner.innerHTML = `
+                ⚠️ <strong>El navegador no puede leer la respuesta del servidor</strong> aunque este sí procesó la petición
+                (por eso la ves en la consola de Python). Esto es un bloqueo de <strong>CORS</strong>.<br>
+                <small>Agrega en tu script Python, justo después de <code>app = Flask(__name__)</code>:</small>
+                <pre style="background:#1e2733; color:#7fe0f7; padding:8px 10px; border-radius:6px; font-size:11px; overflow-x:auto; margin-top:6px;">@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response</pre>
+                <small>Guarda, reinicia el servidor Python y vuelve a intentar.</small>
+            `;
+            const toolbar = document.querySelector('#tab-monitoreo .mon-toolbar');
+            if (toolbar) toolbar.insertAdjacentElement('afterend', corsBanner);
+        }
+    } else if (corsBanner) {
+        corsBanner.remove();
+    }
+
+    // Estado de conexión
+    const dot = document.getElementById('monStatusDot');
+    const lat = document.getElementById('monLatencia');
+    if (dot) dot.className = 'mon-status-dot ' + (ping.online ? 'online' : 'offline');
+    if (lat) lat.textContent = ping.online ? `${ping.latency ?? '—'} ms` : 'Sin respuesta';
+
+    // Usuarios
+    const el4g = document.getElementById('monUsuarios4g');
+    const el5g = document.getElementById('monUsuarios5g');
+    if (el4g) el4g.textContent = usuarios.g4 ?? '—';
+    if (el5g) el5g.textContent = usuarios.g5 ?? '—';
+
+    // Tráfico (bps -> Mbps)
+    const elIn = document.getElementById('monBpsIn');
+    const elOut = document.getElementById('monBpsOut');
+    if (!ipc.error && ipc.bps_in !== undefined) {
+        if (elIn) elIn.textContent = (ipc.bps_in / 1e6).toFixed(2);
+        if (elOut) elOut.textContent = (ipc.bps_out / 1e6).toFixed(2);
+    } else {
+        if (elIn) elIn.textContent = '—';
+        if (elOut) elOut.textContent = '—';
+    }
+
+    // Historial para la gráfica (sesión actual)
+    const horaLabel = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    monitoreoHistorial.labels.push(horaLabel);
+    monitoreoHistorial.g4.push(usuarios.g4 ?? 0);
+    monitoreoHistorial.g5.push(usuarios.g5 ?? 0);
+    if (monitoreoHistorial.labels.length > 20) {
+        monitoreoHistorial.labels.shift();
+        monitoreoHistorial.g4.shift();
+        monitoreoHistorial.g5.shift();
+    }
+    if (monitoreoChart) {
+        monitoreoChart.data.labels = monitoreoHistorial.labels;
+        monitoreoChart.data.datasets[0].data = monitoreoHistorial.g4;
+        monitoreoChart.data.datasets[1].data = monitoreoHistorial.g5;
+        monitoreoChart.update();
+    }
+
+    // Detalles avanzados (GetStat / Processing) — bajo demanda, no bloquean lo anterior
+    Promise.all([fetchMonitorGetstat(ip), fetchMonitorProcessing(ip)]).then(([getstat, processing]) => {
+        const grid = document.getElementById('monDetallesGrid');
+        if (!grid) return;
+        if (getstat.error && processing.error) {
+            grid.innerHTML = `<div style="grid-column:1/-1; color:var(--red);">No se pudieron obtener detalles avanzados (verifica VPN / servidor).</div>`;
+            return;
+        }
+        let itemsHTML = '';
+        if (getstat.actual) {
+            Object.entries(getstat.actual).forEach(([k, v]) => {
+                itemsHTML += `<div><strong>${k}:</strong> ${v ?? '—'}</div>`;
+            });
+        }
+        if (processing.actual) {
+            Object.entries(processing.actual).forEach(([k, v]) => {
+                itemsHTML += `<div><strong>${k}:</strong> ${v ?? '—'}</div>`;
+            });
+        }
+        grid.innerHTML = itemsHTML || `<div style="grid-column:1/-1; color:var(--text-dim);">Sin datos disponibles.</div>`;
+    });
+
+    if (estadoEl) estadoEl.textContent = '';
+    const ultima = document.getElementById('monUltimaActualizacion');
+    if (ultima) ultima.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — servidor ${MONITOR_SERVER}`;
+}
+
 // Función para cargar imágenes pendientes
 async function cargarImagenesVisitas() {
     const pendientes = window._imagenesPendientes || [];
@@ -1653,6 +2149,10 @@ function cerrarRadiografia() {
     modal.classList.remove('active');
     [chartTipo, chartMes, chartAnio].forEach(c => { if (c) { c.destroy(); c = null; } });
     chartTipo = chartMes = chartAnio = null;
+    detenerMonitoreoTab();
+    if (monitoreoIpActual) avisarFinMonitoreoServidor(monitoreoIpActual);
+    if (monitoreoChart) { monitoreoChart.destroy(); monitoreoChart = null; }
+    monitoreoIpActual = null;
     sitioRadiografiaActual = null;
     fallasSitioCompleto = [];
     fallasSitioFiltradas = [];
@@ -1679,6 +2179,68 @@ document.getElementById('aplicarIntervaloBtn').addEventListener('click', () => {
     if (actualizacionActiva) reiniciarIntervalo(seg);
     else { document.getElementById('intervaloActual').innerText = seg; mostrarMensaje(`Intervalo guardado: ${seg}s (reanudar para aplicar)`, 'exito'); }
 });
+
+// ---- Filtro por estado (Todos / OK / Caídos) ----
+document.querySelectorAll('.filtro-estado-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-estado-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        filtroEstadoMapa = this.dataset.estado;
+        actualizarMapa();
+        if (document.getElementById('mapModal').classList.contains('active')) actualizarMapaExpandido();
+    });
+});
+
+// ---- Búsqueda de sitio ----
+const buscarSitioInput = document.getElementById('buscarSitioInput');
+const limpiarBusquedaBtn = document.getElementById('limpiarBusquedaBtn');
+const aplicarBusquedaDebounced = debounce(() => {
+    filtroBusquedaMapa = normalizarTexto(buscarSitioInput.value.trim());
+    limpiarBusquedaBtn.classList.toggle('visible', filtroBusquedaMapa !== '');
+    actualizarMapa();
+    if (document.getElementById('mapModal').classList.contains('active')) actualizarMapaExpandido();
+}, 300);
+buscarSitioInput.addEventListener('input', aplicarBusquedaDebounced);
+buscarSitioInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        centrarEnSitioBuscado(buscarSitioInput.value.trim());
+    }
+});
+limpiarBusquedaBtn.addEventListener('click', () => {
+    buscarSitioInput.value = '';
+    filtroBusquedaMapa = '';
+    limpiarBusquedaBtn.classList.remove('visible');
+    actualizarMapa();
+    if (document.getElementById('mapModal').classList.contains('active')) actualizarMapaExpandido();
+    buscarSitioInput.focus();
+});
+
+// Centra el mapa y abre el popup del sitio buscado (coincidencia exacta o,
+// si no la hay, la primera coincidencia parcial con coordenadas válidas).
+function centrarEnSitioBuscado(texto) {
+    if (!texto || !mapa) return;
+    const textoNorm = normalizarTexto(texto);
+    let match = datosOriginales.find(f => normalizarTexto(obtenerSitio(f)) === textoNorm);
+    if (!match) match = datosOriginales.find(f => normalizarTexto(obtenerSitio(f)).includes(textoNorm));
+    if (!match) { mostrarMensaje(`⚠️ No se encontró el sitio "${texto}"`, 'warning'); return; }
+    const lat = obtenerLatitud(match), lon = obtenerLongitud(match);
+    if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
+        mostrarMensaje(`⚠️ "${obtenerSitio(match)}" no tiene coordenadas válidas`, 'warning');
+        return;
+    }
+    mapa.setView([lat, lon], 16);
+    mapViewState.center = mapa.getCenter();
+    mapViewState.zoom = mapa.getZoom();
+    mapViewState.initialized = true;
+    marcadores.eachLayer(layer => {
+        const ll = layer.getLatLng ? layer.getLatLng() : null;
+        if (ll && Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lon) < 0.0001) {
+            layer.openPopup();
+        }
+    });
+}
+
 
 // Sobrescribir para inicializar eventos de visitas
 const originalRender = renderRadiografiaCompleta;
