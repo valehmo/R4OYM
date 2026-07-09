@@ -330,6 +330,33 @@ body{
 .mon-details-grid div{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;}
 .mon-last-update{font-size:10.5px;color:var(--text-dim);margin-top:6px;}
 
+/* ===== DISPONIBILIDAD (SQL Server) ===== */
+.disp-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.disp-tec-grupo{display:flex;gap:6px;flex-wrap:wrap;}
+.disp-tec-btn{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:7px 16px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer;
+}
+.disp-tec-btn:hover{border-color:var(--cyan);color:var(--text);}
+.disp-tec-btn.active{background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;border-color:transparent;}
+.disp-chart-wrap{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;min-height:220px;}
+.disp-resumen-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px;}
+.disp-card{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.disp-card .disp-label{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+.disp-card .disp-value{font-size:20px;font-weight:800;color:var(--text);}
+.disp-card.ok .disp-value{color:var(--green);}
+.disp-card.warn .disp-value{color:var(--amber);}
+.disp-card.bad .disp-value{color:var(--red);}
+.disp-tabla-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:10px;}
+.disp-tabla{width:100%;border-collapse:collapse;font-size:11.5px;}
+.disp-tabla th{background:var(--panel-2);color:var(--text-dim);text-align:left;padding:8px 10px;position:sticky;top:0;font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;}
+.disp-tabla td{padding:7px 10px;border-top:1px solid var(--border);}
+.disp-tabla tr:hover td{background:var(--panel-2);}
+.disp-badge{padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;}
+.disp-badge.ok{background:#e8f8ef;color:var(--green);}
+.disp-badge.bad{background:#fdeceb;color:var(--red);}
+.disp-badge.warn{background:#fef6e6;color:#b45309;}
+
 /* ===== FILTROS ===== */
 .rx-filtros{
     background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:20px;
@@ -590,6 +617,8 @@ const MONITOR_GETSTAT_ENDPOINT = `${MONITOR_SERVER}/api/getstat`;
 const MONITOR_PROCESSING_ENDPOINT = `${MONITOR_SERVER}/api/processing`;
 const MONITOR_START_ENDPOINT = `${MONITOR_SERVER}/api/start_monitor`;
 const MONITOR_STOP_ENDPOINT = `${MONITOR_SERVER}/api/stop_monitor`;
+const DISPONIBILIDAD_ENDPOINT = `${MONITOR_SERVER}/api/disponibilidad`;
+const TECNOLOGIAS_DISPONIBILIDAD = ['2G', '3G', '4G', '5G'];
 const MONITOR_TIMEOUT_MS = 4000;
 const MONITOR_REFRESH_MS = 60000;
 // Posibles nombres del campo IP en la tabla SITIOS (variantes de mayúsculas/formato)
@@ -1237,11 +1266,13 @@ function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
             <button class="rx-tab-btn" data-tab="tab-info">📋 Info del Sitio</button>
             <button class="rx-tab-btn" data-tab="tab-visitas">📅 Visitas (${visitas.length})</button>
             <button class="rx-tab-btn" data-tab="tab-monitoreo">📶 Monitoreo</button>
+            <button class="rx-tab-btn" data-tab="tab-disponibilidad">📈 Disponibilidad</button>
         </div>
         <div id="tab-fallas" class="rx-tab-content active">${renderFallasContent(sitio, fallas)}</div>
         <div id="tab-info" class="rx-tab-content">${renderInfoContent(sitio, sitiosInfo)}</div>
         <div id="tab-visitas" class="rx-tab-content">${renderVisitasContent(visitas)}</div>
         <div id="tab-monitoreo" class="rx-tab-content">${renderMonitoreoContent(sitio, sitiosInfo)}</div>
+        <div id="tab-disponibilidad" class="rx-tab-content">${renderDisponibilidadContent(sitio)}</div>
     `;
     body.innerHTML = html;
 
@@ -1262,6 +1293,9 @@ function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
                 // recalcular su tamaño para dibujarse bien al volver a mostrarse.
                 monitoreoChart.resize();
             }
+            if (this.dataset.tab === 'tab-disponibilidad' && dispChart) {
+                dispChart.resize();
+            }
         });
     });
 
@@ -1273,6 +1307,9 @@ function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
     // corriendo en segundo plano aunque el usuario cambie de pestaña,
     // para no perder datos ni reiniciar la actualización automática.
     iniciarMonitoreoTab();
+
+    // Disponibilidad: carga la tecnología por defecto (4G) una sola vez al abrir.
+    iniciarDisponibilidadTab();
 }
 
 // ============================================================
@@ -2037,6 +2074,224 @@ def add_cors_headers(response):
     if (ultima) ultima.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — servidor ${MONITOR_SERVER}`;
 }
 
+// ============================================================
+// DISPONIBILIDAD (SQL Server - OYM_DB, tablas BDD_2G/3G/4G/5G)
+// ============================================================
+let dispChart = null;
+let dispTecnologiaActual = '4G';
+let dispCacheDatos = {}; // { '4G': {tabla, columna_fecha, datos}, ... } por sesión de radiografía
+
+function renderDisponibilidadContent(sitio) {
+    return `
+        <div class="disp-toolbar">
+            <div class="disp-tec-grupo" id="dispTecGrupo">
+                ${TECNOLOGIAS_DISPONIBILIDAD.map(t => `<button class="disp-tec-btn${t === dispTecnologiaActual ? ' active' : ''}" data-tec="${t}">${t}</button>`).join('')}
+            </div>
+            <button class="mon-btn" id="dispRefreshBtn"><i class="fas fa-sync"></i> Actualizar</button>
+            <span id="dispEstado" style="font-size:11px; color:var(--text-dim);">Conectando a SQL Server (requiere VPN/Intranet)…</span>
+        </div>
+
+        <div class="disp-resumen-cards" id="dispResumenCards"></div>
+
+        <div class="disp-chart-wrap">
+            <canvas id="dispChartCanvas" height="90"></canvas>
+        </div>
+
+        <div class="disp-tabla-wrap">
+            <table class="disp-tabla" id="dispTabla">
+                <thead><tr><th>Banda</th><th>Celda</th><th>Grupo OYM</th><th>Conectado a</th><th>Status</th><th>Disponibilidad</th></tr></thead>
+                <tbody><tr><td colspan="6" style="text-align:center; color:var(--text-dim); padding:16px;">Cargando…</td></tr></tbody>
+            </table>
+        </div>
+
+        <div class="mon-last-update" id="dispUltimaActualizacion"></div>
+    `;
+}
+
+function iniciarDisponibilidadTab() {
+    dispCacheDatos = {};
+    dispTecnologiaActual = '4G';
+
+    const btnRefresh = document.getElementById('dispRefreshBtn');
+    if (btnRefresh) btnRefresh.addEventListener('click', () => cargarDisponibilidad(dispTecnologiaActual, true));
+
+    document.querySelectorAll('#dispTecGrupo .disp-tec-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('#dispTecGrupo .disp-tec-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            dispTecnologiaActual = this.dataset.tec;
+            cargarDisponibilidad(dispTecnologiaActual, false);
+        });
+    });
+
+    cargarDisponibilidad(dispTecnologiaActual, false);
+}
+
+async function cargarDisponibilidad(tecnologia, forzar) {
+    const estadoEl = document.getElementById('dispEstado');
+    const ultimaEl = document.getElementById('dispUltimaActualizacion');
+
+    // Usa caché de la sesión salvo que se pida forzar (botón Actualizar)
+    if (!forzar && dispCacheDatos[tecnologia]) {
+        renderDatosDisponibilidad(tecnologia, dispCacheDatos[tecnologia]);
+        return;
+    }
+
+    if (estadoEl) estadoEl.textContent = `Consultando ${tecnologia} en SQL Server… (las tablas 3G/4G pueden tardar más)`;
+
+    try {
+        const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${encodeURIComponent(tecnologia)}&dias=30`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+            mostrarErrorDisponibilidad(data.error, data.detalle || data.solucion || '');
+            if (estadoEl) estadoEl.textContent = '';
+            return;
+        }
+
+        dispCacheDatos[tecnologia] = data;
+        renderDatosDisponibilidad(tecnologia, data);
+        if (estadoEl) estadoEl.textContent = '';
+        if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla || tecnologia} en ${MONITOR_SERVER}`;
+    } catch (e) {
+        mostrarErrorDisponibilidad('No se pudo contactar al servidor de monitoreo.', e.message || '');
+        if (estadoEl) estadoEl.textContent = '';
+    }
+}
+
+function mostrarErrorDisponibilidad(mensaje, detalle) {
+    const cards = document.getElementById('dispResumenCards');
+    const tabla = document.querySelector('#dispTabla tbody');
+    if (cards) cards.innerHTML = '';
+    if (dispChart) { dispChart.destroy(); dispChart = null; }
+    if (tabla) {
+        tabla.innerHTML = `<tr><td colspan="6">
+            <div class="rx-empty" style="border-left:4px solid var(--red);">
+                ⚠️ <strong>${mensaje}</strong>
+                ${detalle ? `<br><small style="color:var(--text-dim);">${detalle}</small>` : ''}
+                <br><small>Verifica que el servidor (${MONITOR_SERVER}) tenga VPN/Intranet activa hacia 10.96.17.11:1433 y que <code>pymssql</code> esté instalado.</small>
+            </div>
+        </td></tr>`;
+    }
+}
+
+function renderDatosDisponibilidad(tecnologia, data) {
+    const filas = data.datos || [];
+    const columnaFecha = data.columna_fecha;
+
+    // ---- Tarjetas resumen ----
+    const cards = document.getElementById('dispResumenCards');
+    if (cards) {
+        if (filas.length === 0) {
+            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1;">Sin registros de ${tecnologia} para este sitio en la tabla ${data.tabla || ''}.</div>`;
+        } else {
+            const valores = filas.map(f => parseFloat(f.DISPONIBILIDAD_NUM)).filter(v => !isNaN(v));
+            const promedio = valores.length ? (valores.reduce((a, b) => a + b, 0) / valores.length) : null;
+            const minimo = valores.length ? Math.min(...valores) : null;
+            const celdasUnicas = new Set(filas.map(f => f.CELDA)).size;
+            const claseProm = promedio === null ? '' : (promedio >= 99 ? 'ok' : (promedio >= 95 ? 'warn' : 'bad'));
+            cards.innerHTML = `
+                <div class="disp-card ${claseProm}">
+                    <div class="disp-label">Disp. Promedio</div>
+                    <div class="disp-value">${promedio !== null ? promedio.toFixed(2) + '%' : '—'}</div>
+                </div>
+                <div class="disp-card ${promedio !== null && minimo < 95 ? 'bad' : ''}">
+                    <div class="disp-label">Mínima registrada</div>
+                    <div class="disp-value">${minimo !== null ? minimo.toFixed(2) + '%' : '—'}</div>
+                </div>
+                <div class="disp-card">
+                    <div class="disp-label">Celdas</div>
+                    <div class="disp-value">${celdasUnicas}</div>
+                </div>
+                <div class="disp-card">
+                    <div class="disp-label">Registros</div>
+                    <div class="disp-value">${filas.length}</div>
+                </div>
+            `;
+        }
+    }
+
+    // ---- Gráfica ----
+    const canvas = document.getElementById('dispChartCanvas');
+    if (dispChart) { dispChart.destroy(); dispChart = null; }
+    if (canvas && typeof Chart !== 'undefined' && filas.length > 0) {
+        if (columnaFecha) {
+            // Serie de tiempo: promedio de disponibilidad por día (entre todas las celdas)
+            const porDia = {};
+            filas.forEach(f => {
+                const fecha = String(f[columnaFecha] || '').substring(0, 10);
+                const val = parseFloat(f.DISPONIBILIDAD_NUM);
+                if (!fecha || isNaN(val)) return;
+                if (!porDia[fecha]) porDia[fecha] = [];
+                porDia[fecha].push(val);
+            });
+            const fechas = Object.keys(porDia).sort();
+            const promedios = fechas.map(f => (porDia[f].reduce((a, b) => a + b, 0) / porDia[f].length));
+            dispChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: fechas,
+                    datasets: [{
+                        label: `Disponibilidad ${tecnologia} (%) — promedio diario`,
+                        data: promedios, borderColor: '#0d8fb0', backgroundColor: 'rgba(13,143,176,0.12)',
+                        borderWidth: 2, fill: true, tension: 0.25, pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    scales: { y: { suggestedMin: 90, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
+                }
+            });
+        } else {
+            // Sin columna de fecha: snapshot actual por celda (barras)
+            const celdas = filas.map(f => f.CELDA || f.NOMBRE || '—');
+            const valores = filas.map(f => parseFloat(f.DISPONIBILIDAD_NUM) || 0);
+            dispChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: celdas,
+                    datasets: [{
+                        label: `Disponibilidad ${tecnologia} (%) — foto actual por celda`,
+                        data: valores,
+                        backgroundColor: valores.map(v => v >= 99 ? '#16a34a' : (v >= 95 ? '#f59e0b' : '#dc2626'))
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { suggestedMin: 90, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 }, autoSkip: true, maxRotation: 45 } } }
+                }
+            });
+        }
+    }
+
+    // ---- Tabla de detalle (últimos registros, más recientes primero) ----
+    const tbody = document.querySelector('#dispTabla tbody');
+    if (tbody) {
+        if (filas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-dim); padding:16px;">Sin registros.</td></tr>`;
+        } else {
+            const filasOrdenadas = columnaFecha ? [...filas].reverse() : filas;
+            const filasMostrar = filasOrdenadas.slice(0, 100);
+            tbody.innerHTML = filasMostrar.map(f => {
+                const val = parseFloat(f.DISPONIBILIDAD_NUM);
+                const claseBadge = isNaN(val) ? '' : (val >= 99 ? 'ok' : (val >= 95 ? 'warn' : 'bad'));
+                const dispTexto = f.DISPONIBILIDAD_TXT || (isNaN(val) ? '—' : val.toFixed(2) + '%');
+                return `<tr>
+                    <td>${f.BANDA ?? '—'}</td>
+                    <td>${f.CELDA ?? '—'}</td>
+                    <td>${f.GRUPO_OYM ?? '—'}</td>
+                    <td>${f.CONECTADO_A ?? '—'}</td>
+                    <td>${f.STATUS ?? '—'}</td>
+                    <td><span class="disp-badge ${claseBadge}">${dispTexto}</span></td>
+                </tr>`;
+            }).join('');
+        }
+    }
+}
+
 // Función para cargar imágenes pendientes
 async function cargarImagenesVisitas() {
     const pendientes = window._imagenesPendientes || [];
@@ -2153,6 +2408,8 @@ function cerrarRadiografia() {
     if (monitoreoIpActual) avisarFinMonitoreoServidor(monitoreoIpActual);
     if (monitoreoChart) { monitoreoChart.destroy(); monitoreoChart = null; }
     monitoreoIpActual = null;
+    if (dispChart) { dispChart.destroy(); dispChart = null; }
+    dispCacheDatos = {};
     sitioRadiografiaActual = null;
     fallasSitioCompleto = [];
     fallasSitioFiltradas = [];
