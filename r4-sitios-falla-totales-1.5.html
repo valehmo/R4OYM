@@ -2641,16 +2641,15 @@ function renderComparativoTecnologias(porTec) {
 
 // ============================================================
 // AVL TREND — Dashboard principal de tendencia de disponibilidad
-// TOP 10 de sitios (por NOMBRE) con N días o más por debajo de un
-// umbral de disponibilidad ingresado manualmente, por tecnología y banda.
 // ============================================================
-let avlDatosCrudos = null;   // {tabla, columna_fecha, datos:[{NOMBRE,FECHA,PROMEDIO,MINIMO,NUM_CELDAS}]}
+let avlDatosCrudos = null;
 let avlTop10 = [];
 let avlTodosAfectados = [];
 let avlResumenGrupoOym = [];
 let avlChartBarras = null;
 let avlChartTrend = null;
-let avlChartGrupoOym = null; // Nueva gráfica de líneas por GRUPO_OYM
+let avlChartGrupoOym = null;
+let avlChartAfectadosGrupo = null; // <--- NUEVA GRÁFICA DE BARRAS
 let avlTecnologiaActual = '4G';
 let avlBandaActual = '';
 let avlFechaDesde = null;
@@ -2717,10 +2716,16 @@ function renderAvlTrendContent() {
                 </div>
             </div>
 
-            <!-- NUEVA GRÁFICA: Tendencia por GRUPO_OYM -->
-            <div class="avl-chart-box" style="grid-column:1/-1; margin-bottom:18px;">
-                <h4><i class="fas fa-layer-group"></i> Tendencia de disponibilidad por GRUPO_OYM <span style="font-size:11px; color:var(--text-dim); font-weight:400;">(promedio diario de todos los sitios del grupo)</span></h4>
-                <canvas id="avlChartGrupoOymCanvas" height="200"></canvas>
+            <!-- NUEVO BLOQUE: Gráfica de líneas por GRUPO_OYM + Gráfica de barras de sitios afectados -->
+            <div class="avl-grid-charts" style="margin-bottom:18px;">
+                <div class="avl-chart-box">
+                    <h4><i class="fas fa-chart-line"></i> Tendencia de disponibilidad por GRUPO_OYM <span style="font-size:11px; color:var(--text-dim); font-weight:400;">(promedio diario)</span></h4>
+                    <canvas id="avlChartGrupoOymCanvas" height="200"></canvas>
+                </div>
+                <div class="avl-chart-box">
+                    <h4><i class="fas fa-chart-bar"></i> Sitios afectados por GRUPO_OYM <span style="font-size:11px; color:var(--text-dim); font-weight:400;">(bajo el umbral)</span></h4>
+                    <canvas id="avlChartAfectadosGrupoCanvas" height="200"></canvas>
+                </div>
             </div>
 
             <div class="avl-tabla-wrap">
@@ -2801,7 +2806,7 @@ async function cargarBandasAvl(tecnologia) {
             });
         }
     } catch (e) {
-        // Silencioso: el filtro de banda queda en "Todas" si no se pudieron cargar
+        // Silencioso
     }
 }
 
@@ -2822,7 +2827,6 @@ async function ejecutarAnalisisAvl() {
     document.getElementById('avlIaBox').style.display = 'none';
 
     try {
-        // AGREGADO: filtro por status=OPERANDO
         const url = `${AVL_TREND_ENDPOINT}?tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}${avlBandaActual ? `&banda=${encodeURIComponent(avlBandaActual)}` : ''}&status=OPERANDO`;
         const res = await fetch(url);
         const data = await res.json();
@@ -2855,6 +2859,7 @@ function mostrarErrorAvl(mensaje, detalle) {
     if (avlChartBarras) { avlChartBarras.destroy(); avlChartBarras = null; }
     if (avlChartTrend) { avlChartTrend.destroy(); avlChartTrend = null; }
     if (avlChartGrupoOym) { avlChartGrupoOym.destroy(); avlChartGrupoOym = null; }
+    if (avlChartAfectadosGrupo) { avlChartAfectadosGrupo.destroy(); avlChartAfectadosGrupo = null; }
     avlTodosAfectados = [];
     avlTop10 = [];
     avlResumenGrupoOym = [];
@@ -2873,8 +2878,6 @@ function mostrarErrorAvl(mensaje, detalle) {
     if (tbodyGrupo) tbodyGrupo.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
 }
 
-// Recalcula el TOP 10 a partir de los datos crudos ya descargados, sin volver
-// a consultar SQL — así ajustar el umbral o los días mínimos es instantáneo.
 function recalcularTop10Avl() {
     if (!avlDatosCrudos) return;
     const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
@@ -2893,15 +2896,11 @@ function recalcularTop10Avl() {
         if (promedios.length === 0) return;
 
         const diasBajoUmbral = dias.filter(d => d.PROMEDIO !== null && d.PROMEDIO < umbral).length;
-
-        // Racha actual: días consecutivos por debajo del umbral contando hacia
-        // atrás desde el último día con datos dentro del rango consultado.
         let rachaActual = 0;
         for (let i = dias.length - 1; i >= 0; i--) {
             if (dias[i].PROMEDIO !== null && dias[i].PROMEDIO < umbral) rachaActual++;
             else break;
         }
-
         const promedioGeneral = promedios.reduce((a, b) => a + b, 0) / promedios.length;
         const minimoGeneral = Math.min(...dias.map(d => d.MINIMO).filter(v => v !== null && v !== undefined));
 
@@ -2927,10 +2926,6 @@ function recalcularTop10Avl() {
     renderResultadosAvl(umbral, diasMinimos, resultados.length);
 }
 
-// Agrupa los resultados ya calculados por NOMBRE en un rollup por GRUPO_OYM:
-// cuántos sitios de ese grupo tiene datos, cuántos están afectados (>= días
-// mínimos bajo el umbral), disponibilidad promedio del grupo y el peor sitio
-// dentro de cada grupo — útil para reportar a nivel de zona/grupo de trabajo.
 function calcularResumenPorGrupoOym(resultados, diasMinimos) {
     const porGrupo = {};
     resultados.forEach(s => {
@@ -3029,7 +3024,6 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
     const canvasGrupo = document.getElementById('avlChartGrupoOymCanvas');
     if (avlChartGrupoOym) { avlChartGrupoOym.destroy(); avlChartGrupoOym = null; }
     if (canvasGrupo && typeof Chart !== 'undefined' && avlDatosCrudos && avlDatosCrudos.datos && avlDatosCrudos.datos.length > 0) {
-        // Agrupar por GRUPO_OYM y FECHA, promediar PROMEDIO
         const grupos = {};
         const fechasSet = new Set();
         avlDatosCrudos.datos.forEach(d => {
@@ -3040,11 +3034,7 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
             grupos[grupo][fecha].push(d.PROMEDIO);
             fechasSet.add(fecha);
         });
-
-        // Ordenar fechas
         const fechas = Array.from(fechasSet).sort();
-
-        // Construir datasets
         const colores = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d', '#ec4899', '#14b8a6', '#8b5cf6', '#f97316', '#84cc16', '#06b6d4', '#ef4444'];
         const datasets = Object.keys(grupos).map((grupo, idx) => {
             const data = fechas.map(f => {
@@ -3063,37 +3053,77 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                 spanGaps: true
             };
         });
-
         avlChartGrupoOym = new Chart(canvasGrupo.getContext('2d'), {
             type: 'line',
-            data: {
-                labels: fechas,
-                datasets: datasets
-            },
+            data: { labels: fechas, datasets },
             options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            font: { size: 10 }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        suggestedMin: 85,
-                        suggestedMax: 100,
-                        ticks: { font: { size: 10 } }
-                    },
-                    x: {
-                        ticks: { font: { size: 9 } }
-                    }
-                }
+                responsive: true, maintainAspectRatio: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+                scales: { y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
             }
         });
+    }
+
+    // ---- NUEVA GRÁFICA DE BARRAS: Sitios afectados por GRUPO_OYM ----
+    const canvasAfectados = document.getElementById('avlChartAfectadosGrupoCanvas');
+    if (avlChartAfectadosGrupo) { avlChartAfectadosGrupo.destroy(); avlChartAfectadosGrupo = null; }
+    if (canvasAfectados && typeof Chart !== 'undefined') {
+        const gruposConAfectados = avlResumenGrupoOym.filter(g => g.sitios_afectados > 0);
+        if (gruposConAfectados.length > 0) {
+            // Calcular el mínimo de días afectado por grupo a partir de avlTodosAfectados
+            const minDiasPorGrupo = {};
+            avlTodosAfectados.forEach(s => {
+                const grupo = s.GRUPO_OYM || '(sin grupo)';
+                if (!minDiasPorGrupo[grupo] || s.dias_bajo_umbral < minDiasPorGrupo[grupo]) {
+                    minDiasPorGrupo[grupo] = s.dias_bajo_umbral;
+                }
+            });
+
+            const labels = gruposConAfectados.map(g => g.GRUPO_OYM);
+            const data = gruposConAfectados.map(g => g.sitios_afectados);
+            const minDias = gruposConAfectados.map(g => minDiasPorGrupo[g.GRUPO_OYM] || 0);
+
+            avlChartAfectadosGrupo = new Chart(canvasAfectados.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Sitios afectados',
+                        data: data,
+                        backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                        borderColor: '#dc2626',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return `Días mín. afectado: ${minDias[index]} días`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+                        x: { ticks: { font: { size: 9 }, maxRotation: 45, autoSkip: true } }
+                    }
+                }
+            });
+        } else {
+            // Mostrar mensaje de "sin datos" en el canvas
+            const ctx = canvasAfectados.getContext('2d');
+            ctx.clearRect(0, 0, canvasAfectados.width, canvasAfectados.height);
+            ctx.font = '12px Rajdhani, sans-serif';
+            ctx.fillStyle = '#6b7688';
+            ctx.textAlign = 'center';
+            ctx.fillText('No hay grupos con sitios afectados en este rango', canvasAfectados.width / 2, canvasAfectados.height / 2);
+        }
     }
 
     // ---- Tabla TOP 10 ----
@@ -3121,15 +3151,13 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                     mostrarTendenciaSitioAvl(tr.dataset.nombre);
                 });
             });
-
-            // Selecciona automáticamente el primero (peor sitio)
             mostrarTendenciaSitioAvl(avlTop10[0].NOMBRE);
             const primeraFila = tbody.querySelector('tr[data-nombre]');
             if (primeraFila) primeraFila.classList.add('selected');
         }
     }
 
-    // ---- Tabla completa de seguimiento (TODOS los sitios afectados) ----
+    // ---- Tabla completa de seguimiento ----
     const tbodyCompleta = document.querySelector('#avlTablaCompleta tbody');
     const conteoEl = document.getElementById('avlSeguimientoConteo');
     const btnExcel = document.getElementById('avlExportExcelBtn');
@@ -3326,24 +3354,25 @@ async function generarAnalisisIaAvl() {
     btn.innerHTML = `<i class="fas fa-robot"></i> Regenerar análisis con IA`;
 }
 
-// Función para cargar imágenes pendientes
-async function cargarImagenesVisitas() {
+// ============================================================
+// VISITAS - Eventos y carga de imágenes
+// ============================================================
+function cargarImagenesVisitas() {
     const pendientes = window._imagenesPendientes || [];
     if (pendientes.length === 0) return;
 
     for (let item of pendientes) {
         const cell = document.getElementById(item.cellId);
         if (!cell) continue;
-        const base64 = await descargarImagen(item.url);
-        if (base64) {
-            cell.innerHTML = `
-                <img src="${base64}" class="thumb-mini" data-src="${base64}" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #eee;">
-            `;
-        } else {
-            cell.innerHTML = `
-                <span class="img-placeholder">❌ Error</span>
-            `;
-        }
+        descargarImagen(item.url).then(base64 => {
+            if (base64) {
+                cell.innerHTML = `
+                    <img src="${base64}" class="thumb-mini" data-src="${base64}" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid #eee;">
+                `;
+            } else {
+                cell.innerHTML = `<span class="img-placeholder">❌ Error</span>`;
+            }
+        });
     }
     window._imagenesPendientes = [];
 }
@@ -3470,7 +3499,6 @@ document.querySelectorAll('.main-tab-btn').forEach(btn => {
                 iniciarAvlTrendTab();
             }
         } else if (mapa) {
-            // Al volver al mapa, Leaflet necesita recalcular tamaño si estuvo oculto
             setTimeout(() => mapa.invalidateSize(), 50);
         }
     });
@@ -3493,7 +3521,6 @@ document.getElementById('aplicarIntervaloBtn').addEventListener('click', () => {
     else { document.getElementById('intervaloActual').innerText = seg; mostrarMensaje(`Intervalo guardado: ${seg}s (reanudar para aplicar)`, 'exito'); }
 });
 
-// ---- Filtro por estado (Todos / OK / Caídos) ----
 document.querySelectorAll('.filtro-estado-btn').forEach(btn => {
     btn.addEventListener('click', function () {
         document.querySelectorAll('.filtro-estado-btn').forEach(b => b.classList.remove('active'));
@@ -3504,7 +3531,6 @@ document.querySelectorAll('.filtro-estado-btn').forEach(btn => {
     });
 });
 
-// ---- Búsqueda de sitio ----
 const buscarSitioInput = document.getElementById('buscarSitioInput');
 const limpiarBusquedaBtn = document.getElementById('limpiarBusquedaBtn');
 const aplicarBusquedaDebounced = debounce(() => {
@@ -3529,8 +3555,6 @@ limpiarBusquedaBtn.addEventListener('click', () => {
     buscarSitioInput.focus();
 });
 
-// Centra el mapa y abre el popup del sitio buscado (coincidencia exacta o,
-// si no la hay, la primera coincidencia parcial con coordenadas válidas).
 function centrarEnSitioBuscado(texto) {
     if (!texto || !mapa) return;
     const textoNorm = normalizarTexto(texto);
@@ -3554,8 +3578,6 @@ function centrarEnSitioBuscado(texto) {
     });
 }
 
-
-// Sobrescribir para inicializar eventos de visitas
 const originalRender = renderRadiografiaCompleta;
 renderRadiografiaCompleta = function(sitio, fallas, visitas, sitiosInfo) {
     originalRender(sitio, fallas, visitas, sitiosInfo);
@@ -3565,7 +3587,6 @@ renderRadiografiaCompleta = function(sitio, fallas, visitas, sitiosInfo) {
     }, 150);
 };
 
-// Inicialización
 inicializarMapa();
 cargarDatosPrincipales();
 reiniciarIntervalo(30);
