@@ -8,10 +8,11 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ===== ESTILOS (sin cambios relevantes) ===== */
+/* ===== ESTILOS (sin cambios) ===== */
 :root{
     --cyan:#0d8fb0;
     --cyan-bright:#0ea5c9;
@@ -56,6 +57,18 @@ body{
     padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;
 }
 .main-header p{font-size:12px;color:#b7c2d8;margin-top:6px;}
+
+/* ===== PESTAÑAS DE NIVEL PRINCIPAL (Mapa / AVL Trend) ===== */
+.main-tabs{display:flex;gap:6px;margin-bottom:16px;background:#1c2438;border-radius:12px;padding:6px;}
+.main-tab-btn{
+    flex:1;background:transparent;border:none;color:#8b97ae;padding:10px 16px;
+    border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;
+}
+.main-tab-btn:hover{color:#fff;background:rgba(255,255,255,0.06);}
+.main-tab-btn.active{background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;}
+.main-tab-content{display:none;}
+.main-tab-content.active{display:block;}
 
 .control-bar{
     background:var(--panel);border-radius:16px;padding:14px 18px;margin-bottom:16px;
@@ -357,6 +370,68 @@ body{
 .disp-badge.bad{background:#fdeceb;color:var(--red);}
 .disp-badge.warn{background:#fef6e6;color:#b45309;}
 
+.disp-fecha-grupo{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-dim);flex-wrap:wrap;}
+.disp-fecha-grupo label{display:flex;align-items:center;gap:5px;}
+.disp-fecha-grupo input[type=date]{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:11.5px;background:#fff;color:var(--text);}
+.disp-check{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-dim);cursor:pointer;user-select:none;}
+.disp-check input{cursor:pointer;}
+.disp-comparativo-btn{margin-left:auto;}
+.disp-comparativo-btn.active{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:transparent;}
+
+/* ===== AVL TREND (dashboard principal de tendencia de disponibilidad) ===== */
+.avl-panel{background:var(--panel);border-radius:16px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.06);}
+.avl-toolbar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.avl-field{display:flex;flex-direction:column;gap:4px;}
+.avl-field label{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
+.avl-field input,.avl-field select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;background:#fff;color:var(--text);min-width:110px;}
+.avl-field input[type=number]{width:90px;}
+.avl-tec-grupo{display:flex;gap:6px;}
+.avl-btn-analizar{background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.avl-btn-analizar:hover{filter:brightness(1.08);}
+.avl-btn-analizar:disabled{opacity:0.6;cursor:not-allowed;}
+.avl-estado{font-size:11.5px;color:var(--text-dim);}
+
+.avl-resumen-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+.avl-card{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.avl-card .avl-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;}
+.avl-card .avl-value{font-size:24px;font-weight:800;color:var(--text);}
+.avl-card.bad .avl-value{color:var(--red);}
+.avl-card.warn .avl-value{color:var(--amber);}
+.avl-card.ok .avl-value{color:var(--green);}
+
+.avl-grid-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+@media (max-width:900px){.avl-grid-charts{grid-template-columns:1fr;}}
+.avl-chart-box{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:260px;}
+.avl-chart-box h4{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
+.avl-tabla-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin-bottom:18px;}
+.avl-tabla{width:100%;border-collapse:collapse;font-size:12px;}
+.avl-tabla th{background:var(--panel-2);color:var(--text-dim);text-align:left;padding:10px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;}
+.avl-tabla td{padding:9px 12px;border-top:1px solid var(--border);}
+.avl-tabla tr{cursor:pointer;}
+#avlTablaCompleta tr,#avlTablaGrupoOym tr{cursor:default;}
+#avlTablaCompleta tr:hover td,#avlTablaGrupoOym tr:hover td{background:transparent;}
+.avl-tabla tr:hover td{background:var(--panel-2);}
+.avl-tabla tr.selected td{background:#e8f6fb;}
+.avl-rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--panel-2);font-weight:800;font-size:11px;color:var(--text-dim);}
+.avl-rank.top1{background:#fee2e2;color:var(--red);}
+.avl-rank.top3{background:#fef3c7;color:#b45309;}
+
+.avl-ia-box{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #ddd6fe;border-radius:12px;padding:16px;font-size:13px;line-height:1.6;color:#4c1d95;}
+.avl-ia-box .avl-ia-titulo{font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:8px;color:#6d28d9;}
+.avl-ia-box .avl-ia-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#ddd6fe;color:#6d28d9;margin-left:auto;}
+.avl-btn-ia{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.avl-btn-ia:hover{filter:brightness(1.08);}
+.avl-btn-ia:disabled{opacity:0.6;cursor:not-allowed;}
+
+.avl-seguimiento-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:22px 0 10px;}
+.avl-seguimiento-header h4{font-size:13.5px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.avl-seguimiento-header h4 i{color:var(--cyan);}
+#avlSeguimientoConteo{font-size:11px;font-weight:700;color:var(--text-dim);background:var(--panel-2);padding:2px 10px;border-radius:10px;}
+.avl-btn-excel{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.avl-btn-excel:hover{filter:brightness(1.08);}
+.avl-btn-excel:disabled{opacity:0.5;cursor:not-allowed;}
+
 /* ===== FILTROS ===== */
 .rx-filtros{
     background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:20px;
@@ -513,6 +588,13 @@ body{
         <p><i class="fas fa-cloud-sun"></i> Activa el radar para ver: Lluvia | Tormentas | Viento | Temperatura | Nubes | Satélite</p>
     </div>
 
+    <div class="main-tabs">
+        <button class="main-tab-btn active" data-maintab="mapa"><i class="fas fa-map-marked-alt"></i> Mapa</button>
+        <button class="main-tab-btn" data-maintab="avltrend"><i class="fas fa-chart-line"></i> AVL Trend</button>
+    </div>
+
+    <div id="mainTabMapa" class="main-tab-content active">
+
     <div class="control-bar">
         <div class="interval-control">
             <label><i class="fas fa-clock"></i> Intervalo:</label>
@@ -591,8 +673,15 @@ body{
         <div class="stat-card"><div class="number">-</div><div class="label">Tecnologías</div></div>
     </div>
 
+    </div>
+
+    <div id="mainTabAvlTrend" class="main-tab-content">
+        <div id="avlTrendContainer"></div>
+    </div>
+
     <div class="footer">Base: OYMR4 | Tabla principal: SITIOS R4 | Info: SITIOS | v2.8</div>
 </div>
+
 
 <script>
 // ============================================================
@@ -618,6 +707,9 @@ const MONITOR_PROCESSING_ENDPOINT = `${MONITOR_SERVER}/api/processing`;
 const MONITOR_START_ENDPOINT = `${MONITOR_SERVER}/api/start_monitor`;
 const MONITOR_STOP_ENDPOINT = `${MONITOR_SERVER}/api/stop_monitor`;
 const DISPONIBILIDAD_ENDPOINT = `${MONITOR_SERVER}/api/disponibilidad`;
+const DISPONIBILIDAD_BANDAS_ENDPOINT = `${MONITOR_SERVER}/api/disponibilidad_bandas`;
+const AVL_TREND_ENDPOINT = `${MONITOR_SERVER}/api/avl_trend`;
+const AVL_TREND_IA_ENDPOINT = `${MONITOR_SERVER}/api/avl_trend_ia`;
 const TECNOLOGIAS_DISPONIBILIDAD = ['2G', '3G', '4G', '5G'];
 const MONITOR_TIMEOUT_MS = 4000;
 const MONITOR_REFRESH_MS = 60000;
@@ -2079,14 +2171,44 @@ def add_cors_headers(response):
 // ============================================================
 let dispChart = null;
 let dispTecnologiaActual = '4G';
-let dispCacheDatos = {}; // { '4G': {tabla, columna_fecha, datos}, ... } por sesión de radiografía
+let dispModoComparativo = false;
+let dispPorBanda = false;
+let dispFechaDesde = null; // 'YYYY-MM-DD'
+let dispFechaHasta = null; // 'YYYY-MM-DD'
+let dispCacheDatos = {};       // clave: "TEC|desde|hasta" -> {tabla, columna_fecha, datos}
+let dispCacheComparativo = {}; // clave: "desde|hasta" -> { '2G':{...}, '3G':{...}, ... }
+const COLORES_TEC = { '2G': '#64748b', '3G': '#2563eb', '4G': '#0d8fb0', '5G': '#7c3aed' };
+
+function formatearFechaISO(d) { return d.toISOString().substring(0, 10); }
+function claveCacheDisponibilidad(tecnologia) { return `${tecnologia}|${dispFechaDesde}|${dispFechaHasta}`; }
 
 function renderDisponibilidadContent(sitio) {
+    if (!dispFechaHasta || !dispFechaDesde) {
+        const hoy = new Date();
+        const hace30 = new Date(hoy);
+        hace30.setDate(hoy.getDate() - 30);
+        dispFechaHasta = formatearFechaISO(hoy);
+        dispFechaDesde = formatearFechaISO(hace30);
+    }
+
     return `
         <div class="disp-toolbar">
             <div class="disp-tec-grupo" id="dispTecGrupo">
-                ${TECNOLOGIAS_DISPONIBILIDAD.map(t => `<button class="disp-tec-btn${t === dispTecnologiaActual ? ' active' : ''}" data-tec="${t}">${t}</button>`).join('')}
+                ${TECNOLOGIAS_DISPONIBILIDAD.map(t => `<button class="disp-tec-btn${(!dispModoComparativo && t === dispTecnologiaActual) ? ' active' : ''}" data-tec="${t}">${t}</button>`).join('')}
+                <button class="disp-tec-btn disp-comparativo-btn${dispModoComparativo ? ' active' : ''}" id="dispComparativoBtn">
+                    <i class="fas fa-layer-group"></i> Comparar 2G+3G+4G+5G
+                </button>
             </div>
+        </div>
+        <div class="disp-toolbar">
+            <div class="disp-fecha-grupo">
+                <label>Desde <input type="date" id="dispFechaDesdeInput" value="${dispFechaDesde}"></label>
+                <label>Hasta <input type="date" id="dispFechaHastaInput" value="${dispFechaHasta}"></label>
+                <button class="mon-btn secondary" id="dispAplicarFechaBtn"><i class="fas fa-filter"></i> Aplicar rango</button>
+            </div>
+            <label class="disp-check" id="dispPorBandaLabel" style="${dispModoComparativo ? 'display:none;' : ''}">
+                <input type="checkbox" id="dispPorBandaCheck" ${dispPorBanda ? 'checked' : ''}> Desglosar por banda (+ total)
+            </label>
             <button class="mon-btn" id="dispRefreshBtn"><i class="fas fa-sync"></i> Actualizar</button>
             <span id="dispEstado" style="font-size:11px; color:var(--text-dim);">Conectando a SQL Server (requiere VPN/Intranet)…</span>
         </div>
@@ -2108,39 +2230,86 @@ function renderDisponibilidadContent(sitio) {
     `;
 }
 
+function actualizarVisibilidadCheckBanda() {
+    const label = document.getElementById('dispPorBandaLabel');
+    if (label) label.style.display = dispModoComparativo ? 'none' : 'flex';
+}
+
 function iniciarDisponibilidadTab() {
     dispCacheDatos = {};
-    dispTecnologiaActual = '4G';
+    dispCacheComparativo = {};
 
     const btnRefresh = document.getElementById('dispRefreshBtn');
-    if (btnRefresh) btnRefresh.addEventListener('click', () => cargarDisponibilidad(dispTecnologiaActual, true));
+    if (btnRefresh) btnRefresh.addEventListener('click', () => {
+        if (dispModoComparativo) cargarComparativoTecnologias(true);
+        else cargarDisponibilidad(dispTecnologiaActual, true);
+    });
 
-    document.querySelectorAll('#dispTecGrupo .disp-tec-btn').forEach(btn => {
+    document.querySelectorAll('#dispTecGrupo .disp-tec-btn[data-tec]').forEach(btn => {
         btn.addEventListener('click', function () {
+            dispModoComparativo = false;
             document.querySelectorAll('#dispTecGrupo .disp-tec-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             dispTecnologiaActual = this.dataset.tec;
+            actualizarVisibilidadCheckBanda();
             cargarDisponibilidad(dispTecnologiaActual, false);
         });
     });
 
-    cargarDisponibilidad(dispTecnologiaActual, false);
+    const btnComparativo = document.getElementById('dispComparativoBtn');
+    if (btnComparativo) {
+        btnComparativo.addEventListener('click', () => {
+            dispModoComparativo = true;
+            document.querySelectorAll('#dispTecGrupo .disp-tec-btn').forEach(b => b.classList.remove('active'));
+            btnComparativo.classList.add('active');
+            actualizarVisibilidadCheckBanda();
+            cargarComparativoTecnologias(false);
+        });
+    }
+
+    const checkBanda = document.getElementById('dispPorBandaCheck');
+    if (checkBanda) {
+        checkBanda.addEventListener('change', function () {
+            dispPorBanda = this.checked;
+            const clave = claveCacheDisponibilidad(dispTecnologiaActual);
+            if (!dispModoComparativo && dispCacheDatos[clave]) {
+                renderDatosDisponibilidad(dispTecnologiaActual, dispCacheDatos[clave]);
+            }
+        });
+    }
+
+    const btnAplicarFecha = document.getElementById('dispAplicarFechaBtn');
+    if (btnAplicarFecha) {
+        btnAplicarFecha.addEventListener('click', () => {
+            const desde = document.getElementById('dispFechaDesdeInput').value;
+            const hasta = document.getElementById('dispFechaHastaInput').value;
+            if (!desde || !hasta) { mostrarMensaje('⚠️ Selecciona ambas fechas', 'warning'); return; }
+            if (desde > hasta) { mostrarMensaje('⚠️ La fecha "Desde" no puede ser posterior a "Hasta"', 'warning'); return; }
+            dispFechaDesde = desde;
+            dispFechaHasta = hasta;
+            if (dispModoComparativo) cargarComparativoTecnologias(true);
+            else cargarDisponibilidad(dispTecnologiaActual, true);
+        });
+    }
+
+    if (dispModoComparativo) cargarComparativoTecnologias(false);
+    else cargarDisponibilidad(dispTecnologiaActual, false);
 }
 
 async function cargarDisponibilidad(tecnologia, forzar) {
     const estadoEl = document.getElementById('dispEstado');
     const ultimaEl = document.getElementById('dispUltimaActualizacion');
+    const clave = claveCacheDisponibilidad(tecnologia);
 
-    // Usa caché de la sesión salvo que se pida forzar (botón Actualizar)
-    if (!forzar && dispCacheDatos[tecnologia]) {
-        renderDatosDisponibilidad(tecnologia, dispCacheDatos[tecnologia]);
+    if (!forzar && dispCacheDatos[clave]) {
+        renderDatosDisponibilidad(tecnologia, dispCacheDatos[clave]);
         return;
     }
 
     if (estadoEl) estadoEl.textContent = `Consultando ${tecnologia} en SQL Server… (las tablas 3G/4G pueden tardar más)`;
 
     try {
-        const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${encodeURIComponent(tecnologia)}&dias=30`;
+        const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${encodeURIComponent(tecnologia)}&fecha_inicio=${dispFechaDesde}&fecha_fin=${dispFechaHasta}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -2150,23 +2319,60 @@ async function cargarDisponibilidad(tecnologia, forzar) {
             return;
         }
 
-        dispCacheDatos[tecnologia] = data;
+        dispCacheDatos[clave] = data;
         renderDatosDisponibilidad(tecnologia, data);
         if (estadoEl) estadoEl.textContent = '';
-        if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla || tecnologia} en ${MONITOR_SERVER}`;
+        if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla || tecnologia} (${dispFechaDesde} a ${dispFechaHasta}) en ${MONITOR_SERVER}`;
     } catch (e) {
         mostrarErrorDisponibilidad('No se pudo contactar al servidor de monitoreo.', e.message || '');
         if (estadoEl) estadoEl.textContent = '';
     }
 }
 
+async function cargarComparativoTecnologias(forzar) {
+    const estadoEl = document.getElementById('dispEstado');
+    const ultimaEl = document.getElementById('dispUltimaActualizacion');
+    const clave = `${dispFechaDesde}|${dispFechaHasta}`;
+
+    if (!forzar && dispCacheComparativo[clave]) {
+        renderComparativoTecnologias(dispCacheComparativo[clave]);
+        return;
+    }
+
+    if (estadoEl) estadoEl.textContent = `Consultando 2G, 3G, 4G y 5G en paralelo… (puede tardar, sobre todo 3G/4G)`;
+
+    const resultados = await Promise.all(TECNOLOGIAS_DISPONIBILIDAD.map(async t => {
+        try {
+            const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${t}&fecha_inicio=${dispFechaDesde}&fecha_fin=${dispFechaHasta}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            return { tec: t, data };
+        } catch (e) {
+            return { tec: t, data: { error: 'No se pudo contactar al servidor de monitoreo', detalle: e.message } };
+        }
+    }));
+
+    const porTec = {};
+    resultados.forEach(r => { porTec[r.tec] = r.data; });
+    dispCacheComparativo[clave] = porTec;
+    renderComparativoTecnologias(porTec);
+    if (estadoEl) estadoEl.textContent = '';
+    if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — comparativo 2G/3G/4G/5G (${dispFechaDesde} a ${dispFechaHasta})`;
+}
+
+function actualizarEncabezadoTabla(columnas) {
+    const theadRow = document.querySelector('#dispTabla thead tr');
+    if (theadRow) theadRow.innerHTML = columnas.map(c => `<th>${c}</th>`).join('');
+}
+
 function mostrarErrorDisponibilidad(mensaje, detalle) {
     const cards = document.getElementById('dispResumenCards');
     const tabla = document.querySelector('#dispTabla tbody');
+    const colspan = document.querySelectorAll('#dispTabla thead th').length || 6;
     if (cards) cards.innerHTML = '';
     if (dispChart) { dispChart.destroy(); dispChart = null; }
     if (tabla) {
-        tabla.innerHTML = `<tr><td colspan="6">
+        tabla.innerHTML = `<tr><td colspan="${colspan}">
             <div class="rx-empty" style="border-left:4px solid var(--red);">
                 ⚠️ <strong>${mensaje}</strong>
                 ${detalle ? `<br><small style="color:var(--text-dim);">${detalle}</small>` : ''}
@@ -2176,15 +2382,36 @@ function mostrarErrorDisponibilidad(mensaje, detalle) {
     }
 }
 
+function promedioPorFecha(filas, columnaFecha) {
+    const porDia = {};
+    filas.forEach(f => {
+        const fecha = String(f[columnaFecha] || '').substring(0, 10);
+        const val = parseFloat(f.DISPONIBILIDAD_NUM);
+        if (!fecha || isNaN(val)) return;
+        if (!porDia[fecha]) porDia[fecha] = [];
+        porDia[fecha].push(val);
+    });
+    return porDia;
+}
+
 function renderDatosDisponibilidad(tecnologia, data) {
     const filas = data.datos || [];
     const columnaFecha = data.columna_fecha;
+    actualizarEncabezadoTabla(['Banda', 'Celda', 'Grupo OYM', 'Conectado a', 'Status', 'Disponibilidad']);
 
     // ---- Tarjetas resumen ----
     const cards = document.getElementById('dispResumenCards');
     if (cards) {
-        if (filas.length === 0) {
-            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1;">Sin registros de ${tecnologia} para este sitio en la tabla ${data.tabla || ''}.</div>`;
+        if (filas.length === 0 && data.sin_coincidencia_exacta) {
+            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1; border-left:4px solid var(--amber);">
+                ⚠️ No se encontró ningún registro con <strong>NOMBRE = "${data.nombre_buscado || sitioRadiografiaActual}"</strong> exacto
+                en la tabla ${data.tabla || ''}.
+                <br><small>La búsqueda ahora es exacta (antes era parcial y podía mezclar datos de otros sitios). Si este
+                sitio sí existe en la base pero con otro nombre/formato, verifica el campo <code>NOMBRE</code> en
+                ${data.tabla || 'la tabla'} y compáralo con el nombre del sitio en SITIOS R4.</small>
+            </div>`;
+        } else if (filas.length === 0) {
+            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1;">Sin registros de ${tecnologia} para este sitio en la tabla ${data.tabla || ''} en el rango ${dispFechaDesde} a ${dispFechaHasta}.</div>`;
         } else {
             const valores = filas.map(f => parseFloat(f.DISPONIBILIDAD_NUM)).filter(v => !isNaN(v));
             const promedio = valores.length ? (valores.reduce((a, b) => a + b, 0) / valores.length) : null;
@@ -2216,16 +2443,48 @@ function renderDatosDisponibilidad(tecnologia, data) {
     const canvas = document.getElementById('dispChartCanvas');
     if (dispChart) { dispChart.destroy(); dispChart = null; }
     if (canvas && typeof Chart !== 'undefined' && filas.length > 0) {
-        if (columnaFecha) {
-            // Serie de tiempo: promedio de disponibilidad por día (entre todas las celdas)
-            const porDia = {};
+        if (columnaFecha && dispPorBanda) {
+            // Desglose por banda + línea de Total
+            const porBandaFecha = {};
+            const porFechaTotal = {};
             filas.forEach(f => {
                 const fecha = String(f[columnaFecha] || '').substring(0, 10);
                 const val = parseFloat(f.DISPONIBILIDAD_NUM);
                 if (!fecha || isNaN(val)) return;
-                if (!porDia[fecha]) porDia[fecha] = [];
-                porDia[fecha].push(val);
+                const banda = f.BANDA || 'N/A';
+                if (!porBandaFecha[banda]) porBandaFecha[banda] = {};
+                if (!porBandaFecha[banda][fecha]) porBandaFecha[banda][fecha] = [];
+                porBandaFecha[banda][fecha].push(val);
+                if (!porFechaTotal[fecha]) porFechaTotal[fecha] = [];
+                porFechaTotal[fecha].push(val);
             });
+            const fechas = Object.keys(porFechaTotal).sort();
+            const bandas = Object.keys(porBandaFecha).sort();
+            const paleta = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d'];
+            const datasets = bandas.map((banda, i) => ({
+                label: `Banda ${banda}`,
+                data: fechas.map(f => porBandaFecha[banda][f] ? (porBandaFecha[banda][f].reduce((a, b) => a + b, 0) / porBandaFecha[banda][f].length) : null),
+                borderColor: paleta[i % paleta.length], backgroundColor: 'transparent',
+                borderWidth: 1.5, fill: false, tension: 0.25, pointRadius: 2, spanGaps: true
+            }));
+            datasets.push({
+                label: 'Total (todas las bandas)',
+                data: fechas.map(f => (porFechaTotal[f].reduce((a, b) => a + b, 0) / porFechaTotal[f].length)),
+                borderColor: '#1e2733', backgroundColor: 'rgba(30,39,51,0.08)',
+                borderWidth: 3, fill: true, tension: 0.25, pointRadius: 3
+            });
+            dispChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { labels: fechas, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    scales: { y: { suggestedMin: 90, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
+                }
+            });
+        } else if (columnaFecha) {
+            // Serie de tiempo: promedio de disponibilidad por día (entre todas las celdas/bandas)
+            const porDia = promedioPorFecha(filas, columnaFecha);
             const fechas = Object.keys(porDia).sort();
             const promedios = fechas.map(f => (porDia[f].reduce((a, b) => a + b, 0) / porDia[f].length));
             dispChart = new Chart(canvas.getContext('2d'), {
@@ -2290,6 +2549,781 @@ function renderDatosDisponibilidad(tecnologia, data) {
             }).join('');
         }
     }
+}
+
+function renderComparativoTecnologias(porTec) {
+    const cards = document.getElementById('dispResumenCards');
+    const canvas = document.getElementById('dispChartCanvas');
+    actualizarEncabezadoTabla(['Tecnología', 'Banda', 'Celda', 'Grupo OYM', 'Conectado a', 'Status', 'Disponibilidad']);
+
+    if (dispChart) { dispChart.destroy(); dispChart = null; }
+
+    let cardsHTML = '';
+    const datasetsInfo = [];
+    const todasLasFechas = new Set();
+    let filasCombinadas = [];
+    const errores = [];
+
+    TECNOLOGIAS_DISPONIBILIDAD.forEach(tec => {
+        const data = porTec[tec] || {};
+        if (data.error) {
+            errores.push(`${tec}: ${data.error}`);
+            cardsHTML += `<div class="disp-card bad"><div class="disp-label">${tec}</div><div class="disp-value">Error</div></div>`;
+            return;
+        }
+        const filas = data.datos || [];
+        filas.forEach(f => filasCombinadas.push({ ...f, __TEC__: tec }));
+
+        const valores = filas.map(f => parseFloat(f.DISPONIBILIDAD_NUM)).filter(v => !isNaN(v));
+        const promedio = valores.length ? (valores.reduce((a, b) => a + b, 0) / valores.length) : null;
+        const claseProm = promedio === null ? '' : (promedio >= 99 ? 'ok' : (promedio >= 95 ? 'warn' : 'bad'));
+        cardsHTML += `
+            <div class="disp-card ${claseProm}">
+                <div class="disp-label">${tec} — Promedio</div>
+                <div class="disp-value">${promedio !== null ? promedio.toFixed(2) + '%' : '—'}</div>
+            </div>`;
+
+        if (data.columna_fecha && filas.length > 0) {
+            const porDia = promedioPorFecha(filas, data.columna_fecha);
+            Object.keys(porDia).forEach(f => todasLasFechas.add(f));
+            datasetsInfo.push({ tec, porDia, color: COLORES_TEC[tec] || '#999' });
+        }
+    });
+
+    if (cards) cards.innerHTML = cardsHTML || `<div class="rx-empty" style="grid-column:1/-1;">Sin datos.</div>`;
+
+    if (canvas && typeof Chart !== 'undefined' && datasetsInfo.length > 0) {
+        const fechas = [...todasLasFechas].sort();
+        dispChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: datasetsInfo.map(d => ({
+                    label: `Disponibilidad ${d.tec} (%)`,
+                    data: fechas.map(f => d.porDia[f] ? (d.porDia[f].reduce((a, b) => a + b, 0) / d.porDia[f].length) : null),
+                    borderColor: d.color, backgroundColor: 'transparent',
+                    borderWidth: 2.5, fill: false, tension: 0.25, pointRadius: 3, spanGaps: true
+                }))
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                scales: { y: { suggestedMin: 90, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
+            }
+        });
+    }
+
+    const tbody = document.querySelector('#dispTabla tbody');
+    if (tbody) {
+        if (filasCombinadas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">
+                ${errores.length ? '⚠️ ' + errores.join(' | ') : 'Sin registros en el rango seleccionado.'}
+            </td></tr>`;
+        } else {
+            const filasMostrar = filasCombinadas.slice(0, 150);
+            tbody.innerHTML = filasMostrar.map(f => {
+                const val = parseFloat(f.DISPONIBILIDAD_NUM);
+                const claseBadge = isNaN(val) ? '' : (val >= 99 ? 'ok' : (val >= 95 ? 'warn' : 'bad'));
+                const dispTexto = f.DISPONIBILIDAD_TXT || (isNaN(val) ? '—' : val.toFixed(2) + '%');
+                return `<tr>
+                    <td><strong>${f.__TEC__}</strong></td>
+                    <td>${f.BANDA ?? '—'}</td>
+                    <td>${f.CELDA ?? '—'}</td>
+                    <td>${f.GRUPO_OYM ?? '—'}</td>
+                    <td>${f.CONECTADO_A ?? '—'}</td>
+                    <td>${f.STATUS ?? '—'}</td>
+                    <td><span class="disp-badge ${claseBadge}">${dispTexto}</span></td>
+                </tr>`;
+            }).join('');
+        }
+    }
+}
+
+// ============================================================
+// AVL TREND — Dashboard principal de tendencia de disponibilidad
+// TOP 10 de sitios (por NOMBRE) con N días o más por debajo de un
+// umbral de disponibilidad ingresado manualmente, por tecnología y banda.
+// ============================================================
+let avlDatosCrudos = null;   // {tabla, columna_fecha, datos:[{NOMBRE,FECHA,PROMEDIO,MINIMO,NUM_CELDAS}]}
+let avlTop10 = [];
+let avlTodosAfectados = [];
+let avlResumenGrupoOym = [];
+let avlChartBarras = null;
+let avlChartTrend = null;
+let avlChartGrupoOym = null; // Nueva gráfica de líneas por GRUPO_OYM
+let avlTecnologiaActual = '4G';
+let avlBandaActual = '';
+let avlFechaDesde = null;
+let avlFechaHasta = null;
+let avlSitioSeleccionado = null;
+
+function renderAvlTrendContent() {
+    if (!avlFechaHasta || !avlFechaDesde) {
+        const hoy = new Date();
+        const hace30 = new Date(hoy);
+        hace30.setDate(hoy.getDate() - 30);
+        avlFechaHasta = formatearFechaISO(hoy);
+        avlFechaDesde = formatearFechaISO(hace30);
+    }
+
+    return `
+        <div class="avl-panel">
+            <div class="avl-toolbar">
+                <div class="avl-field">
+                    <label>Tecnología</label>
+                    <div class="avl-tec-grupo" id="avlTecGrupo">
+                        ${TECNOLOGIAS_DISPONIBILIDAD.map(t => `<button class="disp-tec-btn${t === avlTecnologiaActual ? ' active' : ''}" data-tec="${t}">${t}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="avl-field">
+                    <label>Banda</label>
+                    <select id="avlBandaSelect"><option value="">Todas</option></select>
+                </div>
+                <div class="avl-field">
+                    <label>Desde</label>
+                    <input type="date" id="avlFechaDesdeInput" value="${avlFechaDesde}">
+                </div>
+                <div class="avl-field">
+                    <label>Hasta</label>
+                    <input type="date" id="avlFechaHastaInput" value="${avlFechaHasta}">
+                </div>
+                <div class="avl-field">
+                    <label>Disponibilidad mínima (%)</label>
+                    <input type="number" id="avlUmbralInput" value="99" min="0" max="100" step="0.1">
+                </div>
+                <div class="avl-field">
+                    <label>Días mínimos afectado</label>
+                    <input type="number" id="avlDiasMinimosInput" value="3" min="1" max="90" step="1">
+                </div>
+                <button class="avl-btn-analizar" id="avlAnalizarBtn"><i class="fas fa-magnifying-glass-chart"></i> Analizar tendencia</button>
+                <span class="avl-estado" id="avlEstado"></span>
+            </div>
+
+            <div class="avl-resumen-cards" id="avlResumenCards">
+                <div class="rx-empty" style="grid-column:1/-1;">Configura los filtros y presiona "Analizar tendencia" para ver el TOP 10 de sitios con baja disponibilidad (solo OPERANDO).</div>
+            </div>
+
+            <button class="avl-btn-ia" id="avlIaBtn" style="display:none;"><i class="fas fa-robot"></i> Generar análisis con IA</button>
+            <div class="avl-ia-box" id="avlIaBox" style="display:none;"></div>
+
+            <div class="avl-grid-charts">
+                <div class="avl-chart-box">
+                    <h4><i class="fas fa-chart-bar"></i> TOP 10 — Días por debajo del umbral (por NOMBRE)</h4>
+                    <canvas id="avlChartBarrasCanvas" height="200"></canvas>
+                </div>
+                <div class="avl-chart-box">
+                    <h4><i class="fas fa-chart-line"></i> Tendencia diaria <span id="avlTrendSitioTitulo" style="color:var(--text-dim); font-weight:400;">(haz clic en un sitio de la tabla)</span></h4>
+                    <canvas id="avlChartTrendCanvas" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- NUEVA GRÁFICA: Tendencia por GRUPO_OYM -->
+            <div class="avl-chart-box" style="grid-column:1/-1; margin-bottom:18px;">
+                <h4><i class="fas fa-layer-group"></i> Tendencia de disponibilidad por GRUPO_OYM <span style="font-size:11px; color:var(--text-dim); font-weight:400;">(promedio diario de todos los sitios del grupo)</span></h4>
+                <canvas id="avlChartGrupoOymCanvas" height="200"></canvas>
+            </div>
+
+            <div class="avl-tabla-wrap">
+                <table class="avl-tabla" id="avlTabla">
+                    <thead><tr>
+                        <th>#</th><th>Nombre (sitio)</th><th>Días bajo umbral</th><th>Racha actual</th>
+                        <th>Disp. promedio</th><th>Disp. mínima</th><th>Días con datos</th>
+                    </tr></thead>
+                    <tbody><tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="avl-seguimiento-header">
+                <h4><i class="fas fa-list-check"></i> Seguimiento completo — todos los sitios por debajo del umbral <span id="avlSeguimientoConteo"></span></h4>
+                <button class="avl-btn-excel" id="avlExportExcelBtn" disabled><i class="fas fa-file-excel"></i> Descargar Excel</button>
+            </div>
+            <div class="avl-tabla-wrap">
+                <table class="avl-tabla" id="avlTablaCompleta">
+                    <thead><tr>
+                        <th>#</th><th>Nombre (sitio)</th><th>Tecnología</th><th>Banda</th><th>Días bajo umbral</th><th>Racha actual</th>
+                        <th>Disp. promedio</th><th>Disp. mínima</th><th>Días con datos</th><th>Periodo analizado</th>
+                    </tr></thead>
+                    <tbody><tr><td colspan="10" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="avl-seguimiento-header">
+                <h4><i class="fas fa-layer-group"></i> Resumen por Grupo OYM <span id="avlGrupoOymConteo"></span></h4>
+            </div>
+            <div class="avl-tabla-wrap">
+                <table class="avl-tabla" id="avlTablaGrupoOym">
+                    <thead><tr>
+                        <th>Grupo OYM</th><th>Sitios analizados</th><th>Sitios afectados</th><th>% afectados</th>
+                        <th>Disp. promedio del grupo</th><th>Peor sitio del grupo</th><th>Disp. peor sitio</th><th>Días promedio (afectados)</th>
+                    </tr></thead>
+                    <tbody><tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function iniciarAvlTrendTab() {
+    document.querySelectorAll('#avlTecGrupo .disp-tec-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('#avlTecGrupo .disp-tec-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            avlTecnologiaActual = this.dataset.tec;
+            cargarBandasAvl(avlTecnologiaActual);
+        });
+    });
+
+    document.getElementById('avlAnalizarBtn').addEventListener('click', ejecutarAnalisisAvl);
+    document.getElementById('avlIaBtn').addEventListener('click', generarAnalisisIaAvl);
+    document.getElementById('avlExportExcelBtn').addEventListener('click', exportarExcelAvl);
+
+    ['avlUmbralInput', 'avlDiasMinimosInput'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            if (avlDatosCrudos) recalcularTop10Avl();
+        });
+    });
+
+    cargarBandasAvl(avlTecnologiaActual);
+}
+
+async function cargarBandasAvl(tecnologia) {
+    const select = document.getElementById('avlBandaSelect');
+    if (!select) return;
+    select.innerHTML = `<option value="">Todas</option>`;
+    try {
+        const res = await fetch(`${DISPONIBILIDAD_BANDAS_ENDPOINT}?tecnologia=${encodeURIComponent(tecnologia)}`);
+        const data = await res.json();
+        if (data.bandas && data.bandas.length) {
+            data.bandas.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b; opt.textContent = b;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        // Silencioso: el filtro de banda queda en "Todas" si no se pudieron cargar
+    }
+}
+
+async function ejecutarAnalisisAvl() {
+    const estadoEl = document.getElementById('avlEstado');
+    const btn = document.getElementById('avlAnalizarBtn');
+
+    avlFechaDesde = document.getElementById('avlFechaDesdeInput').value;
+    avlFechaHasta = document.getElementById('avlFechaHastaInput').value;
+    avlBandaActual = document.getElementById('avlBandaSelect').value;
+
+    if (!avlFechaDesde || !avlFechaHasta) { mostrarMensaje('⚠️ Selecciona ambas fechas', 'warning'); return; }
+    if (avlFechaDesde > avlFechaHasta) { mostrarMensaje('⚠️ La fecha "Desde" no puede ser posterior a "Hasta"', 'warning'); return; }
+
+    btn.disabled = true;
+    if (estadoEl) estadoEl.textContent = `Consultando ${avlTecnologiaActual} en SQL Server, agrupado por NOMBRE (solo OPERANDO)… (puede tardar en 3G/4G)`;
+    document.getElementById('avlIaBtn').style.display = 'none';
+    document.getElementById('avlIaBox').style.display = 'none';
+
+    try {
+        // AGREGADO: filtro por status=OPERANDO
+        const url = `${AVL_TREND_ENDPOINT}?tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}${avlBandaActual ? `&banda=${encodeURIComponent(avlBandaActual)}` : ''}&status=OPERANDO`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+            mostrarErrorAvl(data.error, data.detalle || data.solucion || '');
+            if (estadoEl) estadoEl.textContent = '';
+            btn.disabled = false;
+            return;
+        }
+
+        avlDatosCrudos = data;
+        recalcularTop10Avl();
+        if (estadoEl) estadoEl.textContent = `Datos al ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla} (${avlFechaDesde} a ${avlFechaHasta})`;
+    } catch (e) {
+        mostrarErrorAvl('No se pudo contactar al servidor de monitoreo.', e.message || '');
+        if (estadoEl) estadoEl.textContent = '';
+    }
+    btn.disabled = false;
+}
+
+function mostrarErrorAvl(mensaje, detalle) {
+    const cards = document.getElementById('avlResumenCards');
+    const tbody = document.querySelector('#avlTabla tbody');
+    const tbodyCompleta = document.querySelector('#avlTablaCompleta tbody');
+    const tbodyGrupo = document.querySelector('#avlTablaGrupoOym tbody');
+    const btnExcel = document.getElementById('avlExportExcelBtn');
+    const conteoEl = document.getElementById('avlSeguimientoConteo');
+    const conteoGrupoEl = document.getElementById('avlGrupoOymConteo');
+    if (avlChartBarras) { avlChartBarras.destroy(); avlChartBarras = null; }
+    if (avlChartTrend) { avlChartTrend.destroy(); avlChartTrend = null; }
+    if (avlChartGrupoOym) { avlChartGrupoOym.destroy(); avlChartGrupoOym = null; }
+    avlTodosAfectados = [];
+    avlTop10 = [];
+    avlResumenGrupoOym = [];
+    if (btnExcel) btnExcel.disabled = true;
+    if (conteoEl) conteoEl.textContent = '';
+    if (conteoGrupoEl) conteoGrupoEl.textContent = '';
+    if (cards) {
+        cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1; border-left:4px solid var(--red);">
+            ⚠️ <strong>${mensaje}</strong>
+            ${detalle ? `<br><small style="color:var(--text-dim);">${detalle}</small>` : ''}
+            <br><small>Verifica que el servidor (${MONITOR_SERVER}) tenga VPN/Intranet activa hacia 10.96.17.11:1433 y que <code>pymssql</code> esté instalado.</small>
+        </div>`;
+    }
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
+    if (tbodyCompleta) tbodyCompleta.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
+    if (tbodyGrupo) tbodyGrupo.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
+}
+
+// Recalcula el TOP 10 a partir de los datos crudos ya descargados, sin volver
+// a consultar SQL — así ajustar el umbral o los días mínimos es instantáneo.
+function recalcularTop10Avl() {
+    if (!avlDatosCrudos) return;
+    const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
+    const diasMinimos = parseInt(document.getElementById('avlDiasMinimosInput').value) || 1;
+
+    const porSitio = {};
+    (avlDatosCrudos.datos || []).forEach(f => {
+        if (!porSitio[f.NOMBRE]) porSitio[f.NOMBRE] = [];
+        porSitio[f.NOMBRE].push(f);
+    });
+
+    const resultados = [];
+    Object.keys(porSitio).forEach(grupo => {
+        const dias = porSitio[grupo].slice().sort((a, b) => a.FECHA.localeCompare(b.FECHA));
+        const promedios = dias.map(d => d.PROMEDIO).filter(v => v !== null && v !== undefined);
+        if (promedios.length === 0) return;
+
+        const diasBajoUmbral = dias.filter(d => d.PROMEDIO !== null && d.PROMEDIO < umbral).length;
+
+        // Racha actual: días consecutivos por debajo del umbral contando hacia
+        // atrás desde el último día con datos dentro del rango consultado.
+        let rachaActual = 0;
+        for (let i = dias.length - 1; i >= 0; i--) {
+            if (dias[i].PROMEDIO !== null && dias[i].PROMEDIO < umbral) rachaActual++;
+            else break;
+        }
+
+        const promedioGeneral = promedios.reduce((a, b) => a + b, 0) / promedios.length;
+        const minimoGeneral = Math.min(...dias.map(d => d.MINIMO).filter(v => v !== null && v !== undefined));
+
+        resultados.push({
+            NOMBRE: grupo,
+            GRUPO_OYM: dias[0].GRUPO_OYM || '(sin grupo)',
+            dias_bajo_umbral: diasBajoUmbral,
+            racha_actual: rachaActual,
+            promedio: promedioGeneral,
+            minimo: isFinite(minimoGeneral) ? minimoGeneral : null,
+            dias_con_datos: dias.length,
+            serie: dias.map(d => ({ fecha: d.FECHA, promedio: d.PROMEDIO }))
+        });
+    });
+
+    avlTodosAfectados = resultados
+        .filter(s => s.dias_bajo_umbral >= diasMinimos)
+        .sort((a, b) => b.dias_bajo_umbral - a.dias_bajo_umbral || a.promedio - b.promedio);
+
+    avlTop10 = avlTodosAfectados.slice(0, 10);
+    avlResumenGrupoOym = calcularResumenPorGrupoOym(resultados, diasMinimos);
+
+    renderResultadosAvl(umbral, diasMinimos, resultados.length);
+}
+
+// Agrupa los resultados ya calculados por NOMBRE en un rollup por GRUPO_OYM:
+// cuántos sitios de ese grupo tiene datos, cuántos están afectados (>= días
+// mínimos bajo el umbral), disponibilidad promedio del grupo y el peor sitio
+// dentro de cada grupo — útil para reportar a nivel de zona/grupo de trabajo.
+function calcularResumenPorGrupoOym(resultados, diasMinimos) {
+    const porGrupo = {};
+    resultados.forEach(s => {
+        const grupo = s.GRUPO_OYM || '(sin grupo)';
+        if (!porGrupo[grupo]) porGrupo[grupo] = [];
+        porGrupo[grupo].push(s);
+    });
+
+    const filas = Object.keys(porGrupo).map(grupo => {
+        const sitios = porGrupo[grupo];
+        const afectados = sitios.filter(s => s.dias_bajo_umbral >= diasMinimos);
+        const promedios = sitios.map(s => s.promedio);
+        const promedioGrupo = promedios.reduce((a, b) => a + b, 0) / promedios.length;
+        const peor = sitios.slice().sort((a, b) => a.promedio - b.promedio)[0];
+        const diasPromedioAfectados = afectados.length
+            ? afectados.reduce((a, b) => a + b.dias_bajo_umbral, 0) / afectados.length
+            : 0;
+        return {
+            GRUPO_OYM: grupo,
+            sitios_analizados: sitios.length,
+            sitios_afectados: afectados.length,
+            pct_afectados: (afectados.length / sitios.length) * 100,
+            promedio_grupo: promedioGrupo,
+            peor_sitio: peor.NOMBRE,
+            peor_sitio_promedio: peor.promedio,
+            dias_promedio_afectados: diasPromedioAfectados,
+            nombres_afectados: afectados.map(s => s.NOMBRE)
+        };
+    });
+
+    return filas.sort((a, b) => b.sitios_afectados - a.sitios_afectados || b.pct_afectados - a.pct_afectados);
+}
+
+function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
+    const cards = document.getElementById('avlResumenCards');
+    const tbody = document.querySelector('#avlTabla tbody');
+    const btnIa = document.getElementById('avlIaBtn');
+
+    // ---- Tarjetas resumen ----
+    if (cards) {
+        if (avlTop10.length === 0) {
+            cards.innerHTML = `<div class="disp-card ok" style="grid-column:1/-1;">
+                <div class="disp-label">Resultado</div>
+                <div class="disp-value" style="font-size:15px;">✅ Ningún sitio con ${diasMinimos}+ días bajo ${umbral}% de disponibilidad (solo OPERANDO)</div>
+            </div>`;
+        } else {
+            const peor = avlTop10[0];
+            const enRachaActiva = avlTop10.filter(s => s.racha_actual >= diasMinimos).length;
+            cards.innerHTML = `
+                <div class="avl-card">
+                    <div class="avl-label">Sitios analizados</div>
+                    <div class="avl-value">${totalSitios}</div>
+                </div>
+                <div class="avl-card bad">
+                    <div class="avl-label">Sitios con problema</div>
+                    <div class="avl-value">${avlTop10.length}</div>
+                </div>
+                <div class="avl-card ${enRachaActiva > 0 ? 'bad' : 'ok'}">
+                    <div class="avl-label">Con racha activa hoy</div>
+                    <div class="avl-value">${enRachaActiva}</div>
+                </div>
+                <div class="avl-card">
+                    <div class="avl-label">Peor sitio</div>
+                    <div class="avl-value" style="font-size:15px;">${peor.NOMBRE}</div>
+                </div>
+            `;
+        }
+    }
+
+    if (btnIa) btnIa.style.display = avlTop10.length > 0 ? 'flex' : 'none';
+    document.getElementById('avlIaBox').style.display = 'none';
+
+    // ---- Gráfica de barras: TOP 10 días bajo umbral ----
+    const canvasBarras = document.getElementById('avlChartBarrasCanvas');
+    if (avlChartBarras) { avlChartBarras.destroy(); avlChartBarras = null; }
+    if (canvasBarras && typeof Chart !== 'undefined' && avlTop10.length > 0) {
+        avlChartBarras = new Chart(canvasBarras.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: avlTop10.map(s => s.NOMBRE),
+                datasets: [{
+                    label: 'Días bajo umbral',
+                    data: avlTop10.map(s => s.dias_bajo_umbral),
+                    backgroundColor: avlTop10.map(s => s.racha_actual >= diasMinimos ? '#dc2626' : '#f59e0b')
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true, indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+            }
+        });
+    }
+
+    // ---- Gráfica de líneas por GRUPO_OYM ----
+    const canvasGrupo = document.getElementById('avlChartGrupoOymCanvas');
+    if (avlChartGrupoOym) { avlChartGrupoOym.destroy(); avlChartGrupoOym = null; }
+    if (canvasGrupo && typeof Chart !== 'undefined' && avlDatosCrudos && avlDatosCrudos.datos && avlDatosCrudos.datos.length > 0) {
+        // Agrupar por GRUPO_OYM y FECHA, promediar PROMEDIO
+        const grupos = {};
+        const fechasSet = new Set();
+        avlDatosCrudos.datos.forEach(d => {
+            const grupo = d.GRUPO_OYM || '(sin grupo)';
+            const fecha = d.FECHA;
+            if (!grupos[grupo]) grupos[grupo] = {};
+            if (!grupos[grupo][fecha]) grupos[grupo][fecha] = [];
+            grupos[grupo][fecha].push(d.PROMEDIO);
+            fechasSet.add(fecha);
+        });
+
+        // Ordenar fechas
+        const fechas = Array.from(fechasSet).sort();
+
+        // Construir datasets
+        const colores = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d', '#ec4899', '#14b8a6', '#8b5cf6', '#f97316', '#84cc16', '#06b6d4', '#ef4444'];
+        const datasets = Object.keys(grupos).map((grupo, idx) => {
+            const data = fechas.map(f => {
+                const valores = grupos[grupo][f] || [];
+                return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
+            });
+            return {
+                label: grupo,
+                data: data,
+                borderColor: colores[idx % colores.length],
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.25,
+                pointRadius: 2,
+                spanGaps: true
+            };
+        });
+
+        avlChartGrupoOym = new Chart(canvasGrupo.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        suggestedMin: 85,
+                        suggestedMax: 100,
+                        ticks: { font: { size: 10 } }
+                    },
+                    x: {
+                        ticks: { font: { size: 9 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // ---- Tabla TOP 10 ----
+    if (tbody) {
+        if (avlTop10.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Sin sitios que cumplan el criterio en este rango.</td></tr>`;
+        } else {
+            tbody.innerHTML = avlTop10.map((s, i) => {
+                const rankClase = i === 0 ? 'top1' : (i < 3 ? 'top3' : '');
+                return `<tr data-nombre="${escaparAtributo(s.NOMBRE)}">
+                    <td><span class="avl-rank ${rankClase}">${i + 1}</span></td>
+                    <td><strong>${s.NOMBRE}</strong></td>
+                    <td>${s.dias_bajo_umbral}</td>
+                    <td>${s.racha_actual > 0 ? `<span class="disp-badge ${s.racha_actual >= diasMinimos ? 'bad' : 'warn'}">${s.racha_actual} días</span>` : '—'}</td>
+                    <td>${s.promedio.toFixed(2)}%</td>
+                    <td>${s.minimo !== null ? s.minimo.toFixed(2) + '%' : '—'}</td>
+                    <td>${s.dias_con_datos}</td>
+                </tr>`;
+            }).join('');
+
+            tbody.querySelectorAll('tr[data-nombre]').forEach(tr => {
+                tr.addEventListener('click', () => {
+                    tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+                    tr.classList.add('selected');
+                    mostrarTendenciaSitioAvl(tr.dataset.nombre);
+                });
+            });
+
+            // Selecciona automáticamente el primero (peor sitio)
+            mostrarTendenciaSitioAvl(avlTop10[0].NOMBRE);
+            const primeraFila = tbody.querySelector('tr[data-nombre]');
+            if (primeraFila) primeraFila.classList.add('selected');
+        }
+    }
+
+    // ---- Tabla completa de seguimiento (TODOS los sitios afectados) ----
+    const tbodyCompleta = document.querySelector('#avlTablaCompleta tbody');
+    const conteoEl = document.getElementById('avlSeguimientoConteo');
+    const btnExcel = document.getElementById('avlExportExcelBtn');
+    if (conteoEl) conteoEl.textContent = `${avlTodosAfectados.length} sitio(s)`;
+    if (btnExcel) btnExcel.disabled = avlTodosAfectados.length === 0;
+    if (tbodyCompleta) {
+        if (avlTodosAfectados.length === 0) {
+            tbodyCompleta.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-dim); padding:16px;">Ningún sitio por debajo del umbral en este rango.</td></tr>`;
+        } else {
+            tbodyCompleta.innerHTML = avlTodosAfectados.map((s, i) => `<tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${s.NOMBRE}</strong></td>
+                    <td>${avlTecnologiaActual}</td>
+                    <td>${avlBandaActual || 'Todas'}</td>
+                    <td>${s.dias_bajo_umbral}</td>
+                    <td>${s.racha_actual > 0 ? `<span class="disp-badge ${s.racha_actual >= diasMinimos ? 'bad' : 'warn'}">${s.racha_actual} días</span>` : '—'}</td>
+                    <td>${s.promedio.toFixed(2)}%</td>
+                    <td>${s.minimo !== null ? s.minimo.toFixed(2) + '%' : '—'}</td>
+                    <td>${s.dias_con_datos}</td>
+                    <td>${avlFechaDesde} a ${avlFechaHasta}</td>
+                </tr>`).join('');
+        }
+    }
+
+    // ---- Tabla de resumen por Grupo OYM ----
+    const tbodyGrupo = document.querySelector('#avlTablaGrupoOym tbody');
+    const conteoGrupoEl = document.getElementById('avlGrupoOymConteo');
+    const gruposConAfectados = avlResumenGrupoOym.filter(g => g.sitios_afectados > 0);
+    if (conteoGrupoEl) conteoGrupoEl.textContent = `${gruposConAfectados.length} de ${avlResumenGrupoOym.length} grupo(s) con sitios afectados`;
+    if (tbodyGrupo) {
+        if (avlResumenGrupoOym.length === 0) {
+            tbodyGrupo.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr>`;
+        } else {
+            tbodyGrupo.innerHTML = avlResumenGrupoOym.map(g => {
+                const claseFila = g.sitios_afectados === 0 ? 'ok' : (g.pct_afectados >= 50 ? 'bad' : 'warn');
+                return `<tr>
+                    <td><strong>${g.GRUPO_OYM}</strong></td>
+                    <td>${g.sitios_analizados}</td>
+                    <td>${g.sitios_afectados}</td>
+                    <td><span class="disp-badge ${claseFila}">${g.pct_afectados.toFixed(0)}%</span></td>
+                    <td>${g.promedio_grupo.toFixed(2)}%</td>
+                    <td>${g.sitios_afectados > 0 ? g.peor_sitio : '—'}</td>
+                    <td>${g.sitios_afectados > 0 ? g.peor_sitio_promedio.toFixed(2) + '%' : '—'}</td>
+                    <td>${g.sitios_afectados > 0 ? g.dias_promedio_afectados.toFixed(1) : '—'}</td>
+                </tr>`;
+            }).join('');
+        }
+    }
+}
+
+function exportarExcelAvl() {
+    if (!avlTodosAfectados || avlTodosAfectados.length === 0) return;
+    if (typeof XLSX === 'undefined') {
+        mostrarMensaje('⚠️ No se pudo cargar el generador de Excel (revisa tu conexión a internet)', 'error');
+        return;
+    }
+    const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
+    const diasMinimos = parseInt(document.getElementById('avlDiasMinimosInput').value) || 1;
+
+    const filas = avlTodosAfectados.map((s, i) => ({
+        '#': i + 1,
+        'Nombre (Sitio)': s.NOMBRE,
+        'Grupo OYM': s.GRUPO_OYM,
+        'Tecnología': avlTecnologiaActual,
+        'Banda': avlBandaActual || 'Todas',
+        'Días bajo umbral': s.dias_bajo_umbral,
+        'Racha actual (días consecutivos)': s.racha_actual,
+        'Disponibilidad promedio (%)': Number(s.promedio.toFixed(2)),
+        'Disponibilidad mínima (%)': s.minimo !== null ? Number(s.minimo.toFixed(2)) : '',
+        'Días con datos en el periodo': s.dias_con_datos,
+        'Umbral configurado (%)': umbral,
+        'Días mínimos configurados': diasMinimos,
+        'Periodo analizado': `${avlFechaDesde} a ${avlFechaHasta}`,
+        'Estado': s.racha_actual >= diasMinimos ? 'Racha activa (sin recuperar)' : 'Con incidencias en el periodo'
+    }));
+
+    const hoja = XLSX.utils.json_to_sheet(filas);
+    hoja['!cols'] = [
+        { wch: 4 }, { wch: 20 }, { wch: 16 }, { wch: 11 }, { wch: 12 }, { wch: 16 }, { wch: 24 },
+        { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 26 }
+    ];
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Sitios bajo umbral');
+
+    if (avlResumenGrupoOym && avlResumenGrupoOym.length > 0) {
+        const filasGrupo = avlResumenGrupoOym.map(g => ({
+            'Grupo OYM': g.GRUPO_OYM,
+            'Sitios analizados': g.sitios_analizados,
+            'Sitios afectados': g.sitios_afectados,
+            '% afectados': Number(g.pct_afectados.toFixed(1)),
+            'Disponibilidad promedio del grupo (%)': Number(g.promedio_grupo.toFixed(2)),
+            'Peor sitio del grupo': g.sitios_afectados > 0 ? g.peor_sitio : '',
+            'Disponibilidad del peor sitio (%)': g.sitios_afectados > 0 ? Number(g.peor_sitio_promedio.toFixed(2)) : '',
+            'Días promedio bajo umbral (afectados)': g.sitios_afectados > 0 ? Number(g.dias_promedio_afectados.toFixed(1)) : '',
+            'Sitios afectados (lista)': g.nombres_afectados.join(', ')
+        }));
+        const hojaGrupo = XLSX.utils.json_to_sheet(filasGrupo);
+        hojaGrupo['!cols'] = [
+            { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 26 },
+            { wch: 20 }, { wch: 24 }, { wch: 26 }, { wch: 40 }
+        ];
+        XLSX.utils.book_append_sheet(libro, hojaGrupo, 'Resumen por Grupo OYM');
+    }
+
+    const nombreArchivo = `AVL_Trend_${avlTecnologiaActual}_${avlFechaDesde}_a_${avlFechaHasta}.xlsx`;
+    XLSX.writeFile(libro, nombreArchivo);
+    mostrarMensaje(`✅ Descargado: ${nombreArchivo}`, 'exito');
+}
+
+function mostrarTendenciaSitioAvl(nombreSitio) {
+    avlSitioSeleccionado = nombreSitio;
+    const sitio = avlTop10.find(s => s.NOMBRE === nombreSitio);
+    const titulo = document.getElementById('avlTrendSitioTitulo');
+    const canvas = document.getElementById('avlChartTrendCanvas');
+    if (titulo) titulo.textContent = `— ${nombreSitio}`;
+    if (avlChartTrend) { avlChartTrend.destroy(); avlChartTrend = null; }
+    if (!sitio || !canvas || typeof Chart === 'undefined') return;
+
+    const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
+    const fechas = sitio.serie.map(p => p.fecha);
+    const valores = sitio.serie.map(p => p.promedio);
+
+    avlChartTrend = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: fechas,
+            datasets: [
+                {
+                    label: `Disponibilidad diaria (%)`,
+                    data: valores, borderColor: '#0d8fb0', backgroundColor: 'rgba(13,143,176,0.12)',
+                    borderWidth: 2, fill: true, tension: 0.25, pointRadius: 3, spanGaps: true
+                },
+                {
+                    label: `Umbral (${umbral}%)`,
+                    data: fechas.map(() => umbral), borderColor: '#dc2626', backgroundColor: 'transparent',
+                    borderWidth: 1.5, borderDash: [6, 4], fill: false, pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+            scales: { y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
+        }
+    });
+}
+
+async function generarAnalisisIaAvl() {
+    const btn = document.getElementById('avlIaBtn');
+    const box = document.getElementById('avlIaBox');
+    if (avlTop10.length === 0) return;
+
+    const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
+    const diasMinimos = parseInt(document.getElementById('avlDiasMinimosInput').value) || 1;
+
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando análisis…`;
+    box.style.display = 'block';
+    box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-robot"></i> Analizando tendencia recurrente y zona geográfica…</div>`;
+
+    try {
+        const payload = {
+            top10: avlTop10.map(s => ({
+                NOMBRE: s.NOMBRE, GRUPO_OYM: s.GRUPO_OYM, dias_bajo_umbral: s.dias_bajo_umbral,
+                racha_actual: s.racha_actual, promedio: s.promedio, minimo: s.minimo
+            })),
+            tecnologia: avlTecnologiaActual, banda: avlBandaActual || null,
+            umbral, dias_minimos: diasMinimos,
+            fecha_inicio: avlFechaDesde, fecha_fin: avlFechaHasta
+        };
+        const res = await fetch(AVL_TREND_IA_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> No se pudo generar el análisis</div>${data.error}`;
+        } else {
+            box.innerHTML = `
+                <div class="avl-ia-titulo">
+                    <i class="fas fa-robot"></i> Análisis de tendencia
+                    <span class="avl-ia-badge">${data.generado_por_ia ? 'IA generativa' : 'Análisis automático'}</span>
+                </div>
+                <div>${data.analisis}</div>
+            `;
+        }
+    } catch (e) {
+        box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> No se pudo contactar al servidor</div>${e.message || ''}`;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-robot"></i> Regenerar análisis con IA`;
 }
 
 // Función para cargar imágenes pendientes
@@ -2410,6 +3444,7 @@ function cerrarRadiografia() {
     monitoreoIpActual = null;
     if (dispChart) { dispChart.destroy(); dispChart = null; }
     dispCacheDatos = {};
+    dispCacheComparativo = {};
     sitioRadiografiaActual = null;
     fallasSitioCompleto = [];
     fallasSitioFiltradas = [];
@@ -2420,6 +3455,27 @@ function cerrarRadiografia() {
 // ============================================================
 // EVENTOS GENERALES
 // ============================================================
+let avlTrendInicializado = false;
+document.querySelectorAll('.main-tab-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+        const destino = this.dataset.maintab === 'avltrend' ? 'mainTabAvlTrend' : 'mainTabMapa';
+        document.getElementById(destino).classList.add('active');
+        if (this.dataset.maintab === 'avltrend') {
+            if (!avlTrendInicializado) {
+                avlTrendInicializado = true;
+                document.getElementById('avlTrendContainer').innerHTML = renderAvlTrendContent();
+                iniciarAvlTrendTab();
+            }
+        } else if (mapa) {
+            // Al volver al mapa, Leaflet necesita recalcular tamaño si estuvo oculto
+            setTimeout(() => mapa.invalidateSize(), 50);
+        }
+    });
+});
+
 document.getElementById('expandMapBtn').addEventListener('click', expandirMapa);
 document.getElementById('stopUpdateBtn').addEventListener('click', toggleActualizacion);
 document.getElementById('layerSelect').addEventListener('change', cambiarCapa);
