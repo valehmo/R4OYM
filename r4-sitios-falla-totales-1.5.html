@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ===== ESTILOS (sin cambios) ===== */
+/* ===== ESTILOS ===== */
 :root{
     --cyan:#0d8fb0;
     --cyan-bright:#0ea5c9;
@@ -389,7 +389,13 @@ body{
 .avl-btn-analizar{background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;}
 .avl-btn-analizar:hover{filter:brightness(1.08);}
 .avl-btn-analizar:disabled{opacity:0.6;cursor:not-allowed;}
-.avl-estado{font-size:11.5px;color:var(--text-dim);}
+.avl-cargando{
+    display:none; align-items:center; gap:8px; font-size:12px; color:var(--cyan-bright); font-weight:700;
+}
+.avl-cargando .spinner-mini{
+    display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--cyan); border-radius:50%; animation:spin .7s linear infinite;
+}
+.avl-estado{font-size:11.5px; color:var(--text-dim);}
 
 .avl-resumen-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
 .avl-card{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
@@ -544,6 +550,32 @@ body{
 }
 .rx-lightbox .close-lb:hover{background:rgba(255,255,255,0.2);}
 
+/* ===== MODAL DE DISPONIBILIDAD POR BANDA (AVL) ===== */
+.avl-modal{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(10,14,26,0.75);z-index:22000;
+    align-items:center;justify-content:center;padding:20px;
+}
+.avl-modal.active{display:flex;}
+.avl-modal .avl-modal-panel{
+    background:#f7f9fc;border-radius:18px;width:100%;max-width:900px;max-height:90vh;
+    overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);position:relative;
+}
+.avl-modal .avl-modal-header{
+    background:linear-gradient(135deg,#1c2b4a,#243a63);color:#fff;padding:16px 22px;
+    border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;position:sticky;top:0;z-index:10;
+}
+.avl-modal .avl-modal-header h3{font-size:16px;font-weight:700;color:var(--cyan-bright);font-family:'JetBrains Mono',monospace;}
+.avl-modal .avl-modal-header .close-avl-modal{
+    background:rgba(255,255,255,0.12);color:#fff;border:none;width:32px;height:32px;
+    border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
+}
+.avl-modal .avl-modal-body{padding:20px 22px 26px;}
+.avl-modal .avl-modal-body .disp-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.avl-modal .avl-modal-body .disp-toolbar .avl-modal-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;}
+.avl-modal .avl-modal-body .disp-toolbar .avl-modal-check input{cursor:pointer;}
+
 @media (max-width:768px){
     .rx-stats{grid-template-columns:repeat(2,1fr);}
     .rx-charts{grid-template-columns:1fr;}
@@ -578,6 +610,30 @@ body{
             </div>
         </div>
         <div class="rx-body" id="radiografiaBody"></div>
+    </div>
+</div>
+
+<!-- MODAL DE DISPONIBILIDAD POR BANDA (AVL) -->
+<div class="avl-modal" id="avlModalDisponibilidad">
+    <div class="avl-modal-panel">
+        <div class="avl-modal-header">
+            <h3 id="avlModalTitulo"><i class="fas fa-chart-line"></i> Disponibilidad por Banda</h3>
+            <button class="close-avl-modal" id="avlModalCloseBtn">&times;</button>
+        </div>
+        <div class="avl-modal-body">
+            <div class="disp-toolbar">
+                <label class="avl-modal-check">
+                    <input type="checkbox" id="avlModalPorBandaCheck" checked> Desglosar por banda (+ total)
+                </label>
+                <span style="font-size:11px; color:var(--text-dim);" id="avlModalEstado">Cargando…</span>
+            </div>
+            <div class="disp-chart-wrap">
+                <canvas id="avlModalChartCanvas" height="90"></canvas>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim); text-align:center; margin-top:8px;">
+                Haz clic en el sitio para ver su tendencia por banda.
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2306,7 +2362,7 @@ async function cargarDisponibilidad(tecnologia, forzar) {
         return;
     }
 
-    if (estadoEl) estadoEl.textContent = `Consultando ${tecnologia} en SQL Server… (las tablas 3G/4G pueden tardar más)`;
+    if (estadoEl) estadoEl.textContent = `Consultando ${tecnologia} en SQL Server (solo celdas STATUS=OPERANDO)… (las tablas 3G/4G pueden tardar más)`;
 
     try {
         const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${encodeURIComponent(tecnologia)}&fecha_inicio=${dispFechaDesde}&fecha_fin=${dispFechaHasta}`;
@@ -2365,6 +2421,32 @@ function actualizarEncabezadoTabla(columnas) {
     if (theadRow) theadRow.innerHTML = columnas.map(c => `<th>${c}</th>`).join('');
 }
 
+// Muestra los valores REALES de STATUS que existen en la tabla cuando el
+// filtro STATUS='OPERANDO' no trajo ningún dato — útil para detectar si el
+// valor guardado en SQL tiene otra ortografía/formato (tildes, espacios,
+// mayúsculas distintas a lo esperado).
+function renderDiagnosticoStatus(diagnostico) {
+    if (!diagnostico) return '';
+    if (diagnostico.length === 0) {
+        return `<br><small style="color:var(--text-dim);">No hay ningún registro (de ningún STATUS) para este sitio/rango — no es un tema de ortografía de STATUS, simplemente no hay datos.</small>`;
+    }
+    if (diagnostico[0] && diagnostico[0].error) {
+        return `<br><small style="color:var(--red);">No se pudo obtener el diagnóstico de STATUS: ${diagnostico[0].error}</small>`;
+    }
+    const filas = diagnostico.map(d =>
+        `<tr><td style="padding:2px 8px;"><code>"${d.valor}"</code></td><td style="padding:2px 8px; text-align:center;">${d.largo}</td><td style="padding:2px 8px; text-align:center;">${d.conteo}</td></tr>`
+    ).join('');
+    return `
+        <div style="margin-top:8px; font-size:11px;">
+            <strong>Valores de STATUS que SÍ existen en la tabla para este caso:</strong>
+            <table style="margin-top:4px; border-collapse:collapse; font-size:11px;">
+                <thead><tr><th style="padding:2px 8px; text-align:left;">Valor exacto</th><th style="padding:2px 8px;">Largo</th><th style="padding:2px 8px;">Registros</th></tr></thead>
+                <tbody>${filas}</tbody>
+            </table>
+            <small style="color:var(--text-dim);">Si ves aquí un valor distinto a "OPERANDO" (ej. con acento, minúsculas, o espacios — compara la columna "Largo"), avísame el valor exacto para ajustar el filtro.</small>
+        </div>`;
+}
+
 function mostrarErrorDisponibilidad(mensaje, detalle) {
     const cards = document.getElementById('dispResumenCards');
     const tabla = document.querySelector('#dispTabla tbody');
@@ -2409,9 +2491,14 @@ function renderDatosDisponibilidad(tecnologia, data) {
                 <br><small>La búsqueda ahora es exacta (antes era parcial y podía mezclar datos de otros sitios). Si este
                 sitio sí existe en la base pero con otro nombre/formato, verifica el campo <code>NOMBRE</code> en
                 ${data.tabla || 'la tabla'} y compáralo con el nombre del sitio en SITIOS R4.</small>
+                ${renderDiagnosticoStatus(data.diagnostico_status)}
             </div>`;
         } else if (filas.length === 0) {
-            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1;">Sin registros de ${tecnologia} para este sitio en la tabla ${data.tabla || ''} en el rango ${dispFechaDesde} a ${dispFechaHasta}.</div>`;
+            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1;">
+                Sin registros de ${tecnologia} para este sitio en la tabla ${data.tabla || ''} en el rango ${dispFechaDesde} a ${dispFechaHasta}
+                (con filtro STATUS = ${data.status_filtro || 'OPERANDO'}).
+                ${renderDiagnosticoStatus(data.diagnostico_status)}
+            </div>`;
         } else {
             const valores = filas.map(f => parseFloat(f.DISPONIBILIDAD_NUM)).filter(v => !isNaN(v));
             const promedio = valores.length ? (valores.reduce((a, b) => a + b, 0) / valores.length) : null;
@@ -2649,12 +2736,30 @@ let avlResumenGrupoOym = [];
 let avlChartBarras = null;
 let avlChartTrend = null;
 let avlChartGrupoOym = null;
-let avlChartAfectadosGrupo = null; // <--- NUEVA GRÁFICA DE BARRAS
+let avlChartAfectadosGrupo = null;
 let avlTecnologiaActual = '4G';
 let avlBandaActual = '';
+let avlStatusActual = 'OPERANDO';
 let avlFechaDesde = null;
 let avlFechaHasta = null;
 let avlSitioSeleccionado = null;
+
+// Función para colorear el STATUS según los valores de BDD
+function colorStatusBdd(status) {
+    const s = (status || '').toUpperCase().trim();
+    if (s === 'OPERANDO') return 'var(--green)';
+    if (s === 'NO OPERANDO' || s === 'NO REMEDY') return 'var(--red)';
+    if (s === 'OPERANDO SIN RADIAR' || s === 'SITIO NUEVO') return 'var(--amber)';
+    return 'var(--text-dim)';
+}
+
+// Para buscar STATUS en datosOriginales (fallback)
+function obtenerStatusDesdeAppSheet(nombreSitio) {
+    if (!datosOriginales || datosOriginales.length === 0) return null;
+    const sitio = datosOriginales.find(f => normalizarTexto(obtenerSitio(f)) === normalizarTexto(nombreSitio));
+    if (sitio) return obtenerEstado(sitio);
+    return null;
+}
 
 function renderAvlTrendContent() {
     if (!avlFechaHasta || !avlFechaDesde) {
@@ -2679,6 +2784,17 @@ function renderAvlTrendContent() {
                     <select id="avlBandaSelect"><option value="">Todas</option></select>
                 </div>
                 <div class="avl-field">
+                    <label>Status</label>
+                    <select id="avlStatusSelect">
+                        <option value="OPERANDO" selected>OPERANDO</option>
+                        <option value="">Todos (sin filtro)</option>
+                        <option value="NO OPERANDO">NO OPERANDO</option>
+                        <option value="NO REMEDY">NO REMEDY</option>
+                        <option value="OPERANDO SIN RADIAR">OPERANDO SIN RADIAR</option>
+                        <option value="SITIO NUEVO">SITIO NUEVO</option>
+                    </select>
+                </div>
+                <div class="avl-field">
                     <label>Desde</label>
                     <input type="date" id="avlFechaDesdeInput" value="${avlFechaDesde}">
                 </div>
@@ -2694,7 +2810,12 @@ function renderAvlTrendContent() {
                     <label>Días mínimos afectado</label>
                     <input type="number" id="avlDiasMinimosInput" value="3" min="1" max="90" step="1">
                 </div>
-                <button class="avl-btn-analizar" id="avlAnalizarBtn"><i class="fas fa-magnifying-glass-chart"></i> Analizar tendencia</button>
+                <div class="avl-field" style="flex-direction:row;align-items:center;gap:8px;">
+                    <button class="avl-btn-analizar" id="avlAnalizarBtn"><i class="fas fa-magnifying-glass-chart"></i> Analizar tendencia</button>
+                    <span class="avl-cargando" id="avlCargando">
+                        <span class="spinner-mini"></span> Consultando...
+                    </span>
+                </div>
                 <span class="avl-estado" id="avlEstado"></span>
             </div>
 
@@ -2702,7 +2823,9 @@ function renderAvlTrendContent() {
                 <div class="rx-empty" style="grid-column:1/-1;">Configura los filtros y presiona "Analizar tendencia" para ver el TOP 10 de sitios con baja disponibilidad (solo OPERANDO).</div>
             </div>
 
-            <button class="avl-btn-ia" id="avlIaBtn" style="display:none;"><i class="fas fa-robot"></i> Generar análisis con IA</button>
+            <div id="avlStatusDistribucion" style="display:none; margin-bottom:16px;"></div>
+
+            <button class="avl-btn-ia" id="avlIaBtn" style="display:none;"><i class="fas fa-robot"></i> Generar análisis con IA (incluye TOP 10 sitios y grupos)</button>
             <div class="avl-ia-box" id="avlIaBox" style="display:none;"></div>
 
             <div class="avl-grid-charts">
@@ -2716,10 +2839,10 @@ function renderAvlTrendContent() {
                 </div>
             </div>
 
-            <!-- NUEVO BLOQUE: Gráfica de líneas por GRUPO_OYM + Gráfica de barras de sitios afectados -->
+            <!-- NUEVO BLOQUE: Gráfica de líneas por GRUPO_OYM con promedio total -->
             <div class="avl-grid-charts" style="margin-bottom:18px;">
                 <div class="avl-chart-box">
-                    <h4><i class="fas fa-chart-line"></i> Tendencia de disponibilidad por GRUPO_OYM <span style="font-size:11px; color:var(--text-dim); font-weight:400;">(promedio diario)</span></h4>
+                    <h4><i class="fas fa-chart-line"></i> Tendencia de disponibilidad por GRUPO_OYM <span id="avlGrupoOymStatusTitulo" style="font-size:11px; color:var(--text-dim); font-weight:400;">(promedio diario)</span></h4>
                     <canvas id="avlChartGrupoOymCanvas" height="200"></canvas>
                 </div>
                 <div class="avl-chart-box">
@@ -2731,10 +2854,11 @@ function renderAvlTrendContent() {
             <div class="avl-tabla-wrap">
                 <table class="avl-tabla" id="avlTabla">
                     <thead><tr>
-                        <th>#</th><th>Nombre (sitio)</th><th>Días bajo umbral</th><th>Racha actual</th>
+                        <th>#</th><th>Nombre (sitio)</th><th>Status</th><th>Días bajo umbral</th><th>Racha actual</th>
                         <th>Disp. promedio</th><th>Disp. mínima</th><th>Días con datos</th>
+                        <th>Última fecha</th>
                     </tr></thead>
-                    <tbody><tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
+                    <tbody><tr><td colspan="9" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
                 </table>
             </div>
 
@@ -2745,10 +2869,12 @@ function renderAvlTrendContent() {
             <div class="avl-tabla-wrap">
                 <table class="avl-tabla" id="avlTablaCompleta">
                     <thead><tr>
-                        <th>#</th><th>Nombre (sitio)</th><th>Tecnología</th><th>Banda</th><th>Días bajo umbral</th><th>Racha actual</th>
-                        <th>Disp. promedio</th><th>Disp. mínima</th><th>Días con datos</th><th>Periodo analizado</th>
+                        <th>#</th><th>Nombre (sitio)</th><th>Status</th><th>Tecnología</th><th>Banda</th>
+                        <th>Días bajo umbral</th><th>Racha actual</th>
+                        <th>Disp. promedio</th><th>Disp. mínima</th><th>Días con datos</th>
+                        <th>Última fecha</th><th>Periodo analizado</th>
                     </tr></thead>
-                    <tbody><tr><td colspan="10" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
+                    <tbody><tr><td colspan="12" style="text-align:center; color:var(--text-dim); padding:16px;">Sin análisis todavía.</td></tr></tbody>
                 </table>
             </div>
 
@@ -2811,45 +2937,105 @@ async function cargarBandasAvl(tecnologia) {
 }
 
 async function ejecutarAnalisisAvl() {
-    const estadoEl = document.getElementById('avlEstado');
     const btn = document.getElementById('avlAnalizarBtn');
+    const estadoEl = document.getElementById('avlEstado');
+    const spinner = document.getElementById('avlCargando');
 
     avlFechaDesde = document.getElementById('avlFechaDesdeInput').value;
     avlFechaHasta = document.getElementById('avlFechaHastaInput').value;
     avlBandaActual = document.getElementById('avlBandaSelect').value;
+    avlStatusActual = document.getElementById('avlStatusSelect').value;
 
     if (!avlFechaDesde || !avlFechaHasta) { mostrarMensaje('⚠️ Selecciona ambas fechas', 'warning'); return; }
     if (avlFechaDesde > avlFechaHasta) { mostrarMensaje('⚠️ La fecha "Desde" no puede ser posterior a "Hasta"', 'warning'); return; }
 
+    // Deshabilitar botón y mostrar spinner
     btn.disabled = true;
-    if (estadoEl) estadoEl.textContent = `Consultando ${avlTecnologiaActual} en SQL Server, agrupado por NOMBRE (solo OPERANDO)… (puede tardar en 3G/4G)`;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+    spinner.style.display = 'inline-flex';
+    if (estadoEl) estadoEl.textContent = `Consultando ${avlTecnologiaActual} en SQL Server, agrupado por NOMBRE... (puede tardar hasta 25s)`;
     document.getElementById('avlIaBtn').style.display = 'none';
     document.getElementById('avlIaBox').style.display = 'none';
 
+    // AbortController con timeout de 25 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
     try {
-        const url = `${AVL_TREND_ENDPOINT}?tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}${avlBandaActual ? `&banda=${encodeURIComponent(avlBandaActual)}` : ''}&status=OPERANDO`;
-        const res = await fetch(url);
+        const url = `${AVL_TREND_ENDPOINT}?tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}${avlBandaActual ? `&banda=${encodeURIComponent(avlBandaActual)}` : ''}&status=${encodeURIComponent(avlStatusActual)}`;
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
         const data = await res.json();
 
         if (data.error) {
             mostrarErrorAvl(data.error, data.detalle || data.solucion || '');
             if (estadoEl) estadoEl.textContent = '';
-            btn.disabled = false;
             return;
         }
 
         avlDatosCrudos = data;
+        renderDistribucionStatusAvl(data);
         recalcularTop10Avl();
-        if (estadoEl) estadoEl.textContent = `Datos al ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla} (${avlFechaDesde} a ${avlFechaHasta})`;
-    } catch (e) {
-        mostrarErrorAvl('No se pudo contactar al servidor de monitoreo.', e.message || '');
-        if (estadoEl) estadoEl.textContent = '';
+        if (estadoEl) estadoEl.textContent = `Datos al ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla} (${avlFechaDesde} a ${avlFechaHasta}) — filtro aplicado en SQL: ${avlStatusActual || 'Todos'}`;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            mostrarErrorAvl('⏱️ Timeout de red', 'El servidor Flask no logra alcanzar 10.96.17.11:1433 en 25 segundos. Verifica VPN/conexión y que el servidor esté ejecutándose.');
+            if (estadoEl) estadoEl.textContent = '⏱️ Timeout - no se pudo conectar a la base de datos.';
+        } else {
+            mostrarErrorAvl('❌ Error de red', error.message || 'No se pudo contactar al servidor de monitoreo.');
+            if (estadoEl) estadoEl.textContent = '❌ Error de red.';
+        }
+    } finally {
+        // Restaurar botón y ocultar spinner
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magnifying-glass-chart"></i> Analizar tendencia';
+        spinner.style.display = 'none';
     }
-    btn.disabled = false;
+}
+
+// Cuenta, del lado del navegador, cuántos registros de cada valor de STATUS
+// llegaron realmente en la respuesta — sirve para comprobar a simple vista
+// si el filtro que se mandó a SQL de verdad se está aplicando: si eliges
+// "OPERANDO" y aquí sigues viendo otros valores mezclados, el filtro NO se
+// está aplicando en el servidor (o el servidor no se reinició con el código
+// nuevo). Si eliges "Todos" para comparar, aquí deberías ver la mezcla real.
+function renderDistribucionStatusAvl(data) {
+    const panel = document.getElementById('avlStatusDistribucion');
+    if (!panel) return;
+    const filas = data.datos || [];
+    if (filas.length === 0) { panel.style.display = 'none'; return; }
+
+    const conteo = {};
+    filas.forEach(f => {
+        const val = f.STATUS || '(sin valor)';
+        conteo[val] = (conteo[val] || 0) + 1;
+    });
+    const entradas = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+    const filtroAplicado = avlStatusActual || '(sin filtro — todos)';
+    const soloUnValor = entradas.length === 1;
+    const coincideFiltro = soloUnValor && avlStatusActual && entradas[0][0].toUpperCase() === avlStatusActual.toUpperCase();
+
+    panel.style.display = 'block';
+    panel.innerHTML = `
+        <div class="rx-empty" style="border-left:4px solid ${avlStatusActual ? (coincideFiltro ? 'var(--green)' : 'var(--red)') : 'var(--cyan)'};">
+            <strong>Verificación del filtro STATUS</strong> — filtro enviado a SQL: <code>${filtroAplicado}</code>
+            ${avlStatusActual ? (coincideFiltro
+                ? ` — ✅ confirmado: los ${filas.length} registros recibidos son todos "${entradas[0][0]}".`
+                : ` — ⚠️ el filtro NO parece estar aplicándose: llegaron valores distintos a "${avlStatusActual}". Revisa que el servidor Python esté reiniciado con la versión más reciente.`)
+              : ` — mostrando la mezcla real de valores (sin filtrar), para comparar.`}
+            <table style="margin-top:8px; border-collapse:collapse; font-size:11px;">
+                <thead><tr><th style="padding:2px 8px; text-align:left;">Valor de STATUS recibido</th><th style="padding:2px 8px;">Registros</th></tr></thead>
+                <tbody>${entradas.map(([val, n]) => `<tr><td style="padding:2px 8px;"><code>"${val}"</code></td><td style="padding:2px 8px; text-align:center;">${n}</td></tr>`).join('')}</tbody>
+            </table>
+        </div>
+    `;
 }
 
 function mostrarErrorAvl(mensaje, detalle) {
     const cards = document.getElementById('avlResumenCards');
+    const panelStatus = document.getElementById('avlStatusDistribucion');
+    if (panelStatus) panelStatus.style.display = 'none';
     const tbody = document.querySelector('#avlTabla tbody');
     const tbodyCompleta = document.querySelector('#avlTablaCompleta tbody');
     const tbodyGrupo = document.querySelector('#avlTablaGrupoOym tbody');
@@ -2873,25 +3059,83 @@ function mostrarErrorAvl(mensaje, detalle) {
             <br><small>Verifica que el servidor (${MONITOR_SERVER}) tenga VPN/Intranet activa hacia 10.96.17.11:1433 y que <code>pymssql</code> esté instalado.</small>
         </div>`;
     }
-    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
-    if (tbodyCompleta) tbodyCompleta.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
+    if (tbodyCompleta) tbodyCompleta.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
     if (tbodyGrupo) tbodyGrupo.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:16px;">Sin datos.</td></tr>`;
 }
 
+// ============================================================
+// FUNCIÓN CORREGIDA: recalcularTop10Avl (STATUS real desde el último registro sin filtrar)
+// ============================================================
 function recalcularTop10Avl() {
     if (!avlDatosCrudos) return;
+
+    // --- Obtener todos los registros originales (sin filtrar por STATUS) ---
+    const todosLosRegistros = avlDatosCrudos.datos || [];
+
+    // --- Subconjunto filtrado según avlStatusActual para el cálculo de días bajo umbral ---
+    let datosFiltrados = todosLosRegistros;
+    if (avlStatusActual) {
+        const statusUpper = avlStatusActual.toUpperCase();
+        datosFiltrados = todosLosRegistros.filter(f => {
+            const st = (f.STATUS || '').toUpperCase();
+            return st === statusUpper;
+        });
+    }
+
+    if (datosFiltrados.length === 0) {
+        // No hay datos con el STATUS seleccionado para el análisis de tendencia
+        const cards = document.getElementById('avlResumenCards');
+        const tbody = document.querySelector('#avlTabla tbody');
+        const tbodyCompleta = document.querySelector('#avlTablaCompleta tbody');
+        const tbodyGrupo = document.querySelector('#avlTablaGrupoOym tbody');
+        const btnExcel = document.getElementById('avlExportExcelBtn');
+        const conteoEl = document.getElementById('avlSeguimientoConteo');
+        const conteoGrupoEl = document.getElementById('avlGrupoOymConteo');
+        if (cards) cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1;">⚠️ No se encontraron registros con STATUS = '${avlStatusActual || 'OPERANDO'}' en el rango seleccionado (para el análisis de tendencia).</div>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-dim); padding:16px;">Sin registros para análisis.</td></tr>`;
+        if (tbodyCompleta) tbodyCompleta.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--text-dim); padding:16px;">Sin registros para análisis.</td></tr>`;
+        if (tbodyGrupo) tbodyGrupo.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:16px;">Sin registros para análisis.</td></tr>`;
+        if (btnExcel) btnExcel.disabled = true;
+        if (conteoEl) conteoEl.textContent = '';
+        if (conteoGrupoEl) conteoGrupoEl.textContent = '';
+        if (avlChartBarras) { avlChartBarras.destroy(); avlChartBarras = null; }
+        if (avlChartTrend) { avlChartTrend.destroy(); avlChartTrend = null; }
+        if (avlChartGrupoOym) { avlChartGrupoOym.destroy(); avlChartGrupoOym = null; }
+        if (avlChartAfectadosGrupo) { avlChartAfectadosGrupo.destroy(); avlChartAfectadosGrupo = null; }
+        avlTodosAfectados = [];
+        avlTop10 = [];
+        avlResumenGrupoOym = [];
+        return;
+    }
+
     const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
     const diasMinimos = parseInt(document.getElementById('avlDiasMinimosInput').value) || 1;
 
+    // --- Agrupar datos filtrados por NOMBRE para calcular días bajo umbral ---
     const porSitio = {};
-    (avlDatosCrudos.datos || []).forEach(f => {
+    datosFiltrados.forEach(f => {
         if (!porSitio[f.NOMBRE]) porSitio[f.NOMBRE] = [];
         porSitio[f.NOMBRE].push(f);
     });
 
+    // --- Para cada sitio, obtener su último registro REAL (sin filtrar) para STATUS ---
+    const ultimoRealPorSitio = {};
+    todosLosRegistros.forEach(f => {
+        const nombre = f.NOMBRE;
+        if (!ultimoRealPorSitio[nombre]) {
+            ultimoRealPorSitio[nombre] = f;
+        } else {
+            // Comparar fechas (asumimos formato YYYY-MM-DD)
+            if (f.FECHA > ultimoRealPorSitio[nombre].FECHA) {
+                ultimoRealPorSitio[nombre] = f;
+            }
+        }
+    });
+
     const resultados = [];
-    Object.keys(porSitio).forEach(grupo => {
-        const dias = porSitio[grupo].slice().sort((a, b) => a.FECHA.localeCompare(b.FECHA));
+    Object.keys(porSitio).forEach(nombre => {
+        const dias = porSitio[nombre].slice().sort((a, b) => a.FECHA.localeCompare(b.FECHA));
         const promedios = dias.map(d => d.PROMEDIO).filter(v => v !== null && v !== undefined);
         if (promedios.length === 0) return;
 
@@ -2904,9 +3148,38 @@ function recalcularTop10Avl() {
         const promedioGeneral = promedios.reduce((a, b) => a + b, 0) / promedios.length;
         const minimoGeneral = Math.min(...dias.map(d => d.MINIMO).filter(v => v !== null && v !== undefined));
 
+        // --- Obtener el último registro REAL para STATUS y GRUPO_OYM ---
+        const ultimoReal = ultimoRealPorSitio[nombre] || {};
+        let status = ultimoReal.STATUS || null;
+        let ultimaFecha = ultimoReal.FECHA || null;
+        let grupo = ultimoReal.GRUPO_OYM || '(sin grupo)';
+
+        // Si el registro real no tiene STATUS, buscar en los datos filtrados (por si acaso)
+        if (!status || status.trim() === '') {
+            // Buscar en los registros filtrados ordenados por fecha descendente
+            const filtradosOrdenados = (porSitio[nombre] || []).slice().sort((a, b) => b.FECHA.localeCompare(a.FECHA));
+            for (let i = 0; i < filtradosOrdenados.length; i++) {
+                if (filtradosOrdenados[i].STATUS && filtradosOrdenados[i].STATUS.trim() !== '') {
+                    status = filtradosOrdenados[i].STATUS;
+                    ultimaFecha = filtradosOrdenados[i].FECHA;
+                    break;
+                }
+            }
+        }
+        // Si aún no hay STATUS, fallback a AppSheet
+        if (!status || status.trim() === '') {
+            status = obtenerStatusDesdeAppSheet(nombre) || '—';
+            if (status !== '—') {
+                console.warn(`⚠️ STATUS para "${nombre}" no disponible en SQL, usando fallback de AppSheet: ${status}`);
+                ultimaFecha = ultimaFecha || '—';
+            }
+        }
+
         resultados.push({
-            NOMBRE: grupo,
-            GRUPO_OYM: dias[0].GRUPO_OYM || '(sin grupo)',
+            NOMBRE: nombre,
+            GRUPO_OYM: grupo,
+            STATUS: status,
+            ultima_fecha: ultimaFecha || '—',
             dias_bajo_umbral: diasBajoUmbral,
             racha_actual: rachaActual,
             promedio: promedioGeneral,
@@ -2966,10 +3239,15 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
 
     // ---- Tarjetas resumen ----
     if (cards) {
-        if (avlTop10.length === 0) {
+        if (totalSitios === 0) {
+            cards.innerHTML = `<div class="rx-empty" style="grid-column:1/-1; border-left:4px solid var(--amber);">
+                ⚠️ No llegó ningún registro de ${avlTecnologiaActual} con STATUS = ${avlStatusActual || 'OPERANDO'}
+                en el rango ${avlFechaDesde} a ${avlFechaHasta} para el análisis de tendencia. Revisa el filtro.
+            </div>`;
+        } else if (avlTop10.length === 0) {
             cards.innerHTML = `<div class="disp-card ok" style="grid-column:1/-1;">
                 <div class="disp-label">Resultado</div>
-                <div class="disp-value" style="font-size:15px;">✅ Ningún sitio con ${diasMinimos}+ días bajo ${umbral}% de disponibilidad (solo OPERANDO)</div>
+                <div class="disp-value" style="font-size:15px;">✅ Ningún sitio con ${diasMinimos}+ días bajo ${umbral}% de disponibilidad (según filtro de STATUS = ${avlStatusActual || 'OPERANDO'})</div>
             </div>`;
         } else {
             const peor = avlTop10[0];
@@ -3020,22 +3298,39 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
         });
     }
 
-    // ---- Gráfica de líneas por GRUPO_OYM ----
+    // ---- Gráfica de líneas por GRUPO_OYM con promedio total ----
+    const tituloGrupoStatus = document.getElementById('avlGrupoOymStatusTitulo');
+    if (tituloGrupoStatus) {
+        tituloGrupoStatus.textContent = `(promedio diario — STATUS: ${avlStatusActual || 'Todos'})`;
+    }
     const canvasGrupo = document.getElementById('avlChartGrupoOymCanvas');
     if (avlChartGrupoOym) { avlChartGrupoOym.destroy(); avlChartGrupoOym = null; }
     if (canvasGrupo && typeof Chart !== 'undefined' && avlDatosCrudos && avlDatosCrudos.datos && avlDatosCrudos.datos.length > 0) {
         const grupos = {};
         const fechasSet = new Set();
+        const totalPorFecha = {};
+
         avlDatosCrudos.datos.forEach(d => {
+            // Filtrar por STATUS seleccionado (si no está vacío)
+            if (avlStatusActual && (d.STATUS || '').toUpperCase() !== avlStatusActual.toUpperCase()) return;
+
             const grupo = d.GRUPO_OYM || '(sin grupo)';
             const fecha = d.FECHA;
+            const promedio = d.PROMEDIO;
+
             if (!grupos[grupo]) grupos[grupo] = {};
             if (!grupos[grupo][fecha]) grupos[grupo][fecha] = [];
-            grupos[grupo][fecha].push(d.PROMEDIO);
+            grupos[grupo][fecha].push(promedio);
+
+            if (!totalPorFecha[fecha]) totalPorFecha[fecha] = [];
+            totalPorFecha[fecha].push(promedio);
+
             fechasSet.add(fecha);
         });
+
         const fechas = Array.from(fechasSet).sort();
         const colores = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d', '#ec4899', '#14b8a6', '#8b5cf6', '#f97316', '#84cc16', '#06b6d4', '#ef4444'];
+
         const datasets = Object.keys(grupos).map((grupo, idx) => {
             const data = fechas.map(f => {
                 const valores = grupos[grupo][f] || [];
@@ -3053,6 +3348,24 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                 spanGaps: true
             };
         });
+
+        // --- AÑADIR PROMEDIO TOTAL ---
+        const promedioTotalData = fechas.map(f => {
+            const valores = totalPorFecha[f] || [];
+            return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
+        });
+        datasets.push({
+            label: '📊 Promedio total',
+            data: promedioTotalData,
+            borderColor: '#1e2733',
+            backgroundColor: 'rgba(30,39,51,0.08)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 3,
+            spanGaps: true
+        });
+
         avlChartGrupoOym = new Chart(canvasGrupo.getContext('2d'), {
             type: 'line',
             data: { labels: fechas, datasets },
@@ -3064,13 +3377,12 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
         });
     }
 
-    // ---- NUEVA GRÁFICA DE BARRAS: Sitios afectados por GRUPO_OYM ----
+    // ---- Gráfica de barras: Sitios afectados por GRUPO_OYM ----
     const canvasAfectados = document.getElementById('avlChartAfectadosGrupoCanvas');
     if (avlChartAfectadosGrupo) { avlChartAfectadosGrupo.destroy(); avlChartAfectadosGrupo = null; }
     if (canvasAfectados && typeof Chart !== 'undefined') {
         const gruposConAfectados = avlResumenGrupoOym.filter(g => g.sitios_afectados > 0);
         if (gruposConAfectados.length > 0) {
-            // Calcular el mínimo de días afectado por grupo a partir de avlTodosAfectados
             const minDiasPorGrupo = {};
             avlTodosAfectados.forEach(s => {
                 const grupo = s.GRUPO_OYM || '(sin grupo)';
@@ -3078,7 +3390,6 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                     minDiasPorGrupo[grupo] = s.dias_bajo_umbral;
                 }
             });
-
             const labels = gruposConAfectados.map(g => g.GRUPO_OYM);
             const data = gruposConAfectados.map(g => g.sitios_afectados);
             const minDias = gruposConAfectados.map(g => minDiasPorGrupo[g.GRUPO_OYM] || 0);
@@ -3116,7 +3427,6 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                 }
             });
         } else {
-            // Mostrar mensaje de "sin datos" en el canvas
             const ctx = canvasAfectados.getContext('2d');
             ctx.clearRect(0, 0, canvasAfectados.width, canvasAfectados.height);
             ctx.font = '12px Rajdhani, sans-serif';
@@ -3129,26 +3439,31 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
     // ---- Tabla TOP 10 ----
     if (tbody) {
         if (avlTop10.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:16px;">Sin sitios que cumplan el criterio en este rango.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-dim); padding:16px;">Sin sitios que cumplan el criterio en este rango.</td></tr>`;
         } else {
             tbody.innerHTML = avlTop10.map((s, i) => {
                 const rankClase = i === 0 ? 'top1' : (i < 3 ? 'top3' : '');
+                const statusColor = colorStatusBdd(s.STATUS);
                 return `<tr data-nombre="${escaparAtributo(s.NOMBRE)}">
                     <td><span class="avl-rank ${rankClase}">${i + 1}</span></td>
                     <td><strong>${s.NOMBRE}</strong></td>
+                    <td><span style="color:${statusColor}; font-weight:700;">${s.STATUS}</span></td>
                     <td>${s.dias_bajo_umbral}</td>
                     <td>${s.racha_actual > 0 ? `<span class="disp-badge ${s.racha_actual >= diasMinimos ? 'bad' : 'warn'}">${s.racha_actual} días</span>` : '—'}</td>
                     <td>${s.promedio.toFixed(2)}%</td>
                     <td>${s.minimo !== null ? s.minimo.toFixed(2) + '%' : '—'}</td>
                     <td>${s.dias_con_datos}</td>
+                    <td>${s.ultima_fecha || '—'}</td>
                 </tr>`;
             }).join('');
 
             tbody.querySelectorAll('tr[data-nombre]').forEach(tr => {
-                tr.addEventListener('click', () => {
+                tr.addEventListener('click', function(e) {
                     tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
-                    tr.classList.add('selected');
-                    mostrarTendenciaSitioAvl(tr.dataset.nombre);
+                    this.classList.add('selected');
+                    const nombre = this.dataset.nombre;
+                    mostrarTendenciaSitioAvl(nombre);
+                    abrirModalDisponibilidad(nombre);
                 });
             });
             mostrarTendenciaSitioAvl(avlTop10[0].NOMBRE);
@@ -3165,11 +3480,14 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
     if (btnExcel) btnExcel.disabled = avlTodosAfectados.length === 0;
     if (tbodyCompleta) {
         if (avlTodosAfectados.length === 0) {
-            tbodyCompleta.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-dim); padding:16px;">Ningún sitio por debajo del umbral en este rango.</td></tr>`;
+            tbodyCompleta.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--text-dim); padding:16px;">Ningún sitio por debajo del umbral en este rango.</td></tr>`;
         } else {
-            tbodyCompleta.innerHTML = avlTodosAfectados.map((s, i) => `<tr>
+            tbodyCompleta.innerHTML = avlTodosAfectados.map((s, i) => {
+                const statusColor = colorStatusBdd(s.STATUS);
+                return `<tr data-nombre="${escaparAtributo(s.NOMBRE)}">
                     <td>${i + 1}</td>
                     <td><strong>${s.NOMBRE}</strong></td>
+                    <td><span style="color:${statusColor}; font-weight:700;">${s.STATUS}</span></td>
                     <td>${avlTecnologiaActual}</td>
                     <td>${avlBandaActual || 'Todas'}</td>
                     <td>${s.dias_bajo_umbral}</td>
@@ -3177,8 +3495,17 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                     <td>${s.promedio.toFixed(2)}%</td>
                     <td>${s.minimo !== null ? s.minimo.toFixed(2) + '%' : '—'}</td>
                     <td>${s.dias_con_datos}</td>
+                    <td>${s.ultima_fecha || '—'}</td>
                     <td>${avlFechaDesde} a ${avlFechaHasta}</td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
+
+            tbodyCompleta.querySelectorAll('tr[data-nombre]').forEach(tr => {
+                tr.addEventListener('click', function() {
+                    const nombre = this.dataset.nombre;
+                    abrirModalDisponibilidad(nombre);
+                });
+            });
         }
     }
 
@@ -3220,6 +3547,7 @@ function exportarExcelAvl() {
     const filas = avlTodosAfectados.map((s, i) => ({
         '#': i + 1,
         'Nombre (Sitio)': s.NOMBRE,
+        'Status (real)': s.STATUS,
         'Grupo OYM': s.GRUPO_OYM,
         'Tecnología': avlTecnologiaActual,
         'Banda': avlBandaActual || 'Todas',
@@ -3228,6 +3556,7 @@ function exportarExcelAvl() {
         'Disponibilidad promedio (%)': Number(s.promedio.toFixed(2)),
         'Disponibilidad mínima (%)': s.minimo !== null ? Number(s.minimo.toFixed(2)) : '',
         'Días con datos en el periodo': s.dias_con_datos,
+        'Última fecha con STATUS': s.ultima_fecha || '—',
         'Umbral configurado (%)': umbral,
         'Días mínimos configurados': diasMinimos,
         'Periodo analizado': `${avlFechaDesde} a ${avlFechaHasta}`,
@@ -3236,8 +3565,8 @@ function exportarExcelAvl() {
 
     const hoja = XLSX.utils.json_to_sheet(filas);
     hoja['!cols'] = [
-        { wch: 4 }, { wch: 20 }, { wch: 16 }, { wch: 11 }, { wch: 12 }, { wch: 16 }, { wch: 24 },
-        { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 26 }
+        { wch: 4 }, { wch: 20 }, { wch: 12 }, { wch: 16 }, { wch: 11 }, { wch: 12 }, { wch: 16 }, { wch: 24 },
+        { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 26 }, { wch: 30 }
     ];
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, 'Sitios bajo umbral');
@@ -3305,10 +3634,168 @@ function mostrarTendenciaSitioAvl(nombreSitio) {
     });
 }
 
+// ============================================================
+// NUEVA FUNCIÓN: abrirModalDisponibilidad
+// ============================================================
+let avlModalChart = null;
+
+function abrirModalDisponibilidad(nombreSitio) {
+    const modal = document.getElementById('avlModalDisponibilidad');
+    const titulo = document.getElementById('avlModalTitulo');
+    const canvas = document.getElementById('avlModalChartCanvas');
+    const estadoEl = document.getElementById('avlModalEstado');
+    const checkBanda = document.getElementById('avlModalPorBandaCheck');
+
+    if (!modal || !canvas) return;
+    titulo.innerHTML = `<i class="fas fa-chart-line"></i> Disponibilidad por Banda — ${nombreSitio}`;
+    modal.classList.add('active');
+
+    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
+
+    estadoEl.textContent = 'Cargando datos…';
+    const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}`;
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                estadoEl.textContent = '❌ Error: ' + data.error;
+                return;
+            }
+            const filas = data.datos || [];
+            const columnaFecha = data.columna_fecha;
+            estadoEl.textContent = `${filas.length} registros — ${avlFechaDesde} a ${avlFechaHasta}`;
+
+            if (!filas.length) {
+                estadoEl.textContent = '⚠️ Sin datos para este sitio en el rango seleccionado.';
+                return;
+            }
+
+            const porBanda = checkBanda.checked;
+            dibujarGraficaModal(canvas, filas, columnaFecha, porBanda);
+        })
+        .catch(err => {
+            estadoEl.textContent = '❌ Error al cargar: ' + err.message;
+        });
+}
+
+function dibujarGraficaModal(canvas, filas, columnaFecha, porBanda) {
+    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
+
+    if (!porBanda) {
+        const porDia = {};
+        filas.forEach(f => {
+            const fecha = String(f[columnaFecha] || '').substring(0, 10);
+            const val = parseFloat(f.DISPONIBILIDAD_NUM);
+            if (!fecha || isNaN(val)) return;
+            if (!porDia[fecha]) porDia[fecha] = [];
+            porDia[fecha].push(val);
+        });
+        const fechas = Object.keys(porDia).sort();
+        const promedios = fechas.map(f => porDia[f].reduce((a, b) => a + b, 0) / porDia[f].length);
+        avlModalChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: [{
+                    label: 'Disponibilidad promedio (%)',
+                    data: promedios,
+                    borderColor: '#0d8fb0',
+                    backgroundColor: 'rgba(13,143,176,0.12)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                scales: {
+                    y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } },
+                    x: { ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+    } else {
+        const porBandaFecha = {};
+        const porFechaTotal = {};
+        filas.forEach(f => {
+            const fecha = String(f[columnaFecha] || '').substring(0, 10);
+            const val = parseFloat(f.DISPONIBILIDAD_NUM);
+            if (!fecha || isNaN(val)) return;
+            const banda = f.BANDA || 'N/A';
+            if (!porBandaFecha[banda]) porBandaFecha[banda] = {};
+            if (!porBandaFecha[banda][fecha]) porBandaFecha[banda][fecha] = [];
+            porBandaFecha[banda][fecha].push(val);
+            if (!porFechaTotal[fecha]) porFechaTotal[fecha] = [];
+            porFechaTotal[fecha].push(val);
+        });
+        const fechas = Object.keys(porFechaTotal).sort();
+        const bandas = Object.keys(porBandaFecha).sort();
+        const paleta = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d'];
+        const datasets = bandas.map((banda, i) => ({
+            label: `Banda ${banda}`,
+            data: fechas.map(f => porBandaFecha[banda][f] ? (porBandaFecha[banda][f].reduce((a, b) => a + b, 0) / porBandaFecha[banda][f].length) : null),
+            borderColor: paleta[i % paleta.length],
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.25,
+            pointRadius: 2,
+            spanGaps: true
+        }));
+        datasets.push({
+            label: 'Total (todas bandas)',
+            data: fechas.map(f => (porFechaTotal[f].reduce((a, b) => a + b, 0) / porFechaTotal[f].length)),
+            borderColor: '#1e2733',
+            backgroundColor: 'rgba(30,39,51,0.08)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 3
+        });
+        avlModalChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: { labels: fechas, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                scales: {
+                    y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } },
+                    x: { ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+    }
+}
+
+document.getElementById('avlModalCloseBtn').addEventListener('click', () => {
+    document.getElementById('avlModalDisponibilidad').classList.remove('active');
+    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
+});
+document.getElementById('avlModalDisponibilidad').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.remove('active');
+        if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
+    }
+});
+document.getElementById('avlModalPorBandaCheck').addEventListener('change', function() {
+    const nombre = document.getElementById('avlModalTitulo').textContent.replace('Disponibilidad por Banda — ', '').trim();
+    if (nombre) abrirModalDisponibilidad(nombre);
+});
+
+// ============================================================
+// FUNCIÓN CORREGIDA: generarAnalisisIaAvl
+// ============================================================
 async function generarAnalisisIaAvl() {
     const btn = document.getElementById('avlIaBtn');
     const box = document.getElementById('avlIaBox');
-    if (avlTop10.length === 0) return;
+    if (avlTop10.length === 0) {
+        mostrarMensaje('⚠️ No hay datos suficientes para generar análisis (TOP 10 vacío)', 'warning');
+        return;
+    }
 
     const umbral = parseFloat(document.getElementById('avlUmbralInput').value) || 0;
     const diasMinimos = parseInt(document.getElementById('avlDiasMinimosInput').value) || 1;
@@ -3316,18 +3803,48 @@ async function generarAnalisisIaAvl() {
     btn.disabled = true;
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando análisis…`;
     box.style.display = 'block';
-    box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-robot"></i> Analizando tendencia recurrente y zona geográfica…</div>`;
+    box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-robot"></i> Analizando tendencias de disponibilidad (sitios y grupos)…</div>`;
 
     try {
+        const totalSitios = avlDatosCrudos ? new Set(avlDatosCrudos.datos.map(d => d.NOMBRE)).size : 0;
+
+        const top10Grupos = avlResumenGrupoOym
+            .slice()
+            .sort((a, b) => b.sitios_afectados - a.sitios_afectados || a.promedio_grupo - b.promedio_grupo)
+            .slice(0, 10)
+            .map(g => ({
+                GRUPO_OYM: g.GRUPO_OYM,
+                sitios_afectados: g.sitios_afectados,
+                total_sitios: g.sitios_analizados,
+                pct_afectados: Number(g.pct_afectados.toFixed(1)),
+                promedio_grupo: Number(g.promedio_grupo.toFixed(2)),
+                peor_sitio: g.peor_sitio,
+                peor_sitio_promedio: Number(g.peor_sitio_promedio.toFixed(2)),
+                dias_promedio_afectados: Number(g.dias_promedio_afectados.toFixed(1))
+            }));
+
         const payload = {
-            top10: avlTop10.map(s => ({
-                NOMBRE: s.NOMBRE, GRUPO_OYM: s.GRUPO_OYM, dias_bajo_umbral: s.dias_bajo_umbral,
-                racha_actual: s.racha_actual, promedio: s.promedio, minimo: s.minimo
+            top10_sitios: avlTop10.map(s => ({
+                NOMBRE: s.NOMBRE,
+                GRUPO_OYM: s.GRUPO_OYM,
+                STATUS: s.STATUS,
+                dias_bajo_umbral: s.dias_bajo_umbral,
+                racha_actual: s.racha_actual,
+                promedio: Number(s.promedio.toFixed(2)),
+                minimo: s.minimo !== null ? Number(s.minimo.toFixed(2)) : null
             })),
-            tecnologia: avlTecnologiaActual, banda: avlBandaActual || null,
-            umbral, dias_minimos: diasMinimos,
-            fecha_inicio: avlFechaDesde, fecha_fin: avlFechaHasta
+            top10_grupos: top10Grupos,
+            tecnologia: avlTecnologiaActual,
+            banda: avlBandaActual || null,
+            umbral: umbral,
+            dias_minimos: diasMinimos,
+            fecha_inicio: avlFechaDesde,
+            fecha_fin: avlFechaHasta,
+            total_sitios_analizados: totalSitios,
+            total_grupos_analizados: avlResumenGrupoOym.length,
+            total_afectados: avlTodosAfectados.length
         };
+
         const res = await fetch(AVL_TREND_IA_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3336,18 +3853,42 @@ async function generarAnalisisIaAvl() {
         const data = await res.json();
 
         if (data.error) {
-            box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> No se pudo generar el análisis</div>${data.error}`;
+            box.innerHTML = `
+                <div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> Análisis generado automáticamente (IA no disponible)</div>
+                <div><strong>Resumen ejecutivo:</strong><br>
+                - Se analizaron ${payload.total_sitios_analizados} sitios en ${payload.total_grupos_analizados} grupos.<br>
+                - ${payload.total_afectados} sitios presentaron ${payload.dias_minimos}+ días por debajo del ${payload.umbral}% de disponibilidad.<br>
+                <strong>TOP 10 grupos más afectados:</strong><br>
+                ${top10Grupos.map((g, i) => `  ${i+1}. ${g.GRUPO_OYM} — ${g.sitios_afectados} sitios afectados (${g.pct_afectados}%), promedio grupo ${g.promedio_grupo}%`).join('<br>')}<br>
+                <strong>Recomendación:</strong> Priorizar atención en grupos con mayor número de sitios afectados y rachas activas.
+                </div>
+            `;
         } else {
             box.innerHTML = `
                 <div class="avl-ia-titulo">
-                    <i class="fas fa-robot"></i> Análisis de tendencia
+                    <i class="fas fa-robot"></i> Análisis de tendencia (IA)
                     <span class="avl-ia-badge">${data.generado_por_ia ? 'IA generativa' : 'Análisis automático'}</span>
                 </div>
                 <div>${data.analisis}</div>
             `;
         }
     } catch (e) {
-        box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> No se pudo contactar al servidor</div>${e.message || ''}`;
+        const totalSitios = avlDatosCrudos ? new Set(avlDatosCrudos.datos.map(d => d.NOMBRE)).size : 0;
+        const top10Grupos = avlResumenGrupoOym
+            .slice()
+            .sort((a, b) => b.sitios_afectados - a.sitios_afectados || a.promedio_grupo - b.promedio_grupo)
+            .slice(0, 10);
+
+        box.innerHTML = `
+            <div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> No se pudo contactar al servidor de IA</div>
+            <div><strong>Análisis local (basado en los datos descargados):</strong><br>
+            - Se analizaron ${totalSitios} sitios en ${avlResumenGrupoOym.length} grupos.<br>
+            - ${avlTodosAfectados.length} sitios presentaron ${diasMinimos}+ días por debajo del ${umbral}% de disponibilidad.<br>
+            <strong>TOP 10 grupos más afectados:</strong><br>
+            ${top10Grupos.map((g, i) => `  ${i+1}. ${g.GRUPO_OYM} — ${g.sitios_afectados} sitios afectados (${g.pct_afectados.toFixed(0)}%), promedio grupo ${g.promedio_grupo.toFixed(2)}%`).join('<br>')}<br>
+            <strong>Recomendación:</strong> Revisar los grupos con mayor número de sitios afectados y las rachas activas.
+            </div>
+        `;
     }
 
     btn.disabled = false;
