@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ===== ESTILOS ===== */
+/* ===== ESTILOS (sin cambios) ===== */
 :root{
     --cyan:#0d8fb0;
     --cyan-bright:#0ea5c9;
@@ -423,10 +423,101 @@ body{
 .avl-rank.top1{background:#fee2e2;color:var(--red);}
 .avl-rank.top3{background:#fef3c7;color:#b45309;}
 
-.avl-ia-box{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #ddd6fe;border-radius:12px;padding:16px;font-size:13px;line-height:1.6;color:#4c1d95;}
-.avl-ia-box .avl-ia-titulo{font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:8px;color:#6d28d9;}
-.avl-ia-box .avl-ia-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#ddd6fe;color:#6d28d9;margin-left:auto;}
-.avl-btn-ia{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:800;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+/* ===== IA BOX MEJORADO ===== */
+.avl-ia-box{
+    background:linear-gradient(135deg,#f5f3ff,#ede9fe);
+    border:1px solid #ddd6fe;
+    border-radius:12px;
+    padding:16px;
+    font-size:13px;
+    line-height:1.6;
+    color:#4c1d95;
+}
+.avl-ia-box .avl-ia-titulo{
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+    color:#6d28d9;
+}
+.avl-ia-box .avl-ia-badge{
+    font-size:10px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:10px;
+    background:#ddd6fe;
+    color:#6d28d9;
+    margin-left:auto;
+}
+.avl-ia-box .ia-seccion{
+    margin-top:14px;
+    border-top:1px solid #ddd6fe;
+    padding-top:12px;
+}
+.avl-ia-box .ia-seccion:first-of-type{
+    margin-top:0;
+    border-top:none;
+    padding-top:0;
+}
+.avl-ia-box .ia-seccion h5{
+    font-size:12px;
+    font-weight:700;
+    color:#4c1d95;
+    margin-bottom:6px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.avl-ia-box .ia-tabla{
+    width:100%;
+    border-collapse:collapse;
+    font-size:11px;
+    margin:6px 0;
+}
+.avl-ia-box .ia-tabla th{
+    text-align:left;
+    padding:4px 6px;
+    background:#ede9fe;
+    color:#4c1d95;
+    font-weight:700;
+}
+.avl-ia-box .ia-tabla td{
+    padding:4px 6px;
+    border-bottom:1px solid #e5e0f0;
+}
+.avl-ia-box .ia-badge{
+    padding:2px 8px;
+    border-radius:10px;
+    font-size:10px;
+    font-weight:700;
+}
+.avl-ia-box .ia-badge.ia-urgente{background:#fdeceb;color:var(--red);}
+.avl-ia-box .ia-badge.ia-atencion{background:#fef6e6;color:#b45309;}
+.avl-ia-box .ia-badge.ia-ok{background:#e8f8ef;color:var(--green);}
+.avl-ia-box .ia-plan-item{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    padding:4px 0;
+}
+.avl-ia-box .ia-plan-item .ia-icon{width:18px;text-align:center;color:#6d28d9;}
+.avl-ia-box .ia-plan-item .ia-text{flex:1;}
+
+.avl-btn-ia{
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:#fff;
+    border:none;
+    padding:9px 18px;
+    border-radius:8px;
+    font-weight:800;
+    font-size:12.5px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:14px;
+}
 .avl-btn-ia:hover{filter:brightness(1.08);}
 .avl-btn-ia:disabled{opacity:0.6;cursor:not-allowed;}
 
@@ -626,6 +717,7 @@ body{
                     <input type="checkbox" id="avlModalPorBandaCheck" checked> Desglosar por banda (+ total)
                 </label>
                 <span style="font-size:11px; color:var(--text-dim);" id="avlModalEstado">Cargando…</span>
+                <button class="mon-btn" id="avlModalRefreshBtn"><i class="fas fa-sync"></i> Actualizar</button>
             </div>
             <div class="disp-chart-wrap">
                 <canvas id="avlModalChartCanvas" height="90"></canvas>
@@ -2825,7 +2917,7 @@ function renderAvlTrendContent() {
 
             <div id="avlStatusDistribucion" style="display:none; margin-bottom:16px;"></div>
 
-            <button class="avl-btn-ia" id="avlIaBtn" style="display:none;"><i class="fas fa-robot"></i> Generar análisis con IA (incluye TOP 10 sitios y grupos)</button>
+            <button class="avl-btn-ia" id="avlIaBtn" style="display:none;"><i class="fas fa-robot"></i> Generar plan de trabajo con IA</button>
             <div class="avl-ia-box" id="avlIaBox" style="display:none;"></div>
 
             <div class="avl-grid-charts">
@@ -2839,7 +2931,7 @@ function renderAvlTrendContent() {
                 </div>
             </div>
 
-            <!-- NUEVO BLOQUE: Gráfica de líneas por GRUPO_OYM con promedio total -->
+            <!-- NUEVO BLOQUE: Gráfica de líneas por GRUPO_OYM con promedio total y promedios por grupo (con tooltip y leyenda mejorados) -->
             <div class="avl-grid-charts" style="margin-bottom:18px;">
                 <div class="avl-chart-box">
                     <h4><i class="fas fa-chart-line"></i> Tendencia de disponibilidad por GRUPO_OYM <span id="avlGrupoOymStatusTitulo" style="font-size:11px; color:var(--text-dim); font-weight:400;">(promedio diario)</span></h4>
@@ -3298,7 +3390,7 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
         });
     }
 
-    // ---- Gráfica de líneas por GRUPO_OYM con promedio total ----
+    // ---- Gráfica de líneas por GRUPO_OYM con promedio total y promedios por grupo (con tooltip y leyenda mejorados) ----
     const tituloGrupoStatus = document.getElementById('avlGrupoOymStatusTitulo');
     if (tituloGrupoStatus) {
         tituloGrupoStatus.textContent = `(promedio diario — STATUS: ${avlStatusActual || 'Todos'})`;
@@ -3331,12 +3423,15 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
         const fechas = Array.from(fechasSet).sort();
         const colores = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d', '#ec4899', '#14b8a6', '#8b5cf6', '#f97316', '#84cc16', '#06b6d4', '#ef4444'];
 
-        const datasets = Object.keys(grupos).map((grupo, idx) => {
+        const datasets = [];
+
+        // --- Líneas de tendencia por grupo ---
+        Object.keys(grupos).forEach((grupo, idx) => {
             const data = fechas.map(f => {
                 const valores = grupos[grupo][f] || [];
                 return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
             });
-            return {
+            datasets.push({
                 label: grupo,
                 data: data,
                 borderColor: colores[idx % colores.length],
@@ -3346,10 +3441,10 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                 tension: 0.25,
                 pointRadius: 2,
                 spanGaps: true
-            };
+            });
         });
 
-        // --- AÑADIR PROMEDIO TOTAL ---
+        // --- Promedio total (línea general) ---
         const promedioTotalData = fechas.map(f => {
             const valores = totalPorFecha[f] || [];
             return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
@@ -3366,13 +3461,98 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
             spanGaps: true
         });
 
+        // --- Promedio por grupo (líneas horizontales) ---
+        const promedioPorGrupo = {};
+        Object.keys(grupos).forEach(grupo => {
+            const todosLosValores = [];
+            fechas.forEach(f => {
+                const vals = grupos[grupo][f] || [];
+                todosLosValores.push(...vals);
+            });
+            const suma = todosLosValores.reduce((a, b) => a + b, 0);
+            promedioPorGrupo[grupo] = todosLosValores.length ? suma / todosLosValores.length : null;
+        });
+
+        Object.keys(grupos).forEach((grupo, idx) => {
+            const prom = promedioPorGrupo[grupo];
+            if (prom !== null) {
+                datasets.push({
+                    label: `Promedio ${grupo}`,
+                    data: fechas.map(() => prom),
+                    borderColor: colores[idx % colores.length],
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0,
+                    spanGaps: true,
+                    // Guardamos el valor para usarlo en tooltip y leyenda
+                    promedioValor: prom
+                });
+            }
+        });
+
+        // Personalizar la leyenda para que muestre el valor del promedio
+        const customLegendLabels = {
+            generateLabels: function(chart) {
+                const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                return original.map(label => {
+                    // Buscar el dataset correspondiente
+                    const dataset = chart.data.datasets.find(ds => ds.label === label.text);
+                    if (dataset && dataset.promedioValor !== undefined) {
+                        // Añadir el valor al texto de la leyenda
+                        label.text = `${label.text}: ${dataset.promedioValor.toFixed(2)}%`;
+                    }
+                    return label;
+                });
+            }
+        };
+
+        // Personalizar el tooltip para mostrar el valor fijo de la línea de promedio
+        const customTooltip = {
+            callbacks: {
+                label: function(context) {
+                    const dataset = context.dataset;
+                    if (dataset.promedioValor !== undefined) {
+                        return `${dataset.label}: ${dataset.promedioValor.toFixed(2)}% (promedio fijo)`;
+                    }
+                    // Comportamiento normal para las demás líneas
+                    let label = dataset.label || '';
+                    if (context.parsed.y !== null) {
+                        label += ': ' + context.parsed.y.toFixed(2) + '%';
+                    }
+                    return label;
+                }
+            }
+        };
+
         avlChartGrupoOym = new Chart(canvasGrupo.getContext('2d'), {
             type: 'line',
             data: { labels: fechas, datasets },
             options: {
-                responsive: true, maintainAspectRatio: true,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
-                scales: { y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } }
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 10 },
+                            generateLabels: customLegendLabels.generateLabels
+                        }
+                    },
+                    tooltip: customTooltip
+                },
+                scales: {
+                    y: {
+                        suggestedMin: 85,
+                        suggestedMax: 100,
+                        ticks: { font: { size: 10 } }
+                    },
+                    x: {
+                        ticks: { font: { size: 9 } }
+                    }
+                }
             }
         });
     }
@@ -3472,12 +3652,26 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
         }
     }
 
-    // ---- Tabla completa de seguimiento ----
+    // ---- Tabla completa de seguimiento (con DELEGACIÓN DE EVENTOS) ----
     const tbodyCompleta = document.querySelector('#avlTablaCompleta tbody');
     const conteoEl = document.getElementById('avlSeguimientoConteo');
     const btnExcel = document.getElementById('avlExportExcelBtn');
     if (conteoEl) conteoEl.textContent = `${avlTodosAfectados.length} sitio(s)`;
     if (btnExcel) btnExcel.disabled = avlTodosAfectados.length === 0;
+
+    // Usamos el contenedor de la tabla (wrap) para delegar eventos, así capturamos clics en filas añadidas dinámicamente.
+    const tablaWrap = document.querySelector('#avlTablaCompleta')?.closest('.avl-tabla-wrap');
+    if (tablaWrap) {
+        tablaWrap.addEventListener('click', function(e) {
+            const tr = e.target.closest('tr[data-nombre]');
+            if (tr) {
+                const nombre = tr.dataset.nombre;
+                console.log('🔍 Click en seguimiento completo:', nombre);
+                abrirModalDisponibilidad(nombre);
+            }
+        });
+    }
+
     if (tbodyCompleta) {
         if (avlTodosAfectados.length === 0) {
             tbodyCompleta.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--text-dim); padding:16px;">Ningún sitio por debajo del umbral en este rango.</td></tr>`;
@@ -3499,13 +3693,6 @@ function renderResultadosAvl(umbral, diasMinimos, totalSitios) {
                     <td>${avlFechaDesde} a ${avlFechaHasta}</td>
                 </tr>`;
             }).join('');
-
-            tbodyCompleta.querySelectorAll('tr[data-nombre]').forEach(tr => {
-                tr.addEventListener('click', function() {
-                    const nombre = this.dataset.nombre;
-                    abrirModalDisponibilidad(nombre);
-                });
-            });
         }
     }
 
@@ -3635,165 +3822,13 @@ function mostrarTendenciaSitioAvl(nombreSitio) {
 }
 
 // ============================================================
-// NUEVA FUNCIÓN: abrirModalDisponibilidad
-// ============================================================
-let avlModalChart = null;
-
-function abrirModalDisponibilidad(nombreSitio) {
-    const modal = document.getElementById('avlModalDisponibilidad');
-    const titulo = document.getElementById('avlModalTitulo');
-    const canvas = document.getElementById('avlModalChartCanvas');
-    const estadoEl = document.getElementById('avlModalEstado');
-    const checkBanda = document.getElementById('avlModalPorBandaCheck');
-
-    if (!modal || !canvas) return;
-    titulo.innerHTML = `<i class="fas fa-chart-line"></i> Disponibilidad por Banda — ${nombreSitio}`;
-    modal.classList.add('active');
-
-    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
-
-    estadoEl.textContent = 'Cargando datos…';
-    const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}`;
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                estadoEl.textContent = '❌ Error: ' + data.error;
-                return;
-            }
-            const filas = data.datos || [];
-            const columnaFecha = data.columna_fecha;
-            estadoEl.textContent = `${filas.length} registros — ${avlFechaDesde} a ${avlFechaHasta}`;
-
-            if (!filas.length) {
-                estadoEl.textContent = '⚠️ Sin datos para este sitio en el rango seleccionado.';
-                return;
-            }
-
-            const porBanda = checkBanda.checked;
-            dibujarGraficaModal(canvas, filas, columnaFecha, porBanda);
-        })
-        .catch(err => {
-            estadoEl.textContent = '❌ Error al cargar: ' + err.message;
-        });
-}
-
-function dibujarGraficaModal(canvas, filas, columnaFecha, porBanda) {
-    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
-
-    if (!porBanda) {
-        const porDia = {};
-        filas.forEach(f => {
-            const fecha = String(f[columnaFecha] || '').substring(0, 10);
-            const val = parseFloat(f.DISPONIBILIDAD_NUM);
-            if (!fecha || isNaN(val)) return;
-            if (!porDia[fecha]) porDia[fecha] = [];
-            porDia[fecha].push(val);
-        });
-        const fechas = Object.keys(porDia).sort();
-        const promedios = fechas.map(f => porDia[f].reduce((a, b) => a + b, 0) / porDia[f].length);
-        avlModalChart = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: fechas,
-                datasets: [{
-                    label: 'Disponibilidad promedio (%)',
-                    data: promedios,
-                    borderColor: '#0d8fb0',
-                    backgroundColor: 'rgba(13,143,176,0.12)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.25,
-                    pointRadius: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
-                scales: {
-                    y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } },
-                    x: { ticks: { font: { size: 9 } } }
-                }
-            }
-        });
-    } else {
-        const porBandaFecha = {};
-        const porFechaTotal = {};
-        filas.forEach(f => {
-            const fecha = String(f[columnaFecha] || '').substring(0, 10);
-            const val = parseFloat(f.DISPONIBILIDAD_NUM);
-            if (!fecha || isNaN(val)) return;
-            const banda = f.BANDA || 'N/A';
-            if (!porBandaFecha[banda]) porBandaFecha[banda] = {};
-            if (!porBandaFecha[banda][fecha]) porBandaFecha[banda][fecha] = [];
-            porBandaFecha[banda][fecha].push(val);
-            if (!porFechaTotal[fecha]) porFechaTotal[fecha] = [];
-            porFechaTotal[fecha].push(val);
-        });
-        const fechas = Object.keys(porFechaTotal).sort();
-        const bandas = Object.keys(porBandaFecha).sort();
-        const paleta = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d'];
-        const datasets = bandas.map((banda, i) => ({
-            label: `Banda ${banda}`,
-            data: fechas.map(f => porBandaFecha[banda][f] ? (porBandaFecha[banda][f].reduce((a, b) => a + b, 0) / porBandaFecha[banda][f].length) : null),
-            borderColor: paleta[i % paleta.length],
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            fill: false,
-            tension: 0.25,
-            pointRadius: 2,
-            spanGaps: true
-        }));
-        datasets.push({
-            label: 'Total (todas bandas)',
-            data: fechas.map(f => (porFechaTotal[f].reduce((a, b) => a + b, 0) / porFechaTotal[f].length)),
-            borderColor: '#1e2733',
-            backgroundColor: 'rgba(30,39,51,0.08)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.25,
-            pointRadius: 3
-        });
-        avlModalChart = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: { labels: fechas, datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
-                scales: {
-                    y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } },
-                    x: { ticks: { font: { size: 9 } } }
-                }
-            }
-        });
-    }
-}
-
-document.getElementById('avlModalCloseBtn').addEventListener('click', () => {
-    document.getElementById('avlModalDisponibilidad').classList.remove('active');
-    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
-});
-document.getElementById('avlModalDisponibilidad').addEventListener('click', function(e) {
-    if (e.target === this) {
-        this.classList.remove('active');
-        if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
-    }
-});
-document.getElementById('avlModalPorBandaCheck').addEventListener('change', function() {
-    const nombre = document.getElementById('avlModalTitulo').textContent.replace('Disponibilidad por Banda — ', '').trim();
-    if (nombre) abrirModalDisponibilidad(nombre);
-});
-
-// ============================================================
-// FUNCIÓN CORREGIDA: generarAnalisisIaAvl
+// FUNCIÓN MEJORADA: generarAnalisisIaAvl (pensamiento profundo y plan de trabajo)
 // ============================================================
 async function generarAnalisisIaAvl() {
     const btn = document.getElementById('avlIaBtn');
     const box = document.getElementById('avlIaBox');
     if (avlTop10.length === 0) {
-        mostrarMensaje('⚠️ No hay datos suficientes para generar análisis (TOP 10 vacío)', 'warning');
+        mostrarMensaje('⚠️ No hay datos suficientes para generar un plan de trabajo (TOP 10 vacío)', 'warning');
         return;
     }
 
@@ -3801,39 +3836,69 @@ async function generarAnalisisIaAvl() {
     const diasMinimos = parseInt(document.getElementById('avlDiasMinimosInput').value) || 1;
 
     btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando análisis…`;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando plan de trabajo...';
     box.style.display = 'block';
-    box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-robot"></i> Analizando tendencias de disponibilidad (sitios y grupos)…</div>`;
+    box.innerHTML = `<div class="avl-ia-titulo"><i class="fas fa-robot"></i> Analizando a profundidad... (puede tardar unos segundos)</div>`;
 
     try {
+        // --- Preparar datos detallados para el análisis ---
         const totalSitios = avlDatosCrudos ? new Set(avlDatosCrudos.datos.map(d => d.NOMBRE)).size : 0;
 
-        const top10Grupos = avlResumenGrupoOym
-            .slice()
-            .sort((a, b) => b.sitios_afectados - a.sitios_afectados || a.promedio_grupo - b.promedio_grupo)
-            .slice(0, 10)
-            .map(g => ({
-                GRUPO_OYM: g.GRUPO_OYM,
-                sitios_afectados: g.sitios_afectados,
-                total_sitios: g.sitios_analizados,
-                pct_afectados: Number(g.pct_afectados.toFixed(1)),
-                promedio_grupo: Number(g.promedio_grupo.toFixed(2)),
-                peor_sitio: g.peor_sitio,
-                peor_sitio_promedio: Number(g.peor_sitio_promedio.toFixed(2)),
-                dias_promedio_afectados: Number(g.dias_promedio_afectados.toFixed(1))
-            }));
+        // Todos los grupos con sus estadísticas completas
+        const gruposCompletos = avlResumenGrupoOym.map(g => ({
+            GRUPO_OYM: g.GRUPO_OYM,
+            sitios_analizados: g.sitios_analizados,
+            sitios_afectados: g.sitios_afectados,
+            pct_afectados: Number(g.pct_afectados.toFixed(1)),
+            promedio_grupo: Number(g.promedio_grupo.toFixed(2)),
+            peor_sitio: g.peor_sitio,
+            peor_sitio_promedio: Number(g.peor_sitio_promedio.toFixed(2)),
+            dias_promedio_afectados: Number(g.dias_promedio_afectados.toFixed(1)),
+            sitios_afectados_lista: g.nombres_afectados || []
+        }));
+
+        // Top 10 sitios más afectados (con más detalles)
+        const topSitios = avlTop10.map(s => ({
+            NOMBRE: s.NOMBRE,
+            GRUPO_OYM: s.GRUPO_OYM,
+            STATUS: s.STATUS,
+            dias_bajo_umbral: s.dias_bajo_umbral,
+            racha_actual: s.racha_actual,
+            promedio: Number(s.promedio.toFixed(2)),
+            minimo: s.minimo !== null ? Number(s.minimo.toFixed(2)) : null,
+            ultima_fecha: s.ultima_fecha
+        }));
+
+        // Calcular tendencia por grupo (mejora/empeora)
+        const tendenciaGrupos = {};
+        if (avlDatosCrudos && avlDatosCrudos.datos) {
+            const fechasOrdenadas = avlDatosCrudos.datos.map(d => d.FECHA).sort();
+            const mitad = Math.floor(fechasOrdenadas.length / 2);
+            const primeraMitadFechas = fechasOrdenadas.slice(0, mitad);
+            const segundaMitadFechas = fechasOrdenadas.slice(-mitad);
+
+            avlResumenGrupoOym.forEach(g => {
+                const grupo = g.GRUPO_OYM;
+                const datosGrupo = avlDatosCrudos.datos.filter(d => d.GRUPO_OYM === grupo);
+                const primera = datosGrupo.filter(d => primeraMitadFechas.includes(d.FECHA));
+                const segunda = datosGrupo.filter(d => segundaMitadFechas.includes(d.FECHA));
+                const promPrimera = primera.length ? primera.reduce((a,b) => a + b.PROMEDIO, 0) / primera.length : null;
+                const promSegunda = segunda.length ? segunda.reduce((a,b) => a + b.PROMEDIO, 0) / segunda.length : null;
+                if (promPrimera !== null && promSegunda !== null) {
+                    tendenciaGrupos[grupo] = {
+                        primera_mitad: Number(promPrimera.toFixed(2)),
+                        segunda_mitad: Number(promSegunda.toFixed(2)),
+                        cambio: Number((promSegunda - promPrimera).toFixed(2)),
+                        tendencia: promSegunda > promPrimera ? 'mejorando' : (promSegunda < promPrimera ? 'empeorando' : 'estable')
+                    };
+                }
+            });
+        }
 
         const payload = {
-            top10_sitios: avlTop10.map(s => ({
-                NOMBRE: s.NOMBRE,
-                GRUPO_OYM: s.GRUPO_OYM,
-                STATUS: s.STATUS,
-                dias_bajo_umbral: s.dias_bajo_umbral,
-                racha_actual: s.racha_actual,
-                promedio: Number(s.promedio.toFixed(2)),
-                minimo: s.minimo !== null ? Number(s.minimo.toFixed(2)) : null
-            })),
-            top10_grupos: top10Grupos,
+            top10_sitios: topSitios,
+            grupos: gruposCompletos,
+            tendencia_grupos: tendenciaGrupos,
             tecnologia: avlTecnologiaActual,
             banda: avlBandaActual || null,
             umbral: umbral,
@@ -3842,7 +3907,10 @@ async function generarAnalisisIaAvl() {
             fecha_fin: avlFechaHasta,
             total_sitios_analizados: totalSitios,
             total_grupos_analizados: avlResumenGrupoOym.length,
-            total_afectados: avlTodosAfectados.length
+            total_afectados: avlTodosAfectados.length,
+            // Metadata para el análisis profundo
+            analisis_profundo: true,
+            solicitud_plan_trabajo: true
         };
 
         const res = await fetch(AVL_TREND_IA_ENDPOINT, {
@@ -3853,46 +3921,245 @@ async function generarAnalisisIaAvl() {
         const data = await res.json();
 
         if (data.error) {
-            box.innerHTML = `
-                <div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> Análisis generado automáticamente (IA no disponible)</div>
-                <div><strong>Resumen ejecutivo:</strong><br>
-                - Se analizaron ${payload.total_sitios_analizados} sitios en ${payload.total_grupos_analizados} grupos.<br>
-                - ${payload.total_afectados} sitios presentaron ${payload.dias_minimos}+ días por debajo del ${payload.umbral}% de disponibilidad.<br>
-                <strong>TOP 10 grupos más afectados:</strong><br>
-                ${top10Grupos.map((g, i) => `  ${i+1}. ${g.GRUPO_OYM} — ${g.sitios_afectados} sitios afectados (${g.pct_afectados}%), promedio grupo ${g.promedio_grupo}%`).join('<br>')}<br>
-                <strong>Recomendación:</strong> Priorizar atención en grupos con mayor número de sitios afectados y rachas activas.
-                </div>
-            `;
+            // Fallback a análisis local
+            box.innerHTML = generarAnalisisLocal(topSitios, gruposCompletos, tendenciaGrupos, umbral, diasMinimos);
         } else {
-            box.innerHTML = `
-                <div class="avl-ia-titulo">
-                    <i class="fas fa-robot"></i> Análisis de tendencia (IA)
-                    <span class="avl-ia-badge">${data.generado_por_ia ? 'IA generativa' : 'Análisis automático'}</span>
-                </div>
-                <div>${data.analisis}</div>
-            `;
+            // Si el backend devuelve texto plano, lo envolvemos en una estructura
+            if (typeof data.analisis === 'string') {
+                box.innerHTML = generarPlanDesdeTexto(data.analisis, topSitios, gruposCompletos, tendenciaGrupos);
+            } else {
+                // Si devuelve JSON estructurado, lo mostramos directamente
+                box.innerHTML = generarPlanDesdeEstructura(data);
+            }
         }
     } catch (e) {
-        const totalSitios = avlDatosCrudos ? new Set(avlDatosCrudos.datos.map(d => d.NOMBRE)).size : 0;
-        const top10Grupos = avlResumenGrupoOym
-            .slice()
-            .sort((a, b) => b.sitios_afectados - a.sitios_afectados || a.promedio_grupo - b.promedio_grupo)
-            .slice(0, 10);
+        // Si falla la conexión o el parseo, usar análisis local
+        const topSitios = avlTop10.map(s => ({
+            NOMBRE: s.NOMBRE,
+            GRUPO_OYM: s.GRUPO_OYM,
+            STATUS: s.STATUS,
+            dias_bajo_umbral: s.dias_bajo_umbral,
+            racha_actual: s.racha_actual,
+            promedio: Number(s.promedio.toFixed(2)),
+            minimo: s.minimo !== null ? Number(s.minimo.toFixed(2)) : null,
+            ultima_fecha: s.ultima_fecha
+        }));
+        const gruposCompletos = avlResumenGrupoOym.map(g => ({
+            GRUPO_OYM: g.GRUPO_OYM,
+            sitios_analizados: g.sitios_analizados,
+            sitios_afectados: g.sitios_afectados,
+            pct_afectados: Number(g.pct_afectados.toFixed(1)),
+            promedio_grupo: Number(g.promedio_grupo.toFixed(2)),
+            peor_sitio: g.peor_sitio,
+            peor_sitio_promedio: Number(g.peor_sitio_promedio.toFixed(2)),
+            dias_promedio_afectados: Number(g.dias_promedio_afectados.toFixed(1)),
+            sitios_afectados_lista: g.nombres_afectados || []
+        }));
+        const tendenciaGrupos = {};
+        if (avlDatosCrudos && avlDatosCrudos.datos) {
+            const fechasOrdenadas = avlDatosCrudos.datos.map(d => d.FECHA).sort();
+            const mitad = Math.floor(fechasOrdenadas.length / 2);
+            const primeraMitadFechas = fechasOrdenadas.slice(0, mitad);
+            const segundaMitadFechas = fechasOrdenadas.slice(-mitad);
+            avlResumenGrupoOym.forEach(g => {
+                const grupo = g.GRUPO_OYM;
+                const datosGrupo = avlDatosCrudos.datos.filter(d => d.GRUPO_OYM === grupo);
+                const primera = datosGrupo.filter(d => primeraMitadFechas.includes(d.FECHA));
+                const segunda = datosGrupo.filter(d => segundaMitadFechas.includes(d.FECHA));
+                const promPrimera = primera.length ? primera.reduce((a,b) => a + b.PROMEDIO, 0) / primera.length : null;
+                const promSegunda = segunda.length ? segunda.reduce((a,b) => a + b.PROMEDIO, 0) / segunda.length : null;
+                if (promPrimera !== null && promSegunda !== null) {
+                    tendenciaGrupos[grupo] = {
+                        primera_mitad: Number(promPrimera.toFixed(2)),
+                        segunda_mitad: Number(promSegunda.toFixed(2)),
+                        cambio: Number((promSegunda - promPrimera).toFixed(2)),
+                        tendencia: promSegunda > promPrimera ? 'mejorando' : (promSegunda < promPrimera ? 'empeorando' : 'estable')
+                    };
+                }
+            });
+        }
+        box.innerHTML = generarAnalisisLocal(topSitios, gruposCompletos, tendenciaGrupos, umbral, diasMinimos);
+    }
 
-        box.innerHTML = `
-            <div class="avl-ia-titulo"><i class="fas fa-triangle-exclamation"></i> No se pudo contactar al servidor de IA</div>
-            <div><strong>Análisis local (basado en los datos descargados):</strong><br>
-            - Se analizaron ${totalSitios} sitios en ${avlResumenGrupoOym.length} grupos.<br>
-            - ${avlTodosAfectados.length} sitios presentaron ${diasMinimos}+ días por debajo del ${umbral}% de disponibilidad.<br>
-            <strong>TOP 10 grupos más afectados:</strong><br>
-            ${top10Grupos.map((g, i) => `  ${i+1}. ${g.GRUPO_OYM} — ${g.sitios_afectados} sitios afectados (${g.pct_afectados.toFixed(0)}%), promedio grupo ${g.promedio_grupo.toFixed(2)}%`).join('<br>')}<br>
-            <strong>Recomendación:</strong> Revisar los grupos con mayor número de sitios afectados y las rachas activas.
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-robot"></i> Regenerar plan de trabajo con IA';
+}
+
+// ============================================================
+// FUNCIONES AUXILIARES PARA GENERAR PLAN DE TRABAJO (fallback local)
+// ============================================================
+function generarAnalisisLocal(topSitios, grupos, tendencias, umbral, diasMinimos) {
+    let html = `
+        <div class="avl-ia-titulo">
+            <i class="fas fa-robot"></i> Plan de trabajo generado (análisis local)
+            <span class="avl-ia-badge">IA no disponible</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">
+            Basado en los datos descargados. Se analizaron ${topSitios.length} sitios en ${grupos.length} grupos.
+        </div>
+    `;
+
+    // Resumen ejecutivo
+    const totalAfectados = grupos.reduce((a, g) => a + g.sitios_afectados, 0);
+    const gruposCriticos = grupos.filter(g => g.sitios_afectados > 0 && g.pct_afectados >= 30);
+    const gruposCriticosOrdenados = gruposCriticos.sort((a, b) => b.pct_afectados - a.pct_afectados);
+
+    html += `
+        <div class="ia-seccion">
+            <h5><i class="fas fa-chart-pie"></i> Resumen ejecutivo</h5>
+            <ul style="list-style:none; padding:0; font-size:12px;">
+                <li>📊 <strong>Total sitios analizados:</strong> ${topSitios.length}</li>
+                <li>⚠️ <strong>Sitios con problema:</strong> ${totalAfectados} (mínimo ${diasMinimos} días bajo ${umbral}%)</li>
+                <li>🏷️ <strong>Grupos con afectación:</strong> ${grupos.filter(g => g.sitios_afectados > 0).length} de ${grupos.length}</li>
+                <li>🔴 <strong>Grupos críticos (>30% afectados):</strong> ${gruposCriticos.length}</li>
+            </ul>
+        </div>
+    `;
+
+    // Grupos más afectados (tabla)
+    const gruposAfectados = grupos.filter(g => g.sitios_afectados > 0).sort((a, b) => b.sitios_afectados - a.sitios_afectados);
+    if (gruposAfectados.length > 0) {
+        html += `
+            <div class="ia-seccion">
+                <h5><i class="fas fa-layer-group"></i> Grupos con afectación</h5>
+                <table class="ia-tabla">
+                    <thead><tr><th>Grupo</th><th>% afectados</th><th>Sitios afectados</th><th>Promedio grupo</th><th>Tendencia</th></tr></thead>
+                    <tbody>
+        `;
+        gruposAfectados.forEach(g => {
+            const tend = tendencias[g.GRUPO_OYM] || {};
+            const tendenciaIcon = tend.tendencia === 'mejorando' ? '🟢' : (tend.tendencia === 'empeorando' ? '🔴' : '⚪');
+            const tendenciaTexto = tend.tendencia || 'sin datos';
+            html += `
+                <tr>
+                    <td><strong>${g.GRUPO_OYM}</strong></td>
+                    <td><span class="ia-badge ${g.pct_afectados >= 50 ? 'ia-urgente' : (g.pct_afectados >= 30 ? 'ia-atencion' : 'ia-ok')}">${g.pct_afectados}%</span></td>
+                    <td>${g.sitios_afectados}</td>
+                    <td>${g.promedio_grupo}%</td>
+                    <td>${tendenciaIcon} ${tendenciaTexto}</td>
+                </tr>
+            `;
+        });
+        html += `</tbody></table></div>`;
+    }
+
+    // Top 5 sitios más críticos
+    const topCriticos = topSitios.slice(0, 5);
+    if (topCriticos.length > 0) {
+        html += `
+            <div class="ia-seccion">
+                <h5><i class="fas fa-exclamation-triangle"></i> Top 5 sitios más críticos</h5>
+                <ul style="list-style:none; padding:0; font-size:12px;">
+        `;
+        topCriticos.forEach((s, i) => {
+            const emoji = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : `${i+1}.`));
+            html += `
+                <li style="padding:3px 0; border-bottom:1px solid #f0ecf8;">
+                    ${emoji} <strong>${s.NOMBRE}</strong> (${s.GRUPO_OYM}) — ${s.dias_bajo_umbral} días bajo ${umbral}% | Promedio: ${s.promedio}% | Racha: ${s.racha_actual} días
+                </li>
+            `;
+        });
+        html += `</ul></div>`;
+    }
+
+    // Plan de trabajo
+    html += `
+        <div class="ia-seccion">
+            <h5><i class="fas fa-list-check"></i> Plan de trabajo recomendado</h5>
+            <div style="font-size:12px;">
+    `;
+
+    if (gruposCriticos.length > 0) {
+        html += `
+            <div style="background:#fdeceb; border-left:4px solid var(--red); padding:8px 12px; border-radius:6px; margin-bottom:8px;">
+                <strong>🔴 Atención inmediata (grupos críticos):</strong>
+                <ul style="margin:4px 0 0 16px;">
+                    ${gruposCriticosOrdenados.slice(0, 3).map(g => `
+                        <li><strong>${g.GRUPO_OYM}</strong> — ${g.pct_afectados}% de sitios afectados (${g.sitios_afectados} sitios). Promedio del grupo: ${g.promedio_grupo}%. Revisar ${g.peor_sitio} (${g.peor_sitio_promedio}%).</li>
+                    `).join('')}
+                </ul>
             </div>
         `;
     }
 
-    btn.disabled = false;
-    btn.innerHTML = `<i class="fas fa-robot"></i> Regenerar análisis con IA`;
+    // Recomendaciones generales
+    const recomendaciones = [];
+    if (gruposCriticos.length > 0) recomendaciones.push('✅ Priorizar atención en grupos con >30% de afectación.');
+    if (topSitios.some(s => s.racha_actual >= diasMinimos)) {
+        recomendaciones.push('✅ Sitios en racha activa: programar visitas técnicas para restablecer disponibilidad.');
+    }
+    if (grupos.some(g => g.promedio_grupo < 95)) {
+        recomendaciones.push('✅ Grupos con promedio bajo: revisar infraestructura compartida (backhaul, energía).');
+    }
+    if (Object.values(tendencias).some(t => t.tendencia === 'empeorando')) {
+        recomendaciones.push('✅ Grupos en tendencia negativa: escalar a ingeniería para análisis de causa raíz.');
+    }
+    if (recomendaciones.length === 0) {
+        recomendaciones.push('✅ Mantener monitoreo continuo y revisar periódicamente los sitios con baja disponibilidad.');
+    }
+
+    html += `
+        <div style="background:#e8f8ef; border-left:4px solid var(--green); padding:8px 12px; border-radius:6px; margin-top:8px;">
+            <strong>📋 Acciones sugeridas:</strong>
+            <ul style="margin:4px 0 0 16px;">
+                ${recomendaciones.map(r => `<li>${r}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+
+    // Plazos
+    html += `
+        <div style="margin-top:8px; font-size:11px; color:var(--text-dim); background:#f5f3ff; padding:8px 12px; border-radius:6px;">
+            <strong>⏱️ Plazos sugeridos:</strong><br>
+            - <span style="color:var(--red);">Inmediato (24h):</span> Grupos críticos y sitios con racha activa.<br>
+            - <span style="color:var(--amber);">Corto plazo (1 semana):</span> Grupos con >20% afectación y tendencia negativa.<br>
+            - <span style="color:var(--green);">Monitoreo continuo:</span> Resto de grupos y sitios.
+        </div>
+    `;
+
+    html += `</div></div>`;
+
+    return html;
+}
+
+function generarPlanDesdeTexto(texto, topSitios, grupos, tendencias) {
+    // Envolver el texto en una estructura con secciones
+    let html = `
+        <div class="avl-ia-titulo">
+            <i class="fas fa-robot"></i> Plan de trabajo generado (IA)
+            <span class="avl-ia-badge">IA generativa</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px;">
+            ${topSitios.length} sitios, ${grupos.length} grupos analizados.
+        </div>
+        <div style="white-space:pre-wrap; font-size:13px; line-height:1.6;">
+            ${texto}
+        </div>
+    `;
+    return html;
+}
+
+function generarPlanDesdeEstructura(data) {
+    // Si el backend devuelve JSON estructurado, podemos renderizarlo con secciones
+    let html = `
+        <div class="avl-ia-titulo">
+            <i class="fas fa-robot"></i> Plan de trabajo (IA)
+            <span class="avl-ia-badge">${data.generado_por_ia ? 'IA generativa' : 'Análisis automático'}</span>
+        </div>
+    `;
+    if (data.analisis) {
+        html += `<div style="font-size:13px; line-height:1.6;">${data.analisis}</div>`;
+    }
+    if (data.resumen) {
+        html += `<div class="ia-seccion"><h5><i class="fas fa-list"></i> Resumen</h5><div style="font-size:12px;">${data.resumen}</div></div>`;
+    }
+    if (data.recomendaciones) {
+        html += `<div class="ia-seccion"><h5><i class="fas fa-lightbulb"></i> Recomendaciones</h5><div style="font-size:12px;">${data.recomendaciones}</div></div>`;
+    }
+    if (data.plan_trabajo) {
+        html += `<div class="ia-seccion"><h5><i class="fas fa-list-check"></i> Plan de trabajo</h5><div style="font-size:12px;">${data.plan_trabajo}</div></div>`;
+    }
+    return html;
 }
 
 // ============================================================
@@ -4128,6 +4395,193 @@ renderRadiografiaCompleta = function(sitio, fallas, visitas, sitiosInfo) {
     }, 150);
 };
 
+// ============================================================
+// NUEVA FUNCIÓN: abrirModalDisponibilidad (para AVL Trend)
+// ============================================================
+let avlModalChart = null;
+
+async function abrirModalDisponibilidad(nombreSitio) {
+    if (!nombreSitio) return;
+    const modal = document.getElementById('avlModalDisponibilidad');
+    const titulo = document.getElementById('avlModalTitulo');
+    const estado = document.getElementById('avlModalEstado');
+    const canvas = document.getElementById('avlModalChartCanvas');
+
+    titulo.innerHTML = `<i class="fas fa-chart-line"></i> Disponibilidad por Banda — ${nombreSitio}`;
+    modal.classList.add('active');
+
+    // Limpiar gráfico anterior
+    if (avlModalChart) {
+        avlModalChart.destroy();
+        avlModalChart = null;
+    }
+
+    estado.textContent = 'Cargando datos...';
+
+    // Usar las fechas del análisis AVL actual (o las últimas 30 días)
+    const fechaInicio = avlFechaDesde || formatearFechaISO(new Date(Date.now() - 30*24*60*60*1000));
+    const fechaFin = avlFechaHasta || formatearFechaISO(new Date());
+
+    try {
+        // Intentar obtener datos por banda del endpoint específico
+        let data = null;
+        try {
+            const res = await fetch(`${DISPONIBILIDAD_BANDAS_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+            data = await res.json();
+            if (data.error) throw new Error(data.error);
+        } catch (e) {
+            // Fallback: consultar cada tecnología por separado y agrupar por banda
+            console.warn('Fallback a disponibilidad por tecnología:', e);
+            const tecData = await Promise.all(TECNOLOGIAS_DISPONIBILIDAD.map(async t => {
+                const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${t}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                const res = await fetch(url);
+                return res.json();
+            }));
+            // Combinar datos
+            const combinados = [];
+            tecData.forEach(d => {
+                if (d.datos) combinados.push(...d.datos);
+            });
+            data = { datos: combinados, columna_fecha: 'FECHA' };
+        }
+
+        if (!data || !data.datos || data.datos.length === 0) {
+            estado.textContent = '⚠️ Sin datos para este sitio en el rango seleccionado.';
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '14px Rajdhani, sans-serif';
+            ctx.fillStyle = '#6b7688';
+            ctx.textAlign = 'center';
+            ctx.fillText('No hay registros de disponibilidad para este sitio.', canvas.width/2, canvas.height/2);
+            return;
+        }
+
+        estado.textContent = `Mostrando ${data.datos.length} registros de ${fechaInicio} a ${fechaFin}`;
+
+        // Procesar datos para gráfico: agrupar por banda y fecha
+        const porBandaFecha = {};
+        const porFechaTotal = {};
+        const colFecha = data.columna_fecha || 'FECHA';
+
+        data.datos.forEach(f => {
+            const fecha = String(f[colFecha] || '').substring(0, 10);
+            if (!fecha) return;
+            const val = parseFloat(f.DISPONIBILIDAD_NUM);
+            if (isNaN(val)) return;
+            const banda = f.BANDA || 'N/A';
+            if (!porBandaFecha[banda]) porBandaFecha[banda] = {};
+            if (!porBandaFecha[banda][fecha]) porBandaFecha[banda][fecha] = [];
+            porBandaFecha[banda][fecha].push(val);
+            if (!porFechaTotal[fecha]) porFechaTotal[fecha] = [];
+            porFechaTotal[fecha].push(val);
+        });
+
+        const fechas = Object.keys(porFechaTotal).sort();
+        const bandas = Object.keys(porBandaFecha).sort();
+
+        // Construir datasets
+        const datasets = [];
+        const coloresBanda = ['#0d8fb0', '#f59e0b', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#65a30d'];
+        bandas.forEach((banda, i) => {
+            const dataBanda = fechas.map(f => {
+                const vals = porBandaFecha[banda][f] || [];
+                return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+            });
+            datasets.push({
+                label: `Banda ${banda}`,
+                data: dataBanda,
+                borderColor: coloresBanda[i % coloresBanda.length],
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.25,
+                pointRadius: 2,
+                spanGaps: true
+            });
+        });
+
+        // Dataset total
+        const totalData = fechas.map(f => {
+            const vals = porFechaTotal[f] || [];
+            return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+        });
+        datasets.push({
+            label: 'Total (todas las bandas)',
+            data: totalData,
+            borderColor: '#1e2733',
+            backgroundColor: 'rgba(30,39,51,0.08)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 3,
+            spanGaps: true
+        });
+
+        const ctx = canvas.getContext('2d');
+        avlModalChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: fechas, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (context.parsed.y !== null) {
+                                    label += ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { suggestedMin: 85, suggestedMax: 100, ticks: { font: { size: 10 } } },
+                    x: { ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+
+    } catch (error) {
+        estado.textContent = '❌ Error al cargar datos: ' + error.message;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '14px Rajdhani, sans-serif';
+        ctx.fillStyle = '#dc2626';
+        ctx.textAlign = 'center';
+        ctx.fillText('Error al cargar disponibilidad.', canvas.width/2, canvas.height/2);
+    }
+}
+
+// Eventos del modal de disponibilidad por banda
+document.getElementById('avlModalCloseBtn').addEventListener('click', () => {
+    document.getElementById('avlModalDisponibilidad').classList.remove('active');
+    if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
+});
+
+document.getElementById('avlModalDisponibilidad').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        document.getElementById('avlModalDisponibilidad').classList.remove('active');
+        if (avlModalChart) { avlModalChart.destroy(); avlModalChart = null; }
+    }
+});
+
+document.getElementById('avlModalRefreshBtn').addEventListener('click', () => {
+    const titulo = document.getElementById('avlModalTitulo');
+    const match = titulo.textContent.match(/—\s*(.+)/);
+    if (match && match[1]) {
+        abrirModalDisponibilidad(match[1].trim());
+    } else {
+        mostrarMensaje('⚠️ No se pudo identificar el sitio para refrescar.', 'warning');
+    }
+});
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
 inicializarMapa();
 cargarDatosPrincipales();
 reiniciarIntervalo(30);
