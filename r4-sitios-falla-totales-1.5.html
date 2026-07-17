@@ -175,6 +175,30 @@ body{
     padding:6px 14px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:700;
 }
 
+/* NUEVO: Buscador de coordenadas/direcciones */
+.busqueda-geo{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    background:#fff;padding:4px 10px 4px 14px;border-radius:20px;border:1px solid var(--border);
+    position:relative;
+}
+.busqueda-geo input{
+    border:none;padding:6px 0;font-size:12px;width:180px;background:transparent;color:var(--text);
+}
+.busqueda-geo input:focus{outline:none;}
+.busqueda-geo button{
+    background:linear-gradient(135deg,var(--cyan),var(--cyan-bright));
+    color:#fff;border:none;padding:5px 12px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;
+}
+.busqueda-geo .btn-geo-loc{
+    background:transparent;color:var(--cyan);font-size:16px;padding:0 4px;border:none;cursor:pointer;
+}
+.busqueda-geo .btn-geo-loc:hover{color:var(--cyan-bright);}
+.busqueda-geo .limpiar-geo{
+    position:absolute;right:80px;background:none;border:none;color:var(--text-dim);
+    cursor:pointer;font-size:13px;padding:2px 4px;display:none;
+}
+.busqueda-geo .limpiar-geo.visible{display:block;}
+
 .map-wrapper{position:relative;height:600px;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
 
 .windy-iframe{
@@ -230,6 +254,8 @@ body{
     .control-bar{flex-direction:column;align-items:stretch;}
     .interval-control{justify-content:center;}
     .weather-controls{justify-content:center;}
+    .busqueda-geo input{width:120px;}
+    .busqueda-geo .limpiar-geo{right:70px;}
 }
 
 .map-modal{
@@ -797,6 +823,16 @@ body{
                 <datalist id="listaSitiosR4"></datalist>
                 <button type="button" class="limpiar-busqueda" id="limpiarBusquedaBtn" title="Limpiar búsqueda"><i class="fas fa-times"></i></button>
             </div>
+
+            <!-- NUEVO: Buscador de coordenadas / dirección -->
+            <div class="busqueda-geo">
+                <i class="fas fa-map-pin" style="color:var(--text-dim);"></i>
+                <input type="text" id="geoSearchInput" placeholder="Dirección o coordenadas (ej. 19.43, -99.13)" title="Ingresa una dirección o coordenadas (lat, lon)">
+                <button type="button" class="limpiar-geo" id="limpiarGeoBtn" title="Limpiar búsqueda"><i class="fas fa-times"></i></button>
+                <button id="geoSearchBtn"><i class="fas fa-search"></i> Buscar</button>
+                <button class="btn-geo-loc" id="geoLocBtn" title="Ir a mi ubicación"><i class="fas fa-location-dot"></i></button>
+            </div>
+
             <div class="filtro-estado-grupo">
                 <button class="filtro-estado-btn active" data-estado="todos"><i class="fas fa-globe"></i> Todos</button>
                 <button class="filtro-estado-btn" data-estado="ok"><span class="dot"></span> OK</button>
@@ -910,6 +946,9 @@ let filtroBusquedaMapa = '';
 
 let ultimoWindyParams = { lat: null, lon: null, zoom: null, capa: null };
 const RADAR_DEBOUNCE_MS = 600;
+
+// Marcador temporal de geocodificación
+let geoMarker = null;
 
 const capasWindy = {
     "rain": { overlay: "rain", nombre: "🌧️ Lluvia", desc: "Precipitación en tiempo real" },
@@ -4386,14 +4425,145 @@ function centrarEnSitioBuscado(texto) {
     });
 }
 
-const originalRender = renderRadiografiaCompleta;
-renderRadiografiaCompleta = function(sitio, fallas, visitas, sitiosInfo) {
-    originalRender(sitio, fallas, visitas, sitiosInfo);
-    setTimeout(() => {
-        initVisitasEvents();
-        cargarImagenesVisitas();
-    }, 150);
-};
+// ============================================================
+// NUEVA FUNCIONALIDAD: Búsqueda por coordenadas/dirección
+// ============================================================
+const geoSearchInput = document.getElementById('geoSearchInput');
+const geoSearchBtn = document.getElementById('geoSearchBtn');
+const geoLocBtn = document.getElementById('geoLocBtn');
+const limpiarGeoBtn = document.getElementById('limpiarGeoBtn');
+
+function parseCoordenadas(texto) {
+    // Intenta extraer lat, lon en formato "lat, lon" o "lat lon"
+    const limpio = texto.replace(/[°'"NSEW]/gi, '').trim();
+    const partes = limpio.split(/[,\s]+/).filter(p => p !== '');
+    if (partes.length >= 2) {
+        const lat = parseFloat(partes[0].replace(',', '.'));
+        const lon = parseFloat(partes[1].replace(',', '.'));
+        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            return { lat, lon };
+        }
+    }
+    return null;
+}
+
+async function buscarPorDireccion(texto) {
+    try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(texto)}&format=json&limit=1`;
+        const res = await fetch(url, {
+            headers: { 'User-Agent': 'SITIOSR4-Map/1.0' }
+        });
+        if (!res.ok) throw new Error('Error en geocodificación');
+        const data = await res.json();
+        if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            return { lat, lon, display: data[0].display_name };
+        }
+        return null;
+    } catch (e) {
+        console.warn('Error en geocodificación:', e);
+        return null;
+    }
+}
+
+function limpiarGeo() {
+    geoSearchInput.value = '';
+    limpiarGeoBtn.classList.remove('visible');
+    if (geoMarker) {
+        mapa.removeLayer(geoMarker);
+        geoMarker = null;
+    }
+    mostrarMensaje('🗑️ Búsqueda geográfica limpiada', 'exito');
+}
+
+async function buscarGeo() {
+    const texto = geoSearchInput.value.trim();
+    if (!texto) {
+        mostrarMensaje('⚠️ Ingresa una dirección o coordenadas', 'warning');
+        return;
+    }
+
+    // Intentar parsear coordenadas
+    let coords = parseCoordenadas(texto);
+    if (coords) {
+        mapa.setView([coords.lat, coords.lon], 15);
+        mapViewState.center = mapa.getCenter();
+        mapViewState.zoom = mapa.getZoom();
+        mapViewState.initialized = true;
+        if (geoMarker) mapa.removeLayer(geoMarker);
+        geoMarker = L.marker([coords.lat, coords.lon])
+            .addTo(mapa)
+            .bindPopup(`📍 Coordenadas: ${coords.lat}, ${coords.lon}`)
+            .openPopup();
+        mostrarMensaje(`✅ Centrado en coordenadas (${coords.lat}, ${coords.lon})`, 'exito');
+        limpiarGeoBtn.classList.add('visible');
+        return;
+    }
+
+    // Buscar por dirección
+    setMapStatus('Buscando dirección...', true);
+    const resultado = await buscarPorDireccion(texto);
+    setMapStatus('Listo', false);
+    if (resultado) {
+        mapa.setView([resultado.lat, resultado.lon], 15);
+        mapViewState.center = mapa.getCenter();
+        mapViewState.zoom = mapa.getZoom();
+        mapViewState.initialized = true;
+        if (geoMarker) mapa.removeLayer(geoMarker);
+        geoMarker = L.marker([resultado.lat, resultado.lon])
+            .addTo(mapa)
+            .bindPopup(`📍 ${resultado.display || 'Ubicación encontrada'}`)
+            .openPopup();
+        mostrarMensaje(`✅ Encontrado: ${resultado.display}`, 'exito');
+        limpiarGeoBtn.classList.add('visible');
+    } else {
+        mostrarMensaje('❌ No se encontró la dirección. Intenta con coordenadas (lat, lon).', 'error');
+    }
+}
+
+function irMiUbicacion() {
+    if (!navigator.geolocation) {
+        mostrarMensaje('⚠️ Tu navegador no soporta geolocalización.', 'warning');
+        return;
+    }
+    setMapStatus('Obteniendo ubicación...', true);
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            mapa.setView([latitude, longitude], 16);
+            mapViewState.center = mapa.getCenter();
+            mapViewState.zoom = mapa.getZoom();
+            mapViewState.initialized = true;
+            if (geoMarker) mapa.removeLayer(geoMarker);
+            geoMarker = L.marker([latitude, longitude])
+                .addTo(mapa)
+                .bindPopup('📍 Tu ubicación')
+                .openPopup();
+            setMapStatus('Listo', false);
+            mostrarMensaje(`✅ Centrado en tu ubicación (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`, 'exito');
+            limpiarGeoBtn.classList.add('visible');
+        },
+        (err) => {
+            setMapStatus('Error de geolocalización', false);
+            mostrarMensaje(`❌ Error al obtener ubicación: ${err.message}`, 'error');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+// Eventos
+geoSearchBtn.addEventListener('click', buscarGeo);
+geoSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') buscarGeo();
+});
+geoLocBtn.addEventListener('click', irMiUbicacion);
+limpiarGeoBtn.addEventListener('click', limpiarGeo);
+
+// Mostrar/ocultar botón de limpieza según contenido
+geoSearchInput.addEventListener('input', () => {
+    limpiarGeoBtn.classList.toggle('visible', geoSearchInput.value.trim() !== '');
+});
 
 // ============================================================
 // NUEVA FUNCIÓN: abrirModalDisponibilidad (para AVL Trend)
@@ -4582,6 +4752,15 @@ document.getElementById('avlModalRefreshBtn').addEventListener('click', () => {
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
+const originalRender = renderRadiografiaCompleta;
+renderRadiografiaCompleta = function(sitio, fallas, visitas, sitiosInfo) {
+    originalRender(sitio, fallas, visitas, sitiosInfo);
+    setTimeout(() => {
+        initVisitasEvents();
+        cargarImagenesVisitas();
+    }, 150);
+};
+
 inicializarMapa();
 cargarDatosPrincipales();
 reiniciarIntervalo(30);
