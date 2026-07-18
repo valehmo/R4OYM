@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ===== ESTILOS ===== */
+/* ===== ESTILOS COMPLETOS ===== */
 :root{
     --cyan:#0d8fb0;
     --cyan-bright:#0ea5c9;
@@ -682,7 +682,7 @@ body{
 .avl-modal .avl-modal-body .disp-toolbar .avl-modal-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;}
 .avl-modal .avl-modal-body .disp-toolbar .avl-modal-check input{cursor:pointer;}
 
-/* ===== MODAL DE ADMINISTRACIÓN CON COLUMNA CLIENTE ===== */
+/* ===== MODAL DE ADMINISTRACIÓN ===== */
 .admin-modal{
     display:none;position:fixed;top:0;left:0;width:100%;height:100%;
     background:rgba(10,14,26,0.75);z-index:23000;
@@ -725,6 +725,27 @@ body{
 .admin-modal .admin-table .btn-stop-ip{background:#fdeceb;color:var(--red);border:1px solid var(--red);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;}
 .admin-modal .admin-table .btn-stop-ip:hover{background:#fee2e1;}
 .admin-modal .admin-status{font-size:11px;color:var(--text-dim);margin-top:8px;}
+
+/* ===== INDICADOR DE SERVIDOR ACTIVO ===== */
+.servidor-status{
+    font-size:11px;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:16px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:#e8f8ef;
+    color:var(--green);
+}
+.servidor-status.respaldo{
+    background:#fef6e6;
+    color:#b45309;
+}
+.servidor-status.error{
+    background:#fdeceb;
+    color:var(--red);
+}
 
 @media (max-width:768px){
     .rx-stats{grid-template-columns:repeat(2,1fr);}
@@ -875,6 +896,7 @@ body{
         <div style="display:flex; gap:6px; align-items:center;">
             <button id="stopUpdateBtn" class="stop-btn"><i class="fas fa-pause"></i> Pausar</button>
             <button class="admin-btn" id="adminBtn"><i class="fas fa-shield-alt"></i> Admin</button>
+            <span class="servidor-status" id="servidorStatus"><i class="fas fa-circle"></i> Servidor: 10.96.180.102</span>
         </div>
     </div>
 
@@ -946,7 +968,151 @@ body{
 
 <script>
 // ============================================================
-// SITIOS R4 - v2.8 - COMPLETO CON ADMIN Y CLIENTE IP
+// SITIOS R4 - CON RESPALDO Y BALANCEO DE SERVIDORES + POOL SQL
+// ============================================================
+
+// ============================================================
+// GESTIÓN DE SESIÓN SQL (para conexiones persistentes)
+// ============================================================
+function obtenerSessionId() {
+    let sessionId = localStorage.getItem('sql_session_id');
+    if (!sessionId) {
+        sessionId = crypto.randomUUID ? crypto.randomUUID() : 
+                    Date.now().toString(36) + Math.random().toString(36).substring(2);
+        localStorage.setItem('sql_session_id', sessionId);
+    }
+    return sessionId;
+}
+
+function cerrarSesionSQL() {
+    const sessionId = obtenerSessionId();
+    const servidor = servidorActivo || SERVIDOR_PRIMARIO;
+    fetch(servidor + '/api/close_session', {
+        method: 'POST',
+        headers: { 'X-Session-ID': sessionId },
+        keepalive: true
+    }).catch(() => {});
+    localStorage.removeItem('sql_session_id');
+}
+
+// ============================================================
+// SERVIDORES DE MONITOREO (Primario y Respaldo)
+// ============================================================
+const SERVIDOR_PRIMARIO = 'http://10.96.180.102:3000';
+const SERVIDOR_RESPALDO = 'http://10.96.180.20:3000';
+let servidorActivo = SERVIDOR_PRIMARIO;
+let servidorVerificado = false;
+
+// ============================================================
+// FUNCIONES DE VERIFICACIÓN Y BALANCEO
+// ============================================================
+
+function actualizarIndicadorServidor(url) {
+    const el = document.getElementById('servidorStatus');
+    if (!el) return;
+    if (url === SERVIDOR_PRIMARIO) {
+        el.className = 'servidor-status';
+        el.innerHTML = `<i class="fas fa-circle"></i> Servidor: ${SERVIDOR_PRIMARIO} (PRIMARIO)`;
+    } else if (url === SERVIDOR_RESPALDO) {
+        el.className = 'servidor-status respaldo';
+        el.innerHTML = `<i class="fas fa-circle"></i> Servidor: ${SERVIDOR_RESPALDO} (RESPALDO)`;
+    } else {
+        el.className = 'servidor-status error';
+        el.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Servidor: DESCONOCIDO`;
+    }
+}
+
+async function verificarServidor(url, timeoutMs = 2000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(`${url}/api/ping?ip=127.0.0.1`, { 
+            signal: controller.signal,
+            method: 'GET'
+        });
+        clearTimeout(timeoutId);
+        return response.ok;
+    } catch {
+        clearTimeout(timeoutId);
+        return false;
+    }
+}
+
+async function obtenerServidorDisponible() {
+    const primarioActivo = await verificarServidor(SERVIDOR_PRIMARIO);
+    const respaldoActivo = await verificarServidor(SERVIDOR_RESPALDO);
+    
+    if (!primarioActivo && !respaldoActivo) {
+        mostrarMensaje('⚠️ ¡ATENCIÓN! Ambos servidores están caídos. Verifica tu conexión de red.', 'error');
+        if (document.getElementById('servidorStatus')) {
+            document.getElementById('servidorStatus').className = 'servidor-status error';
+            document.getElementById('servidorStatus').innerHTML = '<i class="fas fa-exclamation-triangle"></i> AMBOS SERVIDORES CAÍDOS';
+        }
+        return null;
+    }
+    
+    if (!primarioActivo) {
+        servidorActivo = SERVIDOR_RESPALDO;
+        mostrarMensaje(`🟡 Servidor de RESPALDO activo: ${SERVIDOR_RESPALDO}`, 'warning');
+        actualizarIndicadorServidor(servidorActivo);
+        return SERVIDOR_RESPALDO;
+    }
+    
+    if (respaldoActivo && servidorVerificado && Math.random() < 0.4) {
+        servidorActivo = SERVIDOR_RESPALDO;
+        mostrarMensaje(`🔄 Balanceo: usando servidor ${SERVIDOR_RESPALDO}`, 'exito');
+        actualizarIndicadorServidor(servidorActivo);
+        return SERVIDOR_RESPALDO;
+    }
+    
+    servidorActivo = SERVIDOR_PRIMARIO;
+    if (!servidorVerificado) {
+        servidorVerificado = true;
+        mostrarMensaje(`🟢 Servidor PRIMARIO activo: ${SERVIDOR_PRIMARIO}`, 'exito');
+    }
+    actualizarIndicadorServidor(servidorActivo);
+    return SERVIDOR_PRIMARIO;
+}
+
+// ============================================================
+// FETCH CON BALANCEO (para disponibilidad y AVL)
+// ============================================================
+async function fetchConBalanceoDisponibilidad(url, options = {}) {
+    const sessionId = obtenerSessionId();
+    let servidor = await obtenerServidorDisponible();
+    if (!servidor) {
+        throw new Error('No hay servidores disponibles');
+    }
+    const urlFinal = servidor + url;
+    const headers = {
+        'X-Session-ID': sessionId,
+        ...(options.headers || {})
+    };
+    try {
+        const response = await fetch(urlFinal, {
+            ...options,
+            headers: headers
+        });
+        if (!response.ok) {
+            const otro = servidor === SERVIDOR_PRIMARIO ? SERVIDOR_RESPALDO : SERVIDOR_PRIMARIO;
+            const urlOtro = otro + url;
+            const response2 = await fetch(urlOtro, {
+                ...options,
+                headers: headers
+            });
+            if (!response2.ok) {
+                throw new Error(`HTTP ${response2.status}`);
+            }
+            return response2;
+        }
+        return response;
+    } catch (e) {
+        throw e;
+    }
+}
+
+// ============================================================
+// CONFIGURACIÓN DE APPSHEET
 // ============================================================
 const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
 const API_KEY_APPSHEET = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
@@ -957,22 +1123,22 @@ const TABLE_FALLAS = "FALLAS_CCR";
 const TABLE_VISITAS = "VISITAS";
 
 // ============================================================
-// MONITOREO DE TRÁFICO Y USUARIOS CONECTADOS (servidor Python / VPN)
+// MONITOREO DE TRÁFICO Y USUARIOS CONECTADOS
 // ============================================================
-const MONITOR_SERVER = 'http://10.96.180.102:3000';
-const MONITOR_PING_ENDPOINT = `${MONITOR_SERVER}/api/ping`;
-const MONITOR_USUARIOS_ENDPOINT = `${MONITOR_SERVER}/api/usuarios`;
-const MONITOR_IPCOUNTERS_ENDPOINT = `${MONITOR_SERVER}/api/ipcounters`;
-const MONITOR_GETSTAT_ENDPOINT = `${MONITOR_SERVER}/api/getstat`;
-const MONITOR_PROCESSING_ENDPOINT = `${MONITOR_SERVER}/api/processing`;
-const MONITOR_START_ENDPOINT = `${MONITOR_SERVER}/api/start_monitor`;
-const MONITOR_STOP_ENDPOINT = `${MONITOR_SERVER}/api/stop_monitor`;
-const MONITOR_ACTIVOS_ENDPOINT = `${MONITOR_SERVER}/api/monitores_activos`;
-const MONITOR_STOP_ALL_ENDPOINT = `${MONITOR_SERVER}/api/stop_all_monitors`;
-const DISPONIBILIDAD_ENDPOINT = `${MONITOR_SERVER}/api/disponibilidad`;
-const DISPONIBILIDAD_BANDAS_ENDPOINT = `${MONITOR_SERVER}/api/disponibilidad_bandas`;
-const AVL_TREND_ENDPOINT = `${MONITOR_SERVER}/api/avl_trend`;
-const AVL_TREND_IA_ENDPOINT = `${MONITOR_SERVER}/api/avl_trend_ia`;
+const MONITOR_PING_ENDPOINT = '/api/ping';
+const MONITOR_USUARIOS_ENDPOINT = '/api/usuarios';
+const MONITOR_IPCOUNTERS_ENDPOINT = '/api/ipcounters';
+const MONITOR_GETSTAT_ENDPOINT = '/api/getstat';
+const MONITOR_PROCESSING_ENDPOINT = '/api/processing';
+const MONITOR_START_ENDPOINT = '/api/start_monitor';
+const MONITOR_STOP_ENDPOINT = '/api/stop_monitor';
+const MONITOR_ACTIVOS_ENDPOINT = '/api/monitores_activos';
+const MONITOR_STOP_ALL_ENDPOINT = '/api/stop_all_monitors';
+const DISPONIBILIDAD_ENDPOINT = '/api/disponibilidad';
+const DISPONIBILIDAD_BANDAS_ENDPOINT = '/api/disponibilidad_bandas';
+const AVL_TREND_ENDPOINT = '/api/avl_trend';
+const AVL_TREND_IA_ENDPOINT = '/api/avl_trend_ia';
+
 const TECNOLOGIAS_DISPONIBILIDAD = ['2G', '3G', '4G', '5G'];
 const MONITOR_TIMEOUT_MS = 4000;
 const MONITOR_REFRESH_MS = 60000;
@@ -1081,7 +1247,7 @@ function mostrarMensaje(texto, tipo) {
     if (tipo === 'exito') icono = '✅';
     if (tipo === 'warning') icono = '⚠️';
     div.innerHTML = `<div class="mensaje ${tipo}">${icono} ${texto}</div>`;
-    setTimeout(() => { if (div.innerHTML.includes(texto)) div.innerHTML = ''; }, 4000);
+    setTimeout(() => { if (div.innerHTML.includes(texto)) div.innerHTML = ''; }, 5000);
 }
 function setMapStatus(texto, busy) {
     const dot = document.getElementById('mapStatusDot');
@@ -1435,7 +1601,7 @@ function reanudarActualizacion() {
 function toggleActualizacion() { actualizacionActiva ? pausarActualizacion() : reanudarActualizacion(); }
 
 // ============================================================
-// RADIOGRAFÍA (simplificada)
+// RADIOGRAFÍA
 // ============================================================
 function obtenerCampo(f, candidatos) {
     for (let c of candidatos) {
@@ -1604,7 +1770,7 @@ function renderRadiografiaCompleta(sitio, fallas, visitas, sitiosInfo) {
 }
 
 // ============================================================
-// FALLAS (simplificada)
+// FALLAS
 // ============================================================
 function renderFallasContent(sitio, fallas) {
     if (!fallas || fallas.length === 0) {
@@ -1748,7 +1914,7 @@ function actualizarFallasVisual(fallas) {
 }
 
 // ============================================================
-// INFO SITIO (simplificada)
+// INFO SITIO
 // ============================================================
 function renderInfoContent(sitio, sitiosInfo) {
     if (!sitiosInfo || sitiosInfo.length === 0) return `<div class="rx-empty">⚠️ No se pudo cargar la tabla SITIOS.</div>`;
@@ -1793,7 +1959,7 @@ function recargarInfoSitio() {
 }
 
 // ============================================================
-// VISITAS (simplificada)
+// VISITAS
 // ============================================================
 function renderVisitasContent(visitas) {
     if (!visitas || visitas.length === 0) return `<div class="rx-empty">⚠️ No se encontraron visitas para este sitio.</div>`;
@@ -1879,7 +2045,7 @@ function generarTablaVisitas(visitas, añoFiltro) {
 }
 
 // ============================================================
-// MONITOREO (con IP cliente)
+// MONITOREO (con balanceo)
 // ============================================================
 let monitoreoInterval = null;
 let monitoreoChart = null;
@@ -1933,9 +2099,37 @@ function renderMonitoreoContent(sitio, sitiosInfo) {
         <details class="mon-details"><summary><i class="fas fa-chevron-right"></i> Detalles avanzados (GetStat / Processing)</summary>
             <div class="mon-details-grid" id="monDetallesGrid"><div style="grid-column:1/-1; color:var(--text-dim);">Sin datos aún.</div></div>
         </details>
-        <div class="mon-last-update" id="monUltimaActualizacion">Conectando a ${MONITOR_SERVER} (requiere VPN activa)…</div>
+        <div class="mon-last-update" id="monUltimaActualizacion">Conectando al servidor...</div>
     `;
 }
+
+async function avisarInicioMonitoreoServidor(ip) {
+    if (!ip) return;
+    try {
+        const servidor = await obtenerServidorDisponible();
+        if (!servidor) return;
+        const url = servidor + MONITOR_START_ENDPOINT + `?ip=${encodeURIComponent(ip)}`;
+        await fetch(url, { method: 'GET' });
+    } catch (e) {
+        console.warn('Error al iniciar monitoreo en servidor:', e);
+    }
+}
+
+async function avisarFinMonitoreoServidor(ip) {
+    if (!ip) return;
+    try {
+        const servidor = servidorActivo || SERVIDOR_PRIMARIO;
+        const url = servidor + MONITOR_STOP_ENDPOINT + `?ip=${encodeURIComponent(ip)}`;
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(url);
+        } else {
+            await fetch(url, { method: 'GET', keepalive: true });
+        }
+    } catch (e) {
+        console.warn('Error al detener monitoreo en servidor:', e);
+    }
+}
+
 function iniciarMonitoreoTab() {
     detenerMonitoreoTab();
     const sitiosInfo = window.__sitiosInfo || [];
@@ -1951,13 +2145,13 @@ function iniciarMonitoreoTab() {
     if (btnRefresh) btnRefresh.addEventListener('click', () => { if (monitoreoIpActual) actualizarMonitoreo(monitoreoIpActual); });
     if (btnToggle) btnToggle.addEventListener('click', toggleAutoMonitoreo);
     if (btnManual) {
-        btnManual.addEventListener('click', () => {
+        btnManual.addEventListener('click', async () => {
             const val = (document.getElementById('monManualIp').value || '').trim();
             const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
             if (!ipPattern.test(val)) { mostrarMensaje('⚠️ IP inválida', 'error'); return; }
             monitoreoIpActual = val;
             document.getElementById('monIpBadge').innerHTML = `<i class="fas fa-network-wired"></i><span>IP manual: ${val}</span>`;
-            avisarInicioMonitoreoServidor(val);
+            await avisarInicioMonitoreoServidor(val);
             actualizarMonitoreo(val);
             monitoreoInterval = setInterval(() => actualizarMonitoreo(val), MONITOR_REFRESH_MS);
         });
@@ -1970,19 +2164,13 @@ function iniciarMonitoreoTab() {
     }
 }
 function detenerMonitoreoTab() { if (monitoreoInterval) { clearInterval(monitoreoInterval); monitoreoInterval = null; } }
-function avisarInicioMonitoreoServidor(ip) { if (!ip) return; fetch(`${MONITOR_START_ENDPOINT}?ip=${encodeURIComponent(ip)}`).catch(() => {}); }
-function avisarFinMonitoreoServidor(ip) {
-    if (!ip) return;
-    const url = `${MONITOR_STOP_ENDPOINT}?ip=${encodeURIComponent(ip)}`;
-    if (navigator.sendBeacon) navigator.sendBeacon(url);
-    else fetch(url, { keepalive: true }).catch(() => {});
-}
-window.addEventListener('beforeunload', () => { if (monitoreoIpActual) avisarFinMonitoreoServidor(monitoreoIpActual); });
+
 function toggleAutoMonitoreo() {
     const btn = document.getElementById('monToggleAutoBtn');
     if (monitoreoInterval) { clearInterval(monitoreoInterval); monitoreoInterval = null; if (btn) btn.innerHTML = '<i class="fas fa-play"></i> Auto: OFF'; }
     else if (monitoreoIpActual) { actualizarMonitoreo(monitoreoIpActual); monitoreoInterval = setInterval(() => actualizarMonitoreo(monitoreoIpActual), MONITOR_REFRESH_MS); if (btn) btn.innerHTML = '<i class="fas fa-pause"></i> Auto: ON'; }
 }
+
 function inicializarChartMonitoreo() {
     const canvas = document.getElementById('monChartUsuarios');
     if (!canvas || typeof Chart === 'undefined') return;
@@ -1996,39 +2184,87 @@ function inicializarChartMonitoreo() {
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 9 } } } } }
     });
 }
+
+async function fetchConBalanceoMonitoreo(url, options = {}) {
+    let servidor = await obtenerServidorDisponible();
+    if (!servidor) {
+        return { ok: false, error: 'No hay servidores disponibles' };
+    }
+    const urlFinal = servidor + url;
+    try {
+        const response = await fetch(urlFinal, options);
+        if (!response.ok) {
+            const otro = servidor === SERVIDOR_PRIMARIO ? SERVIDOR_RESPALDO : SERVIDOR_PRIMARIO;
+            const urlOtro = otro + url;
+            const response2 = await fetch(urlOtro, options);
+            if (!response2.ok) {
+                return { ok: false, error: `HTTP ${response2.status}` };
+            }
+            return response2;
+        }
+        return response;
+    } catch (e) {
+        return { ok: false, error: e.message };
+    }
+}
+
 async function fetchMonitorPing(ip) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), MONITOR_TIMEOUT_MS);
     try {
-        const res = await fetch(`${MONITOR_PING_ENDPOINT}?ip=${encodeURIComponent(ip)}`, { signal: controller.signal });
+        const result = await fetchConBalanceoMonitoreo(`${MONITOR_PING_ENDPOINT}?ip=${encodeURIComponent(ip)}`, { signal: controller.signal });
         clearTimeout(timeoutId);
-        if (!res.ok) throw new Error('http-' + res.status);
-        const data = await res.json();
+        if (!result.ok) throw new Error(result.error || 'http-error');
+        const data = await result.json();
         return { online: data.online === true, latency: data.latencia_ms ?? null, ok: true };
-    } catch (e) { clearTimeout(timeoutId); return { online: false, latency: null, ok: false, err: e.name || 'error' }; }
+    } catch (e) {
+        clearTimeout(timeoutId);
+        return { online: false, latency: null, ok: false, err: e.name || 'error' };
+    }
 }
+
 async function fetchMonitorUsuarios(ip) {
     try {
-        const res = await fetch(`${MONITOR_USUARIOS_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
-        if (!res.ok) throw new Error('http-' + res.status);
-        const data = await res.json();
+        const result = await fetchConBalanceoMonitoreo(`${MONITOR_USUARIOS_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        if (!result.ok) throw new Error(result.error || 'http-error');
+        const data = await result.json();
         return { g4: data.usuarios_4g ?? 0, g5: data.usuarios_5g ?? 0, ok: true };
     } catch (e) { return { g4: null, g5: null, ok: false, err: e.name || 'error' }; }
 }
+
 async function fetchMonitorIpCounters(ip) {
     try {
-        const res = await fetch(`${MONITOR_IPCOUNTERS_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
-        if (!res.ok) throw new Error('http-' + res.status);
-        const data = await res.json();
+        const result = await fetchConBalanceoMonitoreo(`${MONITOR_IPCOUNTERS_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        if (!result.ok) throw new Error(result.error || 'http-error');
+        const data = await result.json();
         return { ...data, ok: true };
     } catch (e) { return { error: true, ok: false, err: e.name || 'error' }; }
 }
-async function fetchMonitorGetstat(ip) { try { const res = await fetch(`${MONITOR_GETSTAT_ENDPOINT}?ip=${encodeURIComponent(ip)}`); return await res.json(); } catch { return { error: true }; } }
-async function fetchMonitorProcessing(ip) { try { const res = await fetch(`${MONITOR_PROCESSING_ENDPOINT}?ip=${encodeURIComponent(ip)}`); return await res.json(); } catch { return { error: true }; } }
+
+async function fetchMonitorGetstat(ip) {
+    try {
+        const result = await fetchConBalanceoMonitoreo(`${MONITOR_GETSTAT_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        if (!result.ok) return { error: true };
+        return await result.json();
+    } catch { return { error: true }; }
+}
+
+async function fetchMonitorProcessing(ip) {
+    try {
+        const result = await fetchConBalanceoMonitoreo(`${MONITOR_PROCESSING_ENDPOINT}?ip=${encodeURIComponent(ip)}`);
+        if (!result.ok) return { error: true };
+        return await result.json();
+    } catch { return { error: true }; }
+}
+
 async function actualizarMonitoreo(ip) {
     const estadoEl = document.getElementById('monRefreshEstado');
     if (estadoEl) estadoEl.textContent = 'Actualizando…';
-    const [ping, usuarios, ipc] = await Promise.all([fetchMonitorPing(ip), fetchMonitorUsuarios(ip), fetchMonitorIpCounters(ip)]);
+    const [ping, usuarios, ipc] = await Promise.all([
+        fetchMonitorPing(ip),
+        fetchMonitorUsuarios(ip),
+        fetchMonitorIpCounters(ip)
+    ]);
     const todasFallaron = ping.ok === false && usuarios.ok === false && ipc.ok === false;
     let corsBanner = document.getElementById('monCorsBanner');
     if (todasFallaron) {
@@ -2039,8 +2275,8 @@ async function actualizarMonitoreo(ip) {
             corsBanner.style.marginBottom = '14px';
             corsBanner.style.borderLeft = '4px solid var(--red)';
             corsBanner.innerHTML = `
-                ⚠️ <strong>El navegador no puede leer la respuesta del servidor</strong> (bloqueo CORS).<br>
-                <small>Agrega en tu script Python: <code>@app.after_request def add_cors_headers(response): response.headers['Access-Control-Allow-Origin'] = '*'</code></small>
+                ⚠️ <strong>Error de conexión con el servidor de monitoreo</strong>.<br>
+                <small>Verifica que el servidor esté activo y accesible.</small>
             `;
             const toolbar = document.querySelector('#tab-monitoreo .mon-toolbar');
             if (toolbar) toolbar.insertAdjacentElement('afterend', corsBanner);
@@ -2077,11 +2313,11 @@ async function actualizarMonitoreo(ip) {
     });
     if (estadoEl) estadoEl.textContent = '';
     const ultima = document.getElementById('monUltimaActualizacion');
-    if (ultima) ultima.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — servidor ${MONITOR_SERVER}`;
+    if (ultima) ultima.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — Servidor: ${servidorActivo}`;
 }
 
 // ============================================================
-// DISPONIBILIDAD (simplificada)
+// DISPONIBILIDAD (con balanceo y session-id)
 // ============================================================
 let dispChart = null;
 let dispTecnologiaActual = '4G';
@@ -2177,6 +2413,7 @@ function iniciarDisponibilidadTab() {
     if (dispModoComparativo) cargarComparativoTecnologias(false);
     else cargarDisponibilidad(dispTecnologiaActual, false);
 }
+
 async function cargarDisponibilidad(tecnologia, forzar) {
     const estadoEl = document.getElementById('dispEstado');
     const ultimaEl = document.getElementById('dispUltimaActualizacion');
@@ -2185,15 +2422,16 @@ async function cargarDisponibilidad(tecnologia, forzar) {
     if (estadoEl) estadoEl.textContent = `Consultando ${tecnologia}…`;
     try {
         const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${encodeURIComponent(tecnologia)}&fecha_inicio=${dispFechaDesde}&fecha_fin=${dispFechaHasta}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const response = await fetchConBalanceoDisponibilidad(url);
+        const data = await response.json();
         if (data.error) { mostrarErrorDisponibilidad(data.error, data.detalle || data.solucion || ''); if (estadoEl) estadoEl.textContent = ''; return; }
         dispCacheDatos[clave] = data;
         renderDatosDisponibilidad(tecnologia, data);
         if (estadoEl) estadoEl.textContent = '';
-        if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla || tecnologia}`;
+        if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla || tecnologia} — Servidor: ${servidorActivo}`;
     } catch (e) { mostrarErrorDisponibilidad('No se pudo contactar al servidor.', e.message || ''); if (estadoEl) estadoEl.textContent = ''; }
 }
+
 async function cargarComparativoTecnologias(forzar) {
     const estadoEl = document.getElementById('dispEstado');
     const ultimaEl = document.getElementById('dispUltimaActualizacion');
@@ -2203,8 +2441,8 @@ async function cargarComparativoTecnologias(forzar) {
     const resultados = await Promise.all(TECNOLOGIAS_DISPONIBILIDAD.map(async t => {
         try {
             const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(sitioRadiografiaActual)}&tecnologia=${t}&fecha_inicio=${dispFechaDesde}&fecha_fin=${dispFechaHasta}`;
-            const res = await fetch(url);
-            const data = await res.json();
+            const response = await fetchConBalanceoDisponibilidad(url);
+            const data = await response.json();
             return { tec: t, data };
         } catch (e) { return { tec: t, data: { error: 'No se pudo contactar al servidor.', detalle: e.message } }; }
     }));
@@ -2212,8 +2450,9 @@ async function cargarComparativoTecnologias(forzar) {
     dispCacheComparativo[clave] = porTec;
     renderComparativoTecnologias(porTec);
     if (estadoEl) estadoEl.textContent = '';
-    if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — comparativo 2G/3G/4G/5G`;
+    if (ultimaEl) ultimaEl.textContent = `Última actualización: ${new Date().toLocaleTimeString('es-MX')} — comparativo 2G/3G/4G/5G — Servidor: ${servidorActivo}`;
 }
+
 function actualizarEncabezadoTabla(columnas) {
     const theadRow = document.querySelector('#dispTabla thead tr');
     if (theadRow) theadRow.innerHTML = columnas.map(c => `<th>${c}</th>`).join('');
@@ -2413,7 +2652,7 @@ function renderComparativoTecnologias(porTec) {
 }
 
 // ============================================================
-// AVL TREND (completo)
+// AVL TREND (con balanceo)
 // ============================================================
 let avlDatosCrudos = null;
 let avlTop10 = [];
@@ -2522,8 +2761,8 @@ async function cargarBandasAvl(tecnologia) {
     if (!select) return;
     select.innerHTML = `<option value="">Todas</option>`;
     try {
-        const res = await fetch(`${DISPONIBILIDAD_BANDAS_ENDPOINT}?tecnologia=${encodeURIComponent(tecnologia)}`);
-        const data = await res.json();
+        const response = await fetchConBalanceoDisponibilidad(`${DISPONIBILIDAD_BANDAS_ENDPOINT}?tecnologia=${encodeURIComponent(tecnologia)}`);
+        const data = await response.json();
         if (data.bandas && data.bandas.length) data.bandas.forEach(b => { const opt = document.createElement('option'); opt.value = b; opt.textContent = b; select.appendChild(opt); });
     } catch (e) {}
 }
@@ -2547,14 +2786,14 @@ async function ejecutarAnalisisAvl() {
     const timeoutId = setTimeout(() => controller.abort(), 25000);
     try {
         const url = `${AVL_TREND_ENDPOINT}?tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${avlFechaDesde}&fecha_fin=${avlFechaHasta}${avlBandaActual ? `&banda=${encodeURIComponent(avlBandaActual)}` : ''}&status=${encodeURIComponent(avlStatusActual)}`;
-        const res = await fetch(url, { signal: controller.signal });
+        const response = await fetchConBalanceoDisponibilidad(url);
         clearTimeout(timeoutId);
-        const data = await res.json();
+        const data = await response.json();
         if (data.error) { mostrarErrorAvl(data.error, data.detalle || data.solucion || ''); if (estadoEl) estadoEl.textContent = ''; return; }
         avlDatosCrudos = data;
         renderDistribucionStatusAvl(data);
         recalcularTop10Avl();
-        if (estadoEl) estadoEl.textContent = `Datos al ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla} (${avlFechaDesde} a ${avlFechaHasta})`;
+        if (estadoEl) estadoEl.textContent = `Datos al ${new Date().toLocaleTimeString('es-MX')} — tabla ${data.tabla} (${avlFechaDesde} a ${avlFechaHasta}) — Servidor: ${servidorActivo}`;
     } catch (error) {
         clearTimeout(timeoutId);
         if (error.name === 'AbortError') { mostrarErrorAvl('⏱️ Timeout de red', 'Verifica VPN/conexión.'); if (estadoEl) estadoEl.textContent = '⏱️ Timeout - no se pudo conectar.'; }
@@ -3042,8 +3281,14 @@ async function generarAnalisisIaAvl() {
             analisis_profundo: true,
             solicitud_plan_trabajo: true
         };
-        const res = await fetch(AVL_TREND_IA_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        const data = await res.json();
+        const servidor = await obtenerServidorDisponible();
+        if (!servidor) throw new Error('No hay servidores disponibles');
+        const response = await fetch(servidor + AVL_TREND_IA_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
         if (data.error) {
             box.innerHTML = generarAnalisisLocal(topSitios, gruposCompletos, tendenciaGrupos, umbral, diasMinimos);
         } else {
@@ -3228,6 +3473,10 @@ document.getElementById('rxRefreshBtn').addEventListener('click', () => {
 });
 document.getElementById('rxCloseBtn').addEventListener('click', cerrarRadiografia);
 document.getElementById('radiografiaModal').addEventListener('click', function (e) { if (e.target === this) cerrarRadiografia(); });
+
+// ============================================================
+// CERRAR RADIOGRAFÍA (CON CIERRE DE SESIÓN SQL)
+// ============================================================
 function cerrarRadiografia() {
     const modal = document.getElementById('radiografiaModal');
     modal.classList.remove('active');
@@ -3242,7 +3491,18 @@ function cerrarRadiografia() {
     sitioRadiografiaActual = null;
     fallasSitioCompleto = []; fallasSitioFiltradas = []; visitasSitioCompleto = [];
     document.getElementById('radiografiaBody').innerHTML = '';
+    
+    // Cerrar conexión SQL al salir de la radiografía
+    cerrarSesionSQL();
 }
+
+// ============================================================
+// CIERRE DE SESIÓN SQL AL CERRAR LA PESTAÑA
+// ============================================================
+window.addEventListener('beforeunload', () => {
+    if (monitoreoIpActual) avisarFinMonitoreoServidor(monitoreoIpActual);
+    cerrarSesionSQL();
+});
 
 // ============================================================
 // EVENTOS GENERALES
@@ -3428,14 +3688,20 @@ async function abrirModalDisponibilidad(nombreSitio) {
     try {
         let data = null;
         try {
-            const res = await fetch(`${DISPONIBILIDAD_BANDAS_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+            const servidor = await obtenerServidorDisponible();
+            if (!servidor) throw new Error('No hay servidores disponibles');
+            const url = servidor + `${DISPONIBILIDAD_BANDAS_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${encodeURIComponent(avlTecnologiaActual)}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            const res = await fetch(url, { headers: { 'X-Session-ID': obtenerSessionId() } });
             data = await res.json();
             if (data.error) throw new Error(data.error);
         } catch (e) {
             console.warn('Fallback a disponibilidad por tecnología:', e);
+            const servidor = await obtenerServidorDisponible();
+            if (!servidor) throw new Error('No hay servidores disponibles');
+            const sessionId = obtenerSessionId();
             const tecData = await Promise.all(TECNOLOGIAS_DISPONIBILIDAD.map(async t => {
-                const url = `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${t}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-                const res = await fetch(url);
+                const url = servidor + `${DISPONIBILIDAD_ENDPOINT}?sitio=${encodeURIComponent(nombreSitio)}&tecnologia=${t}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                const res = await fetch(url, { headers: { 'X-Session-ID': sessionId } });
                 return res.json();
             }));
             const combinados = [];
@@ -3452,7 +3718,7 @@ async function abrirModalDisponibilidad(nombreSitio) {
             ctx.fillText('No hay registros de disponibilidad.', canvas.width/2, canvas.height/2);
             return;
         }
-        estado.textContent = `Mostrando ${data.datos.length} registros de ${fechaInicio} a ${fechaFin}`;
+        estado.textContent = `Mostrando ${data.datos.length} registros de ${fechaInicio} a ${fechaFin} — Servidor: ${servidorActivo}`;
         const porBandaFecha = {};
         const porFechaTotal = {};
         const colFecha = data.columna_fecha || 'FECHA';
@@ -3538,7 +3804,7 @@ document.getElementById('avlModalRefreshBtn').addEventListener('click', () => {
 });
 
 // ============================================================
-// ADMINISTRACIÓN - CON COLUMNA CLIENTE
+// ADMINISTRACIÓN - CON COLUMNA CLIENTE Y BALANCEO
 // ============================================================
 function abrirAdminModal() {
     const modal = document.getElementById('adminModal');
@@ -3576,7 +3842,9 @@ async function cargarMonitoresActivos() {
     const status = document.getElementById('adminStatus');
     status.textContent = 'Cargando lista de monitores activos...';
     try {
-        const res = await fetch(MONITOR_ACTIVOS_ENDPOINT);
+        const servidor = await obtenerServidorDisponible();
+        if (!servidor) throw new Error('No hay servidores disponibles');
+        const res = await fetch(servidor + MONITOR_ACTIVOS_ENDPOINT);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const ips = data.ips || [];
@@ -3593,7 +3861,7 @@ async function cargarMonitoresActivos() {
                 <td><button class="btn-stop-ip" data-ip="${item.nodo}"><i class="fas fa-stop"></i> Detener</button></td>
             </tr>
         `).join('');
-        status.textContent = `✅ ${ips.length} monitor(es) activo(s).`;
+        status.textContent = `✅ ${ips.length} monitor(es) activo(s) — Servidor: ${servidorActivo}`;
         tbody.querySelectorAll('.btn-stop-ip').forEach(btn => {
             btn.addEventListener('click', function() {
                 const ip = this.dataset.ip;
@@ -3610,7 +3878,9 @@ async function detenerMonitor(ip) {
     const status = document.getElementById('adminStatus');
     status.textContent = `Deteniendo monitoreo de ${ip}...`;
     try {
-        const res = await fetch(`${MONITOR_STOP_ENDPOINT}?ip=${encodeURIComponent(ip)}`, { method: 'POST' });
+        const servidor = await obtenerServidorDisponible();
+        if (!servidor) throw new Error('No hay servidores disponibles');
+        const res = await fetch(servidor + `${MONITOR_STOP_ENDPOINT}?ip=${encodeURIComponent(ip)}`, { method: 'POST' });
         const data = await res.json();
         if (data.error) { status.textContent = `❌ Error: ${data.error}`; }
         else { status.textContent = `✅ Monitoreo de ${ip} detenido.`; mostrarMensaje(`✅ Monitoreo de ${ip} detenido`, 'exito'); cargarMonitoresActivos(); }
@@ -3621,7 +3891,9 @@ async function detenerTodosMonitores() {
     const status = document.getElementById('adminStatus');
     status.textContent = 'Deteniendo todos los monitores...';
     try {
-        const res = await fetch(MONITOR_STOP_ALL_ENDPOINT, { method: 'POST' });
+        const servidor = await obtenerServidorDisponible();
+        if (!servidor) throw new Error('No hay servidores disponibles');
+        const res = await fetch(servidor + MONITOR_STOP_ALL_ENDPOINT, { method: 'POST' });
         const data = await res.json();
         if (data.error) { status.textContent = `❌ Error: ${data.error}`; }
         else { status.textContent = `✅ Todos los monitores detenidos.`; mostrarMensaje('✅ Todos los monitores fueron detenidos', 'exito'); cargarMonitoresActivos(); }
@@ -3634,6 +3906,18 @@ document.getElementById('adminPasswordBtn').addEventListener('click', verificarA
 document.getElementById('adminPasswordInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') verificarAdminPassword(); });
 document.getElementById('adminRefreshMonitoresBtn').addEventListener('click', cargarMonitoresActivos);
 document.getElementById('adminStopAllBtn').addEventListener('click', detenerTodosMonitores);
+
+// ============================================================
+// VERIFICACIÓN INICIAL DEL SERVIDOR
+// ============================================================
+(async function verificarServidorInicial() {
+    const servidor = await obtenerServidorDisponible();
+    if (servidor) {
+        console.log(`✅ Servidor activo: ${servidor}`);
+    } else {
+        console.warn('⚠️ No hay servidores disponibles');
+    }
+})();
 
 // ============================================================
 // INICIALIZACIÓN
