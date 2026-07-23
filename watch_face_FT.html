@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📊 OYMR4 - WATCH DASH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: #0a0a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        
+        .watch-container {
+            max-width: 380px;
+            width: 100%;
+            background: linear-gradient(145deg, #12122a, #1a1a3e);
+            border-radius: 30px;
+            padding: 16px 14px 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        /* Header */
+        .watch-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        .watch-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .watch-title h1 {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        
+        .watch-title .badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 8px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .watch-time {
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .watch-time .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #28a745;
+            display: inline-block;
+            animation: pulse-dot 1.5s infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        
+        /* Total counter */
+        .total-counter {
+            background: rgba(102,126,234,0.12);
+            border-radius: 16px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            border: 1px solid rgba(102,126,234,0.15);
+        }
+        
+        .total-counter .label {
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .total-counter .number {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Grid layout */
+        .watch-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .watch-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 12px 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .watch-card.full {
+            grid-column: 1 / -1;
+        }
+        
+        .watch-card .card-title {
+            color: rgba(255,255,255,0.4);
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .watch-card .card-title i {
+            font-size: 10px;
+        }
+        
+        /* Items list */
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        
+        .item-row .name {
+            color: rgba(255,255,255,0.85);
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 65%;
+        }
+        
+        .item-row .name .dot-color {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        
+        .item-row .value {
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.06);
+            padding: 0 8px;
+            border-radius: 10px;
+            min-width: 22px;
+            text-align: center;
+        }
+        
+        .item-row .value.danger {
+            color: #ff6b6b;
+        }
+        
+        .item-row .value.warning {
+            color: #ffd93d;
+        }
+        
+        .item-row .value.success {
+            color: #6bcb77;
+        }
+        
+        /* Tipo badges */
+        .tipo-badge {
+            font-size: 8px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
+        
+        .tipo-badge.software { background: #1565c033; color: #64b5f6; }
+        .tipo-badge.hardware { background: #c6282833; color: #ef9a9a; }
+        .tipo-badge.fibra { background: #2e7d3233; color: #81c784; }
+        .tipo-badge.energia { background: #ef6c0033; color: #ffb74d; }
+        .tipo-badge.vandalismo { background: #c2185b33; color: #f48fb1; }
+        .tipo-badge.infrestructura { background: #28359333; color: #9fa8da; }
+        .tipo-badge.default { background: #7b1fa233; color: #ce93d8; }
+        
+        /* Footer */
+        .watch-footer {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .watch-footer .update-info {
+            color: rgba(255,255,255,0.25);
+            font-size: 9px;
+            font-weight: 300;
+        }
+        
+        .watch-footer .update-info i {
+            margin-right: 4px;
+        }
+        
+        .watch-footer .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .watch-footer .status .led {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .watch-footer .status .led.online {
+            background: #28a745;
+            box-shadow: 0 0 8px rgba(40,167,69,0.3);
+        }
+        
+        .watch-footer .status .led.error {
+            background: #dc3545;
+            box-shadow: 0 0 8px rgba(220,53,69,0.3);
+        }
+        
+        .watch-footer .status-text {
+            color: rgba(255,255,255,0.4);
+            font-size: 9px;
+        }
+        
+        /* Scrollbar minimal */
+        ::-webkit-scrollbar {
+            width: 2px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 380px) {
+            .watch-container {
+                padding: 12px 10px 16px;
+                border-radius: 20px;
+            }
+            .total-counter .number {
+                font-size: 22px;
+            }
+            .item-row .name {
+                font-size: 10px;
+            }
+            .item-row .value {
+                font-size: 11px;
+                padding: 0 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="watch-container">
+    <!-- Header -->
+    <div class="watch-header">
+        <div class="watch-title">
+            <h1>OYMR4</h1>
+            <span class="badge">FAST TRACK</span>
+        </div>
+        <div class="watch-time">
+            <span class="dot"></span>
+            <span id="watchClock">--:--</span>
+        </div>
+    </div>
+    
+    <!-- Total Counter -->
+    <div class="total-counter">
+        <span class="label"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i> Fallas activas</span>
+        <span class="number" id="totalFallas">0</span>
+    </div>
+    
+    <!-- Grid -->
+    <div class="watch-grid">
+        <!-- ZONAS -->
+        <div class="watch-card">
+            <div class="card-title"><i class="fas fa-map-pin"></i> Por zona</div>
+            <div class="item-list" id="zonasList">
+                <div class="item-row">
+                    <span class="name" style="color:rgba(255,255,255,0.3);">Cargando...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TIPOS -->
+        <div class="watch-card">
+            <div class="card-title"><i class="fas fa-bug"></i> Por tipo</div>
+            <div class="item-list" id="tiposList">
+                <div class="item-row">
+                    <span class="name" style="color:rgba(255,255,255,0.3);">Cargando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="watch-footer">
+        <div class="update-info">
+            <i class="fas fa-sync-alt"></i>
+            <span id="lastUpdate">--:--:--</span>
+        </div>
+        <div class="status">
+            <span class="led online" id="statusLed"></span>
+            <span class="status-text" id="statusText">Conectado</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN - MISMA QUE TU SISTEMA
+// ============================================================
+const APP_ID = "c92b101b-660e-4e39-bf95-d989a4223dd1";
+const API_KEY = "V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
+const TABLE_NAME = "FAST TRACK";
+
+const COLORS = [
+    '#667eea', '#28a745', '#dc3545', '#ffc107', '#17a2b8',
+    '#fd7e14', '#6f42c1', '#e83e8c', '#20c997', '#6610f2'
+];
+
+const TIPO_COLORS = {
+    'software': '#64b5f6',
+    'hardware': '#ef9a9a',
+    'fibra': '#81c784',
+    'energia': '#ffb74d',
+    'vandalismo': '#f48fb1',
+    'infraestructura': '#9fa8da',
+    'default': '#ce93d8'
+};
+
+// ============================================================
+// FUNCIONES AUXILIARES
+// ============================================================
+function obtenerValor(fila, campo) {
+    if (!fila) return '-';
+    if (fila[campo] !== undefined) return fila[campo];
+    if (fila[campo.toUpperCase()] !== undefined) return fila[campo.toUpperCase()];
+    if (fila[campo.toLowerCase()] !== undefined) return fila[campo.toLowerCase()];
+    for (let key in fila) {
+        if (key.toUpperCase().includes(campo.toUpperCase())) return fila[key];
+    }
+    return '-';
+}
+
+function obtenerZona(fila) { return obtenerValor(fila, 'ZONA'); }
+function obtenerTipoFalla(fila) { return obtenerValor(fila, 'TIPO DE FALLA'); }
+
+function getTipoClass(tipo) {
+    const t = (tipo || '').toLowerCase();
+    if (t.includes('software') || t.includes('datos de configuracion')) return 'software';
+    if (t.includes('hardware')) return 'hardware';
+    if (t.includes('fibra')) return 'fibra';
+    if (t.includes('energia')) return 'energia';
+    if (t.includes('vandalismo')) return 'vandalismo';
+    if (t.includes('infraestructura')) return 'infrestructura';
+    return 'default';
+}
+
+function getTipoColor(tipo) {
+    const cls = getTipoClass(tipo);
+    return TIPO_COLORS[cls] || TIPO_COLORS['default'];
+}
+
+function getZonaColor(zona, index) {
+    // Usamos un hash simple para mantener consistencia
+    let hash = 0;
+    for (let i = 0; i < zona.length; i++) {
+        hash = zona.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return COLORS[Math.abs(hash) % COLORS.length];
+}
+
+// ============================================================
+// ESTADO
+// ============================================================
+let datos = [];
+let intervalId = null;
+let isUpdating = false;
+
+// ============================================================
+// RENDERIZADO
+// ============================================================
+function renderDashboard(data) {
+    if (!data || data.length === 0) {
+        document.getElementById('totalFallas').textContent = '0';
+        document.getElementById('zonasList').innerHTML = `
+            <div class="item-row">
+                <span class="name" style="color:rgba(255,255,255,0.3);">Sin datos</span>
+            </div>
+        `;
+        document.getElementById('tiposList').innerHTML = `
+            <div class="item-row">
+                <span class="name" style="color:rgba(255,255,255,0.3);">Sin datos</span>
+            </div>
+        `;
+        return;
+    }
+    
+    // Total
+    document.getElementById('totalFallas').textContent = data.length;
+    
+    // === ZONAS (top 5) ===
+    const zonas = {};
+    data.forEach(f => {
+        const z = obtenerZona(f);
+        if (z !== '-') zonas[z] = (zonas[z] || 0) + 1;
+    });
+    
+    const zonasSorted = Object.entries(zonas)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    let zonasHtml = '';
+    zonasSorted.forEach(([zona, count], idx) => {
+        const color = getZonaColor(zona, idx);
+        const valueClass = count > 6 ? 'danger' : (count > 3 ? 'warning' : 'success');
+        zonasHtml += `
+            <div class="item-row">
+                <span class="name">
+                    <span class="dot-color" style="background:${color};"></span>
+                    ${zona}
+                </span>
+                <span class="value ${valueClass}">${count}</span>
+            </div>
+        `;
+    });
+    
+    if (zonasSorted.length === 0) {
+        zonasHtml = `<div class="item-row"><span class="name" style="color:rgba(255,255,255,0.3);">Sin zonas</span></div>`;
+    }
+    document.getElementById('zonasList').innerHTML = zonasHtml;
+    
+    // === TIPOS (top 5) ===
+    const tipos = {};
+    data.forEach(f => {
+        const t = obtenerTipoFalla(f);
+        if (t !== '-') tipos[t] = (tipos[t] || 0) + 1;
+    });
+    
+    const tiposSorted = Object.entries(tipos)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    let tiposHtml = '';
+    tiposSorted.forEach(([tipo, count]) => {
+        const cls = getTipoClass(tipo);
+        const color = getTipoColor(tipo);
+        tiposHtml += `
+            <div class="item-row">
+                <span class="name">
+                    <span class="dot-color" style="background:${color};"></span>
+                    <span class="tipo-badge ${cls}">${tipo.length > 15 ? tipo.substring(0, 12)+'…' : tipo}</span>
+                </span>
+                <span class="value">${count}</span>
+            </div>
+        `;
+    });
+    
+    if (tiposSorted.length === 0) {
+        tiposHtml = `<div class="item-row"><span class="name" style="color:rgba(255,255,255,0.3);">Sin tipos</span></div>`;
+    }
+    document.getElementById('tiposList').innerHTML = tiposHtml;
+}
+
+// ============================================================
+// OBTENER DATOS DESDE APPSHEET
+// ============================================================
+async function fetchData() {
+    if (isUpdating) return;
+    isUpdating = true;
+    
+    const led = document.getElementById('statusLed');
+    const statusText = document.getElementById('statusText');
+    
+    try {
+        led.className = 'led online';
+        statusText.textContent = 'Conectando...';
+        
+        const response = await fetch(
+            `https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE_NAME)}/Action`,
+            {
+                method: 'POST',
+                headers: {
+                    'ApplicationAccessKey': API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    Action: "Find",
+                    Properties: {},
+                    Rows: []
+                })
+            }
+        );
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const rawData = await response.json();
+        
+        let registros = [];
+        if (Array.isArray(rawData)) registros = rawData;
+        else if (rawData.Rows && Array.isArray(rawData.Rows)) registros = rawData.Rows;
+        else if (rawData && typeof rawData === 'object') {
+            for (let key in rawData) {
+                if (Array.isArray(rawData[key]) && rawData[key].length > 0) {
+                    registros = rawData[key];
+                    break;
+                }
+            }
+            if (registros.length === 0 && rawData.SITIO !== undefined) registros = [rawData];
+        }
+        
+        datos = registros;
+        renderDashboard(datos);
+        
+        // Update time
+        const now = new Date();
+        document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('es-MX');
+        document.getElementById('watchClock').textContent = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        
+        led.className = 'led online';
+        statusText.textContent = `OK ${datos.length} regs`;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        led.className = 'led error';
+        statusText.textContent = 'Error';
+        
+        if (datos.length === 0) {
+            renderDashboard([]);
+        } else {
+            renderDashboard(datos);
+        }
+    } finally {
+        isUpdating = false;
+    }
+}
+
+// ============================================================
+// RELOJ
+// ============================================================
+function updateClock() {
+    const now = new Date();
+    document.getElementById('watchClock').textContent = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+function init() {
+    updateClock();
+    fetchData();
+    
+    // Actualizar cada 30 segundos
+    intervalId = setInterval(() => {
+        updateClock();
+        fetchData();
+    }, 30000);
+    
+    // También actualizar el reloj cada 1s
+    setInterval(updateClock, 1000);
+}
+
+// Iniciar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', init);
+
+// Limpiar intervalo al cerrar
+window.addEventListener('beforeunload', () => {
+    if (intervalId) clearInterval(intervalId);
+});
+</script>
+
+</body>
+</html>
