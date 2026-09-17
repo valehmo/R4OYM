@@ -755,6 +755,16 @@ body{
     .rx-year-dashboard{grid-template-columns:repeat(auto-fill,minmax(60px,1fr));}
 }
 </style>
+
+<style id="carto-clean-map-style">
+.leaflet-map .leaflet-tile-pane {
+    filter: saturate(0.55) brightness(1.08) contrast(0.92);
+}
+.leaflet-map .leaflet-tile {
+    opacity: 0.96;
+}
+</style>
+
 </head>
 <body>
 
@@ -1451,9 +1461,8 @@ function actualizarListaSitiosDatalist() {
 // ============================================================
 function inicializarMapa() {
     mapa = L.map('map', { preferCanvas: true }).setView(mapViewState.center, mapViewState.zoom);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
-        subdomains: 'abcd',
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
         maxZoom: 19
     }).addTo(mapa);
     mapa.on('moveend', () => {
@@ -1474,9 +1483,8 @@ function inicializarMapa() {
 function inicializarMapaExpandido() {
     if (mapExpandido) mapExpandido.remove();
     mapExpandido = L.map('map-expanded', { preferCanvas: true }).setView(mapViewState.center, mapViewState.zoom);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: '&copy; OSM',
-        subdomains: 'abcd',
         maxZoom: 19
     }).addTo(mapExpandido);
     marcadoresExpandido = L.layerGroup().addTo(mapExpandido);
