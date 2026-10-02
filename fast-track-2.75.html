@@ -350,6 +350,38 @@
             transition: all 0.3s ease;
         }
         
+        /* Estilo para el selector de capas de Leaflet */
+        .leaflet-control-layers {
+            border-radius: 12px !important;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.2) !important;
+            border: none !important;
+            padding: 8px 10px !important;
+            font-family: 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 12px !important;
+        }
+        .leaflet-control-layers-list label {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 4px 6px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            transition: background 0.2s !important;
+        }
+        .leaflet-control-layers-list label:hover {
+            background: #f0f4ff !important;
+        }
+        .leaflet-control-layers-selector {
+            margin: 0 !important;
+            cursor: pointer !important;
+        }
+        .leaflet-control-layers-toggle {
+            width: 36px !important;
+            height: 36px !important;
+            background-size: 20px 20px !important;
+            border-radius: 10px !important;
+        }
+        
         .map-modal {
             display: none;
             position: fixed;
@@ -647,6 +679,7 @@
             .btn-expand-map { padding: 4px 10px; font-size: 10px; }
             .map-filters { flex-direction: column; }
             .map-filters select { width: 100%; }
+            .leaflet-control-layers { font-size: 11px !important; padding: 6px 8px !important; }
         }
         
         #tableContent{transition:opacity 0.15s ease;}
@@ -769,7 +802,7 @@
         </div>
         <div id="map"></div>
         <div class="grafica-tiempo" style="margin-top: 8px;">
-            <i class="fas fa-palette"></i> Colores: 🔴 >6 días | 🟠 >3 días | 🟡 >2 días | 🟢 ≤2 días | Iconos según tipo de falla
+            <i class="fas fa-layer-group"></i> Capas: Satélite | Terreno | Calles | Océano | NatGeo (selector arriba a la derecha) &nbsp;·&nbsp; <i class="fas fa-palette"></i> Colores: 🔴 >6 días | 🟠 >3 días | 🟡 >2 días | 🟢 ≤2 días
         </div>
     </div>
     
@@ -777,7 +810,7 @@
         <h3>
             <i class="fas fa-chart-line"></i> Evolución de registros
             <span class="recording-indicator" id="recIndicator"></span>
-            <span style="font-size:11px; font-weight:normal;" id="timerInfo"></span>
+            <span style="font-size:11px;font-weight:normal;" id="timerInfo"></span>
         </h3>
         <div class="selector-grafica-container">
             <div class="selector-grafica">
@@ -860,6 +893,9 @@
 </div>
 
 <script>
+// ⬇️ Forzar el envío del header Referer
+L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
+
 // ============================================
 // MAPA CON FILTRO POR TIPO DE FALLA
 // ============================================
@@ -996,15 +1032,46 @@ function actualizarSelectorMapaTipoFalla() {
     }
 }
 
+// ============================================
+// CAPAS BASE DISPONIBLES (todas sin API Key)
+// ============================================
+function crearCapasBase() {
+    const atribucionEsri = 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community';
+    return {
+        "🛰️ Satélite": L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            { attribution: atribucionEsri, maxZoom: 19, minZoom: 3 }
+        ),
+        "🏔️ Terreno": L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+            { attribution: atribucionEsri, maxZoom: 19, minZoom: 3 }
+        ),
+        "🛣️ Calles": L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            { attribution: atribucionEsri, maxZoom: 19, minZoom: 3 }
+        ),
+        "🌊 Océano": L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+            { attribution: atribucionEsri, maxZoom: 13, minZoom: 3 }
+        ),
+        "🗺️ NatGeo": L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
+            { attribution: atribucionEsri, maxZoom: 16, minZoom: 3 }
+        )
+    };
+}
+
 // ============ FUNCIONES DEL MAPA CON FILTRO ============
 function inicializarMapa() {
-    map = L.map('map').setView(mapViewState.center, mapViewState.zoom);
+    map = L.map('map', { zoomControl: true }).setView(mapViewState.center, mapViewState.zoom);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
-        subdomains: 'abcd',
-        maxZoom: 19,
-        minZoom: 3
+    const capas = crearCapasBase();
+    capas["🛰️ Satélite"].addTo(map); // Capa por defecto
+    
+    // Control de capas (selector arriba a la derecha)
+    L.control.layers(capas, null, {
+        position: 'topright',
+        collapsed: false
     }).addTo(map);
     
     map.on('moveend', function() {
@@ -1026,13 +1093,14 @@ function inicializarMapaExpandido() {
         mapExpanded.remove();
         mapExpanded = null;
     }
-    mapExpanded = L.map('map-expanded').setView(mapViewState.center, mapViewState.zoom);
+    mapExpanded = L.map('map-expanded', { zoomControl: true }).setView(mapViewState.center, mapViewState.zoom);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
-        subdomains: 'abcd',
-        maxZoom: 19,
-        minZoom: 3
+    const capas = crearCapasBase();
+    capas["🛰️ Satélite"].addTo(mapExpanded);
+    
+    L.control.layers(capas, null, {
+        position: 'topright',
+        collapsed: false
     }).addTo(mapExpanded);
     
     return mapExpanded;
@@ -1109,7 +1177,6 @@ function actualizarMapa() {
             .addTo(markersLayer);
     });
     
-    // Mantener la posición actual del mapa, no reajustar
     if (mapViewState.initialized) {
         map.setView(mapViewState.center, mapViewState.zoom);
     }
