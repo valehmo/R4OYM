@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAO TELMEX · Folios</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#f5f7fc;color:#0a2540;padding-bottom:40px}
+.top{position:sticky;top:0;z-index:1000;background:#0a1c2f;color:#fff;box-shadow:0 4px 12px #0003}
+.ti{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:8px 24px;flex-wrap:wrap}
+.sc{padding:0 12px;border-left:2px solid #fff3}.sc:first-child{border:0;padding-left:0}
+.sc b{display:block;font-size:1.5rem;line-height:1.1}.sc span{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#9ab3cf}
+.bd{background:#ffffff14;border-radius:30px;padding:4px 14px;font-size:.72rem;white-space:nowrap}
+.bd i{font-style:normal;background:#dc2626;border-radius:20px;padding:1px 8px;margin-left:6px;font-weight:700}
+.live{background:#dc2626;border-radius:40px;padding:2px 10px;font-size:.65rem;font-weight:700;animation:p 1.5s infinite}
+@keyframes p{50%{opacity:.55}}
+.top button,.top select{background:#ffffff26;color:#fff;border:0;border-radius:6px;padding:5px 10px;font:inherit;font-size:.72rem;cursor:pointer}
+.top select option{color:#000}
+.dash{max-width:1400px;margin:0 auto;padding:22px 24px}
+h1{font-size:1.5rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bn{display:inline-block;margin:10px 0 16px;background:#fff0db;border-radius:30px;padding:5px 14px;font-size:.78rem}
+.bn.ok{background:#e8f3e8}.bn.er{background:#fee9e6}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:16px}
+.stat{background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 4px #0a25401a}
+.stat b{font-size:2rem;display:block}.stat span{font-size:.68rem;color:#64748b;text-transform:uppercase;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.row{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px #0a25401a;min-width:0;margin-bottom:14px}
+.row .card{margin:0}
+.ch{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.ch h3{font-size:.92rem}
+.cv{position:relative;height:290px}
+#map{height:380px;border-radius:10px;background:#e3eaf3}
+.seg button,.btn{border:1px solid #cbd5e1;background:#fff;border-radius:20px;padding:5px 14px;font:inherit;font-size:.75rem;cursor:pointer}
+.seg button.on{background:#0a1c2f;color:#fff;border-color:#0a1c2f}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools input{border:1px solid #cbd5e1;border-radius:20px;padding:5px 14px;font:inherit;font-size:.78rem;min-width:220px}
+.chip{background:#dbeafe;color:#1e40af;border-radius:20px;padding:4px 12px;font-size:.75rem;cursor:pointer}
+.tw{overflow:auto;max-height:560px}
+table{border-collapse:collapse;width:100%;font-size:.76rem;white-space:nowrap}
+th{position:sticky;top:0;background:#eef2f9;text-align:left;padding:8px 10px;z-index:1}
+td{padding:7px 10px;border-bottom:1px solid #eef2f9;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+.s{border-radius:20px;padding:2px 9px;font-weight:600;font-size:.7rem}
+.s.o{background:#fee2e2;color:#b91c1c}.s.l{background:#dcfce7;color:#15803d}.s.w{background:#fef3c7;color:#b45309}
+.lg{display:flex;gap:16px;font-size:.72rem;margin-top:8px;color:#475569}.lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.ft{text-align:center;font-size:.7rem;color:#64748b;margin-top:8px}
+#dbg{position:fixed;left:0;right:0;bottom:0;background:#070d17;color:#9fb3cc;border-top:2px solid #2dd4ff;z-index:2000;height:32px;display:flex;flex-direction:column}
+#dbg.open{height:38vh}
+#dh{display:flex;gap:10px;align-items:center;padding:4px 14px;min-height:30px;font-size:.75rem}
+#dh strong{margin-right:auto;color:#fff}#dh button{background:#16243a;color:#dbe6f5;border:1px solid #1f2f48;border-radius:5px;padding:2px 9px;font:inherit;cursor:pointer}
+#lg{flex:1;overflow:auto;padding:4px 14px;font:11.5px/1.5 Consolas,monospace;display:none}#dbg.open #lg{display:block}
+.l{border-bottom:1px solid #121e31;white-space:pre-wrap;word-break:break-all}.l.ok{color:#34d399}.l.er{color:#ff5d6c}.l.wr{color:#fbbf24}
+</style></head><body>
+
+<div class="top"><div class="ti">
+ <div class="sc"><b id="tOpen">0</b><span>Folios no levantados</span></div>
+ <div class="sc"><b id="tLev">0</b><span>Levantados</span></div>
+ <div class="sc"><b id="tPct">0%</b><span>% levantado</span></div>
+ <div class="bd">🏆 TOP ZONA <span id="tZ">---</span><i id="tZn">0</i></div>
+ <div class="bd">⚠ SIN SISA <i id="tSs">0</i></div>
+ <span style="flex:1"></span>
+ <span class="live">● LIVE</span><span class="bd" id="cd">60s</span>
+ <button id="bRef">Actualizar</button><button id="bMute">🔔 Alerta</button>
+ <select id="fd" title="Formato de fecha que devuelve AppSheet"><option value="auto">Fecha: auto</option><option value="mdy">Fecha: M/D/A</option><option value="dmy">Fecha: D/M/A</option></select>
+</div></div>
+
+<div class="dash">
+ <h1>📡 CAO TELMEX · Folios <small style="font-size:.8rem;color:#64748b;font-weight:500">No levantados vs levantados</small></h1>
+ <span class="bn" id="bn">Conectando a AppSheet…</span>
+
+ <div class="stats">
+  <div class="stat"><b id="sOpen" style="color:#dc2626">0</b><span>No levantados</span></div>
+  <div class="stat"><b id="sLev" style="color:#16a34a">0</b><span>Levantados</span></div>
+  <div class="stat"><b id="sTot">0</b><span>Total folios</span></div>
+  <div class="stat"><b id="sMas" style="color:#ea580c">0</b><span>Masivos abiertos</span></div>
+  <div class="stat"><b id="sSs" style="color:#b45309">0</b><span>Abiertos sin SISA</span></div>
+  <div class="stat"><b id="sAvg">-</b><span>Tiempo prom. abiertos</span></div>
+ </div>
+
+ <div class="row">
+  <div class="card"><div class="ch"><h3>Folios por zona (clic para filtrar)</h3><button class="btn" id="bClr">🗑 Limpiar zona</button></div><div class="cv"><canvas id="cz"></canvas></div></div>
+  <div class="card"><div class="ch"><h3>Backlog y levantamientos</h3><div class="seg"><button id="vH" class="on">Por hora (48h)</button><button id="vD">Por día (14d)</button></div></div><div class="cv"><canvas id="ct"></canvas></div></div>
+ </div>
+
+ <div class="card"><div class="ch"><h3>🗺 Localización de folios (según filtros)</h3></div><div id="map"></div>
+  <div class="lg"><span><i style="background:#dc2626"></i>No levantado</span><span><i style="background:#16a34a"></i>Levantado</span></div></div>
+
+ <div class="card">
+  <div class="ch"><div class="seg"><button id="tO" class="on">No levantados</button><button id="tL">Levantados</button><button id="tA">Todos</button></div>
+   <div class="tools"><span class="chip" id="zChip" hidden></span><input id="q" placeholder="🔍 Sitio, zona, folio, SISA…"><button class="btn" id="bX">⬇ Exportar CSV</button></div></div>
+  <div class="tw"><table><thead><tr><th>Sitio</th><th>Zona</th><th>Folio</th><th>Tipo</th><th>Prioridad</th><th>Estatus sitio</th><th>SISA trabajo</th><th>SISA respaldo</th><th>Inicio</th><th>Fin</th><th id="hD" style="cursor:pointer">Duración ⬇</th><th>Cob. única</th><th>Último comentario</th></tr></thead><tbody id="tb"></tbody></table></div>
+ </div>
+ <div class="ft">Levantado = folio con FIN DE FALLA registrado o sitio en UP · Actualiza cada 60 s · Fuente: AppSheet, tabla CAOR4</div>
+</div>
+
+<div id="dbg"><div id="dh"><strong>Debug</strong><span id="dc">0 eventos</span><button id="bCp">Copiar</button><button id="bCl">Limpiar</button><button id="bTg">Abrir</button></div><div id="lg"></div></div>
+
+<script>
+const APP_ID="c92b101b-660e-4e39-bf95-d989a4223dd1",API_KEY="V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt",TABLE="CAOR4";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nrm=s=>String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+const cl=v=>{v=String(v??"").trim();return /^-+$/.test(v)?"":v};
+const PAT={zona:/^zona$/,folio:/^folio$/,sitio:/^sitio$/,tipo:/^tipo ?folio/,est:/^estatus ?(de )?sitio/,sisaT:/^sisa ?trabajo$/,sisaTe:/^estatus ?sisa ?trabajo/,sisaR:/^sisa ?respaldo$/,sisaRe:/^estatus ?sisa ?respaldo/,ini:/^inicio ?(de )?falla/,fin:/^fin ?(de )?falla/,com:/(ultimo|utlimo) ?comentario/,estF:/^estatus ?folio/,pob:/^poblacion/,cu:/^cobertura ?unica/,lat:/^latitud/,lon:/^longitud/,pri:/^prioridad/};
+let R=[],tab="open",zonaF="",q="",sortDir=-1,DMY=false,prevOpen=null,mute=false,cZ=null,cT=null,view="hour",map=null,layer=null,fitted=false,cd=60,logs=[],nl=0,busy=false;
+try{$("fd").value=localStorage.getItem("fdate")||"auto";mute=localStorage.getItem("mute")==="1"}catch(e){}
+
+// ---------- debug ----------
+function log(t,m){nl++;const s=new Date().toLocaleTimeString("es-MX")+" "+m;logs.push(s);const d=document.createElement("div");d.className="l "+t;d.textContent=s;$("lg").appendChild(d);$("lg").scrollTop=1e9;$("dc").textContent=nl+" eventos";if(t==="er")dbg(true)}
+function dbg(o){$("dbg").classList.toggle("open",o);$("bTg").textContent=o?"Cerrar":"Abrir";document.body.style.paddingBottom=o?"40vh":"40px"}
+$("bTg").onclick=()=>dbg(!$("dbg").classList.contains("open"));
+$("bCl").onclick=()=>{logs=[];$("lg").innerHTML="";nl=0;$("dc").textContent="0 eventos"};
+$("bCp").onclick=()=>navigator.clipboard.writeText(logs.join("\n")).then(()=>log("ok","Log copiado"),()=>log("wr","No se pudo copiar"));
+addEventListener("error",e=>log("er","JS: "+e.message));
+addEventListener("unhandledrejection",e=>log("er","Promesa: "+(e.reason&&e.reason.message||e.reason)));
+
+// ---------- fechas ----------
+function pF(v){v=String(v??"").trim();if(!v||/^-+$/.test(v))return null;
+ const n=Number(v);if(isFinite(n)&&n>40000&&n<80000)return new Date(Math.round((n-25569)*864e5)+new Date().getTimezoneOffset()*6e4);
+ let m=v.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+ if(m)return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+ m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp])?)?/);
+ if(m){let a=+m[1],b=+m[2],y=+m[3];if(y<100)y+=2000;const d=DMY?a:b,mo=DMY?b:a;let h=+(m[4]||0);
+  if(m[7]){const p=/p/i.test(m[7]);if(p&&h<12)h+=12;if(!p&&h===12)h=0}
+  return new Date(y,mo-1,d,h,+(m[5]||0),+(m[6]||0))}
+ const d=new Date(v);return isNaN(d)?null:d}
+const dur=r=>{if(!r.ini)return -1;const b=r.lev?r.fin:new Date();return b?Math.max(0,b-r.ini):-1};
+const fd=ms=>{if(ms<0)return"-";const m=Math.floor(ms/6e4),h=Math.floor(m/60),d=Math.floor(h/24);return d?`${d}d ${h%24}h`:h?`${h}h ${m%60}m`:`${m}m`};
+const fl=d=>d?d.toLocaleString("es-MX",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"-";
+
+// ---------- carga ----------
+function dt(tx){try{return JSON.parse(tx).detail||tx.slice(0,1500)}catch(e){return tx.slice(0,1500)}}
+async function load(){
+ if(busy)return;busy=true;cd=60;
+ const t0=performance.now();
+ try{
+  log("in","→ Find "+TABLE);
+  const r=await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE)}/Action`,{method:"POST",headers:{ApplicationAccessKey:API_KEY,"Content-Type":"application/json"},body:JSON.stringify({Action:"Find",Properties:{Locale:"es-MX"},Rows:[]})});
+  const tx=await r.text();log(r.ok?"ok":"er",`← HTTP ${r.status} · ${Math.round(performance.now()-t0)} ms · ${tx.length} bytes`);
+  if(!r.ok)throw new Error(`HTTP ${r.status}: ${dt(tx)}`);
+  let j=JSON.parse(tx);if(!Array.isArray(j))j=j.Rows||[];
+  build(j);paint();
+  const b=$("bn");b.className="bn ok";b.textContent=`✔ ${new Date().toLocaleTimeString("es-MX")} · ${R.filter(x=>!x.lev).length} no levantados · ${R.filter(x=>x.lev).length} levantados`;
+ }catch(e){const b=$("bn");b.className="bn er";b.textContent="⚠ "+e.message.slice(0,160);log("er",e.message)}
+ finally{busy=false}
+}
+function build(j){
+ const keys=[...new Set(j.flatMap(r=>Object.keys(r)))],K={};
+ for(const[n,p]of Object.entries(PAT)){const k=keys.find(k=>p.test(nrm(k)));if(k)K[n]=k;else log("wr","Columna no encontrada: "+n)}
+ const g=(r,n)=>K[n]?cl(r[K[n]]):"";
+ const rows=j.map(r=>({zona:g(r,"zona")||"N/D",folio:g(r,"folio"),sitio:g(r,"sitio"),tipo:g(r,"tipo"),est:g(r,"est"),sisaT:g(r,"sisaT"),sisaTe:g(r,"sisaTe"),sisaR:g(r,"sisaR"),sisaRe:g(r,"sisaRe"),iniR:g(r,"ini"),finR:g(r,"fin"),com:g(r,"com"),estF:g(r,"estF"),pob:g(r,"pob"),cu:g(r,"cu"),lat:parseFloat(g(r,"lat")),lon:parseFloat(g(r,"lon")),pri:g(r,"pri")}));
+ const sel=$("fd").value;
+ if(sel==="dmy")DMY=true;else if(sel==="mdy")DMY=false;
+ else{let a=0,b=0;rows.forEach(r=>[r.iniR,r.finR].forEach(v=>{const m=v.match(/^(\d{1,2})\/(\d{1,2})\/\d{2,4}/);if(m){if(+m[1]>12)a++;if(+m[2]>12)b++}}));DMY=a>0;
+  if(nl<40)log("in","Formato de fecha detectado: "+(a>0?"D/M/A":b>0?"M/D/A":"M/D/A (sin evidencia, por defecto)"))}
+ rows.forEach(r=>{r.ini=pF(r.iniR);r.fin=pF(r.finR);r.lev=!!r.fin||r.est.toUpperCase()==="UP";r.tipoD=/^m/i.test(r.tipo)?"MASIVO":/^i/i.test(r.tipo)?"INDIVIDUAL":(r.tipo||"-")});
+ const bad=rows.filter(r=>(r.iniR&&!r.ini)||(r.finR&&!r.fin)).length;if(bad)log("wr",bad+" filas con fecha no interpretable");
+ log("ok",`Filas: ${rows.length} · muestra: ${rows[0]?rows[0].iniR+" → "+(rows[0].ini?rows[0].ini.toLocaleString("es-MX"):"?"):"-"}`);
+ R=rows;
+}
+
+// ---------- vistas ----------
+function flt(){const s=q.toLowerCase();
+ return R.filter(r=>(tab==="all"||(tab==="open")===!r.lev)&&(!zonaF||r.zona===zonaF)&&(!s||[r.sitio,r.zona,r.folio,r.sisaT,r.sisaR,r.com].some(v=>String(v).toLowerCase().includes(s)))).sort((a,b)=>(dur(a)-dur(b))*sortDir)}
+function paint(){
+ const op=R.filter(r=>!r.lev),lv=R.length-op.length,ss=op.filter(r=>!r.sisaT).length,ms=op.filter(r=>r.tipoD==="MASIVO").length;
+ const zm={};op.forEach(r=>zm[r.zona]=(zm[r.zona]||0)+1);const tz=Object.entries(zm).sort((a,b)=>b[1]-a[1])[0]||["---",0];
+ const d=op.map(dur).filter(x=>x>=0),avg=d.length?d.reduce((a,b)=>a+b,0)/d.length:-1;
+ $("tOpen").textContent=$("sOpen").textContent=op.length;$("tLev").textContent=$("sLev").textContent=lv;$("sTot").textContent=R.length;
+ $("tPct").textContent=(R.length?Math.round(lv/R.length*100):0)+"%";$("tZ").textContent=tz[0];$("tZn").textContent=tz[1];
+ $("tSs").textContent=$("sSs").textContent=ss;$("sMas").textContent=ms;$("sAvg").textContent=fd(avg);
+ document.title=op.length?`(${op.length}) CAO TELMEX · Folios`:"CAO TELMEX · Folios";
+ if(prevOpen!==null&&op.length>prevOpen)beep();prevOpen=op.length;
+ $("tO").textContent=`No levantados (${op.length})`;$("tL").textContent=`Levantados (${lv})`;$("tA").textContent=`Todos (${R.length})`;
+ zChart();tChart();mapUp();table()}
+function setZ(z){zonaF=z;$("zChip").hidden=!z;$("zChip").textContent="Zona: "+z+" ✕";tChart();mapUp();table()}
+function zChart(){const m={};R.forEach(r=>{(m[r.zona]??={o:0,l:0})[r.lev?"l":"o"]++});
+ const e=Object.entries(m).sort((a,b)=>b[1].o-a[1].o||b[1].l-a[1].l).slice(0,15),lab=e.map(x=>x[0]),a=e.map(x=>x[1].o),b=e.map(x=>x[1].l);
+ if(cZ){cZ.data.labels=lab;cZ.data.datasets[0].data=a;cZ.data.datasets[1].data=b;cZ.update();return}
+ cZ=new Chart($("cz"),{type:"bar",data:{labels:lab,datasets:[{label:"No levantados",data:a,backgroundColor:"#dc2626",borderRadius:3},{label:"Levantados",data:b,backgroundColor:"#16a34a",borderRadius:3}]},
+  options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{precision:0}},y:{stacked:true}},onClick:(ev,els)=>{if(els.length){const z=cZ.data.labels[els[0].index];setZ(zonaF===z?"":z)}}}})}
+function tChart(){
+ const rs=R.filter(r=>!zonaF||r.zona===zonaF),now=Date.now(),H=view==="hour",step=H?36e5:864e5,n=H?48:14,lab=[],bl=[],lv=[];
+ for(let i=n-1;i>=0;i--){let t=now-i*step;if(!H){const d=new Date(now);d.setHours(23,59,59,999);t=Math.min(now,d.getTime()-i*864e5)}
+  lab.push(H?(i?`-${i}h`:"Ahora"):new Date(t).toLocaleDateString("es-MX",{day:"numeric",month:"short"}));
+  bl.push(rs.filter(r=>r.ini&&r.ini<=t&&!(r.lev&&!r.fin)&&(!r.fin||r.fin>t)).length);
+  lv.push(rs.filter(r=>r.fin&&r.fin<=t&&r.fin>t-step).length)}
+ const ds=[{type:"line",label:"No levantados (backlog)",data:bl,borderColor:"#dc2626",backgroundColor:"#dc262618",fill:true,tension:.3,pointRadius:2},{type:"bar",label:H?"Levantados en la hora":"Levantados en el día",data:lv,backgroundColor:"#16a34a",borderRadius:3}];
+ if(cT){cT.data.labels=lab;cT.data.datasets=ds;cT.update();return}
+ cT=new Chart($("ct"),{type:"bar",data:{labels:lab,datasets:ds},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{ticks:{autoSkip:true,maxTicksLimit:12}}}}})}
+function mapUp(){
+ if(!map){map=L.map("map").setView([25.6866,-100.3161],8);
+  const T=(u,at,o)=>L.tileLayer(u,{attribution:at,maxZoom:18,...o}),
+   B={"Calles (Esri)":T("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}","Tiles &copy; Esri"),
+    "Calles (OSM)":T("https://tile.openstreetmap.org/{z}/{x}/{y}.png","&copy; OpenStreetMap",{referrerPolicy:"origin"}),
+    "Topográfico":T("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png","&copy; OpenTopoMap",{subdomains:"abc"}),
+    "Satélite (Esri)":T("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}","Tiles &copy; Esri"),
+    "Solo puntos (sin mapa base)":L.layerGroup()};
+  let sv="";try{sv=localStorage.getItem("basemap")||""}catch(e){}
+  (B[sv]||B["Calles (Esri)"]).addTo(map);
+  L.control.layers(B).addTo(map);
+  map.on("baselayerchange",e=>{try{localStorage.setItem("basemap",e.name)}catch(x){}log("in","Mapa base: "+e.name)});
+  let te=0;Object.values(B).forEach(t=>t.on&&t.on("tileerror",()=>{if(te++<3)log("wr","Error al cargar mosaicos del mapa; cambia de capa (arriba a la derecha)")}));
+  layer=L.layerGroup().addTo(map)}
+ layer.clearLayers();const pts=flt().filter(r=>isFinite(r.lat)&&isFinite(r.lon));
+ pts.forEach(r=>L.circleMarker([r.lat,r.lon],{radius:7,color:"#fff",weight:1.5,fillColor:r.lev?"#16a34a":"#dc2626",fillOpacity:.9}).addTo(layer).bindPopup(
+  `<b>${esc(r.sitio)}</b><br>Zona: ${esc(r.zona)}<br>Folio: ${esc(r.folio)} (${r.tipoD})<br>${r.lev?"✅ Levantado":"🔴 No levantado"} · ${fd(dur(r))}<br>SISA: ${esc(r.sisaT||"-")} ${esc(r.sisaTe)}<br>Población: ${esc(r.pob||"-")}<br>${esc(r.com||"")}`));
+ if(pts.length&&!fitted){map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));fitted=true}}
+function table(){
+ const f=flt();
+ $("tb").innerHTML=f.length?f.slice(0,400).map(r=>{
+  const ss=!r.lev&&!r.sisaT?'<span class="s w">SIN SISA</span>':esc(r.sisaT||"-")+(r.sisaTe?` <small>(${esc(r.sisaTe)})</small>`:"");
+  return `<tr><td><b>${esc(r.sitio)}</b></td><td>${esc(r.zona)}</td><td>${esc(r.folio)}</td><td>${r.tipoD}</td><td>${esc(r.pri||"-")}</td>
+  <td><span class="s ${r.lev?"l":"o"}">${esc(r.est||(r.lev?"UP":"DOWN"))}</span></td><td>${ss}</td><td>${esc(r.sisaR||"-")}${r.sisaRe?` <small>(${esc(r.sisaRe)})</small>`:""}</td>
+  <td>${fl(r.ini)}</td><td>${fl(r.fin)}</td><td><b>${fd(dur(r))}</b></td><td>${esc(r.cu||"-")}</td><td title="${esc(r.com)}">${esc(r.com||"-")}</td></tr>`}).join(""):'<tr><td colspan="13" style="text-align:center;padding:30px;color:#64748b">Sin folios con estos filtros</td></tr>';
+ if(f.length>400)log("wr","Tabla limitada a 400 de "+f.length+" filas");
+ $("hD").textContent="Duración "+(sortDir<0?"⬇":"⬆")}
+function beep(){if(mute)return;try{const c=new(window.AudioContext||window.webkitAudioContext)();[0,.3,.6].forEach(t=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.2,c.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+t+.25);o.start(c.currentTime+t);o.stop(c.currentTime+t+.26)})}catch(e){}}
+
+// ---------- eventos ----------
+const setTab=t=>{tab=t;["O","L","A"].forEach(k=>$("t"+k).classList.toggle("on",k===({open:"O",lev:"L",all:"A"})[t]));mapUp();table()};
+$("tO").onclick=()=>setTab("open");$("tL").onclick=()=>setTab("lev");$("tA").onclick=()=>setTab("all");
+$("q").oninput=e=>{q=e.target.value;mapUp();table()};
+$("zChip").onclick=()=>setZ("");$("bClr").onclick=()=>setZ("");
+$("hD").onclick=()=>{sortDir=-sortDir;table()};
+$("vH").onclick=()=>{view="hour";$("vH").classList.add("on");$("vD").classList.remove("on");tChart()};
+$("vD").onclick=()=>{view="day";$("vD").classList.add("on");$("vH").classList.remove("on");tChart()};
+$("bRef").onclick=load;
+$("bMute").onclick=()=>{mute=!mute;$("bMute").textContent=mute?"🔕 Silenciado":"🔔 Alerta";try{localStorage.setItem("mute",mute?"1":"0")}catch(e){}if(!mute)beep()};
+$("bMute").textContent=mute?"🔕 Silenciado":"🔔 Alerta";
+$("fd").onchange=()=>{try{localStorage.setItem("fdate",$("fd").value)}catch(e){}load()};
+$("bX").onclick=()=>{const f=flt();if(!f.length)return alert("No hay datos para exportar");
+ const h=["Sitio","Zona","Folio","Tipo","Prioridad","Estatus sitio","SISA trabajo","Estatus SISA trabajo","SISA respaldo","Estatus SISA respaldo","Inicio","Fin","Duración","Levantado","Cobertura única","Último comentario"];
+ const rw=f.map(r=>[r.sitio,r.zona,r.folio,r.tipoD,r.pri,r.est,r.sisaT,r.sisaTe,r.sisaR,r.sisaRe,fl(r.ini),fl(r.fin),fd(dur(r)),r.lev?"SI":"NO",r.cu,r.com]);
+ const csv=[h,...rw].map(x=>x.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));a.download="folios_cao_telmex.csv";document.body.appendChild(a);a.click();a.remove()};
+setInterval(()=>{cd--;if(cd<=0)load();$("cd").textContent=cd+"s"},1000);
+log("in","Dashboard iniciado");
+load();
+</script></body></html>
