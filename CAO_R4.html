@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAO TELMEX · Folios</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#f5f7fc;color:#0a2540;padding-bottom:40px}
+.top{position:sticky;top:0;z-index:1000;background:#0a1c2f;color:#fff;box-shadow:0 4px 12px #0003}
+.ti{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:8px 24px;flex-wrap:wrap}
+.sc{padding:0 12px;border-left:2px solid #fff3}.sc:first-child{border:0;padding-left:0}
+.sc b{display:block;font-size:1.5rem;line-height:1.1}.sc span{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#9ab3cf}
+.bd{background:#ffffff14;border-radius:30px;padding:4px 14px;font-size:.72rem;white-space:nowrap}
+.bd i{font-style:normal;background:#dc2626;border-radius:20px;padding:1px 8px;margin-left:6px;font-weight:700}
+.live{background:#dc2626;border-radius:40px;padding:2px 10px;font-size:.65rem;font-weight:700;animation:p 1.5s infinite}
+@keyframes p{50%{opacity:.55}}
+.top button,.top select{background:#ffffff26;color:#fff;border:0;border-radius:6px;padding:5px 10px;font:inherit;font-size:.72rem;cursor:pointer}
+.top select option{color:#000}
+.dash{max-width:1400px;margin:0 auto;padding:22px 24px}
+h1{font-size:1.5rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bn{display:inline-block;margin:10px 0 16px;background:#fff0db;border-radius:30px;padding:5px 14px;font-size:.78rem}
+.bn.ok{background:#e8f3e8}.bn.er{background:#fee9e6}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:16px}
+.stat{background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 4px #0a25401a}
+.stat b{font-size:2rem;display:block}.stat span{font-size:.68rem;color:#64748b;text-transform:uppercase;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.row{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px #0a25401a;min-width:0;margin-bottom:14px}
+.row .card{margin:0}
+.ch{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.ch h3{font-size:.92rem}
+.cv{position:relative;height:290px}
+#map{height:380px;border-radius:10px;background:#e3eaf3}
+.seg button,.btn{border:1px solid #cbd5e1;background:#fff;border-radius:20px;padding:5px 14px;font:inherit;font-size:.75rem;cursor:pointer}
+.seg button.on{background:#0a1c2f;color:#fff;border-color:#0a1c2f}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools input{border:1px solid #cbd5e1;border-radius:20px;padding:5px 14px;font:inherit;font-size:.78rem;min-width:220px}
+.chip{background:#dbeafe;color:#1e40af;border-radius:20px;padding:4px 12px;font-size:.75rem;cursor:pointer}
+.tw{overflow:auto;max-height:560px}
+table{border-collapse:collapse;width:100%;font-size:.76rem;white-space:nowrap}
+th{position:sticky;top:0;background:#eef2f9;text-align:left;padding:8px 10px;z-index:1}
+td{padding:7px 10px;border-bottom:1px solid #eef2f9;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+.s{border-radius:20px;padding:2px 9px;font-weight:600;font-size:.7rem}
+.s.o{background:#fee2e2;color:#b91c1c}.s.l{background:#dcfce7;color:#15803d}.s.w{background:#fef3c7;color:#b45309}
+.lg{display:flex;gap:16px;font-size:.72rem;margin-top:8px;color:#475569}.lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.card>h3{margin-bottom:10px;font-size:.92rem}.tools select{border:1px solid #cbd5e1;border-radius:20px;padding:5px 10px;font:inherit;font-size:.78rem}.sla{font-size:.75rem;display:flex;gap:4px;align-items:center}.sla input{border:1px solid #cbd5e1;border-radius:8px;padding:4px 6px;font:inherit;width:58px}
+.ft{text-align:center;font-size:.7rem;color:#64748b;margin-top:8px}
+#dbg{position:fixed;left:0;right:0;bottom:0;background:#070d17;color:#9fb3cc;border-top:2px solid #2dd4ff;z-index:2000;height:32px;display:flex;flex-direction:column}
+#dbg.open{height:38vh}
+#dh{display:flex;gap:10px;align-items:center;padding:4px 14px;min-height:30px;font-size:.75rem}
+#dh strong{margin-right:auto;color:#fff}#dh button{background:#16243a;color:#dbe6f5;border:1px solid #1f2f48;border-radius:5px;padding:2px 9px;font:inherit;cursor:pointer}
+#lg{flex:1;overflow:auto;padding:4px 14px;font:11.5px/1.5 Consolas,monospace;display:none}#dbg.open #lg{display:block}
+.l{border-bottom:1px solid #121e31;white-space:pre-wrap;word-break:break-all}.l.ok{color:#34d399}.l.er{color:#ff5d6c}.l.wr{color:#fbbf24}
+</style></head><body>
+
+<div class="top"><div class="ti">
+ <div class="sc"><b id="tOpen">0</b><span>Folios no levantados</span></div>
+ <div class="sc"><b id="tLev">0</b><span>Folios levantados</span></div>
+ <div class="sc"><b id="tPct">0%</b><span>% levantado</span></div>
+ <div class="bd">🏆 TOP ZONA <span id="tZ">---</span><i id="tZn">0</i></div>
+ <div class="bd">⚠ SIN SISA <i id="tSs">0</i></div>
+ <span style="flex:1"></span>
+ <span class="live">● LIVE</span><span class="bd" id="cd">60s</span>
+ <button id="bRef">Actualizar</button><button id="bMute">🔔 Alerta</button>
+ <select id="fd" title="Formato de fecha que devuelve AppSheet"><option value="auto">Fecha: auto</option><option value="mdy">Fecha: M/D/A</option><option value="dmy">Fecha: D/M/A</option></select>
+</div></div>
+
+<div class="dash">
+ <h1>📡 CAO TELMEX · Folios <small style="font-size:.8rem;color:#64748b;font-weight:500">No levantados vs levantados</small></h1>
+ <span class="bn" id="bn">Conectando a AppSheet…</span>
+ <div class="seg" style="margin:0 0 14px"><button id="vL" class="on">📡 En vivo</button> <button id="vH2">📚 Histórico</button></div>
+
+ <div id="vLive">
+ <div class="stats">
+  <div class="stat"><b id="sOpen" style="color:#dc2626">0</b><span>Folios no levantados</span></div>
+  <div class="stat"><b id="sLev" style="color:#16a34a">0</b><span>Folios levantados</span></div>
+  <div class="stat"><b id="sTot">0</b><span>Total folios únicos</span></div>
+  <div class="stat"><b id="sMas" style="color:#ea580c">0</b><span>Masivos abiertos</span></div>
+  <div class="stat"><b id="sSs" style="color:#b45309">0</b><span>Sitios DOWN sin SISA</span></div>
+  <div class="stat"><b id="sDn" style="color:#dc2626">0</b><span>Sitios DOWN</span></div>
+  <div class="stat"><b id="sAvg">-</b><span>Tiempo prom. abiertos</span></div>
+ </div>
+
+ <div class="row">
+  <div class="card"><div class="ch"><h3>Folios por zona (clic para filtrar)</h3><button class="btn" id="bClr">🗑 Limpiar zona</button></div><div class="cv"><canvas id="cz"></canvas></div></div>
+  <div class="card"><div class="ch"><h3>Backlog y levantamientos</h3><div class="seg"><button id="vH" class="on">Por hora (48h)</button><button id="vD">Por día (14d)</button></div></div><div class="cv"><canvas id="ct"></canvas></div></div>
+ </div>
+
+ <div class="card"><div class="ch"><h3>🧩 Folios masivos · sitios por folio único (clic en un folio)</h3><div class="seg"><button id="mA" class="on">Abiertos</button><button id="mT">Todos</button></div></div>
+ <div id="mSum" style="font-size:.8rem;margin-bottom:8px"></div>
+ <div id="cmw" style="position:relative;height:200px"><canvas id="cm"></canvas></div>
+ <div id="fDet" style="margin-top:12px;font-size:.8rem"></div></div>
+
+ <div class="card"><div class="ch"><h3>🗺 Localización de folios (según filtros)</h3></div><div id="map"></div>
+  <div class="lg"><span><i style="background:#dc2626"></i>No levantado</span><span><i style="background:#16a34a"></i>Levantado</span></div></div>
+
+ <div class="card">
+  <div class="ch"><div class="seg"><button id="tO" class="on">No levantados</button><button id="tL">Levantados</button><button id="tA">Todos</button></div>
+   <div class="tools"><span class="chip" id="zChip" hidden></span><span class="chip" id="fChip" hidden></span><input id="q" placeholder="🔍 Sitio, zona, folio, SISA…"><button class="btn" id="bX">⬇ Exportar CSV</button></div></div>
+  <div class="tw"><table><thead><tr><th>Sitio</th><th>Zona</th><th>Folio</th><th>Tipo</th><th>Prioridad</th><th>Estatus sitio</th><th>SISA trabajo</th><th>SISA respaldo</th><th>Inicio</th><th>Fin</th><th id="hD" style="cursor:pointer">Duración ⬇</th><th>Cob. única</th><th>Último comentario</th></tr></thead><tbody id="tb"></tbody></table></div>
+ </div>
+ </div>
+<div id="vHist" hidden>
+ <div class="card"><div class="ch"><h3>📚 Histórico de folios · SLA y tendencia de fallas</h3>
+  <div class="tools"><select id="hP"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="180">Últimos 180 días</option><option value="365">Últimos 12 meses</option><option value="0">Todo el histórico</option></select>
+   <select id="hZ"><option value="">Todas las zonas</option></select>
+   <select id="hT"><option value="">Masivos + individuales</option><option value="MASIVO">Solo masivos</option><option value="INDIVIDUAL">Solo individuales</option></select>
+   <label class="sla">SLA masivo <input id="sM" type="number" min="1" value="4"> h</label><label class="sla">SLA individual <input id="sI" type="number" min="1" value="8"> h</label></div></div>
+  <div class="stats" id="hK" style="margin:0"></div></div>
+ <div class="row"><div class="card"><h3>⏱ MTTR por zona (horas) · color = % cumplimiento SLA</h3><div class="cv"><canvas id="hz"></canvas></div></div>
+  <div class="card"><div class="ch"><h3>📈 Tendencia de fallas</h3><div class="seg"><button id="gD">Día</button><button id="gW" class="on">Semana</button><button id="gM">Mes</button></div></div><div class="cv"><canvas id="hc"></canvas></div></div></div>
+ <div class="card"><h3>🎯 SLA por zona y total TELMEX (incidentes por sitio)</h3><div class="tw" style="max-height:420px"><table id="hSla"></table></div></div>
+ <div class="row"><div class="card"><h3>🔁 Sitios reincidentes (≥2 folios en el periodo)</h3><div class="tw" style="max-height:380px"><table id="hRs"></table></div></div>
+  <div class="card"><h3>🧩 Recurrencia de masivos por zona</h3><div class="tw" style="max-height:380px"><table id="hRm"></table></div></div></div>
+ <div class="card"><div class="ch"><h3>🗂 Historial de folios</h3><div class="tools"><input id="hq" placeholder="🔍 Folio, sitio, zona…"><select id="hE"><option value="">Todos los estatus</option><option value="CERRADO">Cerrados</option><option value="ABIERTO">Abiertos</option></select><button class="btn" id="hX">⬇ Exportar CSV</button></div></div><div class="tw"><table id="hTb"></table></div></div>
+</div>
+<div class="ft">En vivo solo aparecen folios no CERRADOS (los cerrados pasan al Histórico). Un folio se cuenta una sola vez; los masivos agrupan N sitios. Sitio levantado = FIN DE FALLA registrado o sitio en UP; folio levantado = todos sus sitios levantados · Actualiza cada 60 s · Fuente: AppSheet, tabla CAOR4</div>
+</div>
+
+<div id="dbg"><div id="dh"><strong>Debug</strong><span id="dc">0 eventos</span><button id="bCp">Copiar</button><button id="bCl">Limpiar</button><button id="bTg">Abrir</button></div><div id="lg"></div></div>
+
+<script>
+const APP_ID="c92b101b-660e-4e39-bf95-d989a4223dd1",API_KEY="V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt",TABLE="CAOR4";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nrm=s=>String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/_/g," ").trim();
+const cl=v=>{v=String(v??"").trim();return /^-+$/.test(v)?"":v};
+const PAT={zona:/^zona$/,folio:/^folio$/,sitio:/^sitio$/,tipo:/^tipo ?folio/,est:/^estatus ?(de )?sitio/,sisaT:/^sisa ?trabajo$/,sisaTe:/^estatus ?sisa ?trabajo/,sisaR:/^sisa ?respaldo$/,sisaRe:/^estatus ?sisa ?respaldo/,ini:/^inicio ?(de )?falla/,fin:/^fin ?(de )?falla/,com:/(ultimo|utlimo) ?comentario/,estF:/^estatus ?folio/,pob:/^poblacion/,cu:/^cobertura ?unica/,lat:/^latitud/,lon:/^longitud/,pri:/^prioridad/};
+let R=[],FO=[],LV=[],folioF="",mAll=false,mTop=[],cM=null,tab="open",zonaF="",q="",sortDir=-1,DMY=false,prevOpen=null,mute=false,cZ=null,cT=null,view="hour",map=null,layer=null,fitted=false,cd=60,logs=[],nl=0,busy=false;
+try{$("fd").value=localStorage.getItem("fdate")||"auto";mute=localStorage.getItem("mute")==="1"}catch(e){}
+
+// ---------- debug ----------
+function log(t,m){nl++;const s=new Date().toLocaleTimeString("es-MX")+" "+m;logs.push(s);const d=document.createElement("div");d.className="l "+t;d.textContent=s;$("lg").appendChild(d);$("lg").scrollTop=1e9;$("dc").textContent=nl+" eventos";if(t==="er")dbg(true)}
+function dbg(o){$("dbg").classList.toggle("open",o);$("bTg").textContent=o?"Cerrar":"Abrir";document.body.style.paddingBottom=o?"40vh":"40px"}
+$("bTg").onclick=()=>dbg(!$("dbg").classList.contains("open"));
+$("bCl").onclick=()=>{logs=[];$("lg").innerHTML="";nl=0;$("dc").textContent="0 eventos"};
+$("bCp").onclick=()=>navigator.clipboard.writeText(logs.join("\n")).then(()=>log("ok","Log copiado"),()=>log("wr","No se pudo copiar"));
+addEventListener("error",e=>log("er","JS: "+e.message));
+addEventListener("unhandledrejection",e=>log("er","Promesa: "+(e.reason&&e.reason.message||e.reason)));
+
+// ---------- fechas ----------
+function pF(v){v=String(v??"").trim();if(!v||/^-+$/.test(v))return null;
+ const n=Number(v);if(isFinite(n)&&n>40000&&n<80000)return new Date(Math.round((n-25569)*864e5)+new Date().getTimezoneOffset()*6e4);
+ let m=v.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+ if(m)return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+ m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp])?)?/);
+ if(m){let a=+m[1],b=+m[2],y=+m[3];if(y<100)y+=2000;const d=DMY?a:b,mo=DMY?b:a;let h=+(m[4]||0);
+  if(m[7]){const p=/p/i.test(m[7]);if(p&&h<12)h+=12;if(!p&&h===12)h=0}
+  return new Date(y,mo-1,d,h,+(m[5]||0),+(m[6]||0))}
+ const d=new Date(v);return isNaN(d)?null:d}
+const dur=r=>{if(!r.ini)return -1;const b=r.lev?r.fin:new Date();return b?Math.max(0,b-r.ini):-1};
+const fd=ms=>{if(ms<0)return"-";const m=Math.floor(ms/6e4),h=Math.floor(m/60),d=Math.floor(h/24);return d?`${d}d ${h%24}h`:h?`${h}h ${m%60}m`:`${m}m`};
+const fl=d=>d?d.toLocaleString("es-MX",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"-";
+
+// ---------- carga ----------
+function dt(tx){try{return JSON.parse(tx).detail||tx.slice(0,1500)}catch(e){return tx.slice(0,1500)}}
+async function load(){
+ if(busy)return;busy=true;cd=60;
+ const t0=performance.now();
+ try{
+  log("in","→ Find "+TABLE);
+  const r=await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLE)}/Action`,{method:"POST",headers:{ApplicationAccessKey:API_KEY,"Content-Type":"application/json"},body:JSON.stringify({Action:"Find",Properties:{Locale:"es-MX"},Rows:[]})});
+  const tx=await r.text();log(r.ok?"ok":"er",`← HTTP ${r.status} · ${Math.round(performance.now()-t0)} ms · ${tx.length} bytes`);
+  if(!r.ok)throw new Error(`HTTP ${r.status}: ${dt(tx)}`);
+  let j=JSON.parse(tx);if(!Array.isArray(j))j=j.Rows||[];
+  build(j);paint();
+  const b=$("bn");b.className="bn ok";b.textContent=`✔ ${new Date().toLocaleTimeString("es-MX")} · ${R.filter(x=>!x.lev).length} no levantados · ${R.filter(x=>x.lev).length} levantados`;
+ }catch(e){const b=$("bn");b.className="bn er";b.textContent="⚠ "+e.message.slice(0,160);log("er",e.message)}
+ finally{busy=false}
+}
+function build(j){
+ const keys=[...new Set(j.flatMap(r=>Object.keys(r)))],K={};
+ for(const[n,p]of Object.entries(PAT)){const k=keys.find(k=>p.test(nrm(k)));if(k)K[n]=k;else log("wr","Columna no encontrada: "+n)}
+ const g=(r,n)=>K[n]?cl(r[K[n]]):"";
+ const rows=j.map(r=>({zona:g(r,"zona")||"N/D",folio:g(r,"folio"),sitio:g(r,"sitio"),tipo:g(r,"tipo"),est:g(r,"est"),sisaT:g(r,"sisaT"),sisaTe:g(r,"sisaTe"),sisaR:g(r,"sisaR"),sisaRe:g(r,"sisaRe"),iniR:g(r,"ini"),finR:g(r,"fin"),com:g(r,"com"),estF:g(r,"estF"),pob:g(r,"pob"),cu:g(r,"cu"),lat:parseFloat(g(r,"lat")),lon:parseFloat(g(r,"lon")),pri:g(r,"pri")}));
+ const sel=$("fd").value;
+ if(sel==="dmy")DMY=true;else if(sel==="mdy")DMY=false;
+ else{let a=0,b=0;rows.forEach(r=>[r.iniR,r.finR].forEach(v=>{const m=v.match(/^(\d{1,2})\/(\d{1,2})\/\d{2,4}/);if(m){if(+m[1]>12)a++;if(+m[2]>12)b++}}));DMY=a>0;
+  if(nl<40)log("in","Formato de fecha detectado: "+(a>0?"D/M/A":b>0?"M/D/A":"M/D/A (sin evidencia, por defecto)"))}
+ rows.forEach(r=>{r.ini=pF(r.iniR);r.fin=pF(r.finR);r.lev=!!r.fin||r.est.toUpperCase()==="UP";r.cerrado=/cerr/i.test(r.estF);r.tipoD=/^m/i.test(r.tipo)?"MASIVO":/^i/i.test(r.tipo)?"INDIVIDUAL":(r.tipo||"-")});
+ const bad=rows.filter(r=>(r.iniR&&!r.ini)||(r.finR&&!r.fin)).length;if(bad)log("wr",bad+" filas con fecha no interpretable");
+ log("ok",`Filas: ${rows.length} · muestra: ${rows[0]?rows[0].iniR+" → "+(rows[0].ini?rows[0].ini.toLocaleString("es-MX"):"?"):"-"}`);
+ R=rows;agg();
+}
+
+function agg(){const m=new Map();
+ R.forEach((r,i)=>{const k=r.folio||("s/f-"+i);let f=m.get(k);if(!f){f={folio:r.folio||"S/F",tipoD:r.tipoD,rows:[],zonas:new Set()};m.set(k,f)}f.rows.push(r);f.zonas.add(r.zona);if(r.tipoD==="MASIVO")f.tipoD="MASIVO"});
+ FO=[...m.values()];
+ FO.forEach(f=>{f.n=f.rows.length;f.down=f.rows.filter(r=>!r.lev).length;f.up=f.n-f.down;f.lev=f.down===0;f.cerrado=f.rows.every(r=>r.cerrado);
+  const a=f.rows.map(r=>r.ini).filter(Boolean),b=f.rows.map(r=>r.fin).filter(Boolean);
+  f.ini=a.length?new Date(Math.min(...a)):null;f.fin=f.lev&&b.length?new Date(Math.max(...b)):null});
+ LV=FO.filter(f=>!f.cerrado);log("in",`Cerrados: ${FO.length-LV.length} · Folios únicos: ${FO.length} (${FO.filter(f=>f.tipoD==="MASIVO").length} masivos) · sitios: ${R.length}`)}
+
+
+// ---------- vistas ----------
+function flt(){const s=q.toLowerCase();
+ return R.filter(r=>!r.cerrado&&(tab==="all"||(tab==="open")===!r.lev)&&(!zonaF||r.zona===zonaF)&&(!folioF||r.folio===folioF)&&(!s||[r.sitio,r.zona,r.folio,r.sisaT,r.sisaR,r.com].some(v=>String(v).toLowerCase().includes(s)))).sort((a,b)=>(dur(a)-dur(b))*sortDir)}
+function paint(){
+ if(folioF&&!FO.some(f=>f.folio===folioF)){folioF="";$("fChip").hidden=true}
+ const op=LV.filter(f=>!f.lev),lv=LV.length-op.length,dn=R.filter(r=>!r.lev&&!r.cerrado),ss=dn.filter(r=>!r.sisaT).length,ms=op.filter(f=>f.tipoD==="MASIVO").length;
+ const zm={};op.forEach(f=>f.zonas.forEach(z=>zm[z]=(zm[z]||0)+1));const tz=Object.entries(zm).sort((a,b)=>b[1]-a[1])[0]||["---",0];
+ const d=op.map(dur).filter(x=>x>=0),avg=d.length?d.reduce((a,b)=>a+b,0)/d.length:-1;
+ $("tOpen").textContent=$("sOpen").textContent=op.length;$("tLev").textContent=$("sLev").textContent=lv;$("sTot").textContent=LV.length;
+ $("tPct").textContent=(LV.length?Math.round(lv/LV.length*100):0)+"%";$("tZ").textContent=tz[0];$("tZn").textContent=tz[1];
+ $("tSs").textContent=$("sSs").textContent=ss;$("sMas").textContent=ms;$("sDn").textContent=dn.length;$("sAvg").textContent=fd(avg);
+ document.title=op.length?`(${op.length}) CAO TELMEX · Folios`:"CAO TELMEX · Folios";
+ if(prevOpen!==null&&op.length>prevOpen)beep();prevOpen=op.length;
+ $("tO").textContent=`No levantados (${op.length} folios · ${dn.length} sitios)`;$("tL").textContent=`Levantados (${lv} folios)`;$("tA").textContent=`Todos (${R.filter(r=>!r.cerrado).length} sitios)`;
+ zChart();tChart();mChart();mapUp();table();if(!$("vHist").hidden)hRender()}
+function setF(f){folioF=f;$("fChip").hidden=!f;$("fChip").textContent="Folio: "+f+" ✕";if(f)setTab("all");else{mapUp();table()}fDet()}
+function mChart(){
+ const Ms=LV.filter(f=>f.tipoD==="MASIVO"),In=LV.filter(f=>f.tipoD!=="MASIVO");
+ const sm=a=>a.reduce((x,f)=>x+f.n,0),ds=a=>a.reduce((x,f)=>x+f.down,0);
+ $("mSum").innerHTML=`<b>Masivos:</b> ${Ms.length} folios (${Ms.filter(f=>!f.lev).length} abiertos) · ${sm(Ms)} sitios afectados · 🔴 ${ds(Ms)} DOWN · 🟢 ${sm(Ms)-ds(Ms)} UP &nbsp;|&nbsp; <b>Individuales:</b> ${In.length} folios (1 sitio c/u) · 🔴 ${ds(In)} DOWN · 🟢 ${sm(In)-ds(In)} UP`;
+ const bad=In.filter(f=>f.n>1).length;if(bad&&!mChart.w){mChart.w=1;log("wr",bad+" folios no masivos traen más de un sitio")}
+ mTop=(mAll?Ms:Ms.filter(f=>!f.lev)).sort((a,b)=>b.down-a.down||b.n-a.n).slice(0,30);
+ $("cmw").style.height=Math.max(170,mTop.length*30+70)+"px";
+ const lab=mTop.map(f=>`${f.folio} · ${f.n} sitios`),d1=mTop.map(f=>f.down),d2=mTop.map(f=>f.up);
+ if(cM){cM.data.labels=lab;cM.data.datasets[0].data=d1;cM.data.datasets[1].data=d2;cM.update();fDet();return}
+ cM=new Chart($("cm"),{type:"bar",data:{labels:lab,datasets:[{label:"DOWN",data:d1,backgroundColor:"#dc2626",borderRadius:3},{label:"UP",data:d2,backgroundColor:"#16a34a",borderRadius:3}]},
+  options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{precision:0}},y:{stacked:true}},onClick:(ev,els)=>{if(els.length){const f=mTop[els[0].index].folio;setF(folioF===f?"":f)}}}});
+ fDet()}
+function fDet(){const el=$("fDet");
+ if(!folioF){el.innerHTML='<span style="color:#64748b">Haz clic en un folio masivo para ver cuántos sitios tiene, cuántos están UP / DOWN y cuáles son.</span>';return}
+ const f=FO.find(x=>x.folio===folioF);if(!f){el.innerHTML="";return}
+ const rs=[...f.rows].sort((a,b)=>(a.lev-b.lev)||String(a.sitio).localeCompare(b.sitio));
+ el.innerHTML=`<b>Folio ${esc(f.folio)}</b> · ${f.tipoD} · <b>${f.n}</b> sitios · 🔴 <b>${f.down}</b> DOWN · 🟢 <b>${f.up}</b> UP · ${f.lev?"folio levantado":"folio abierto"} · ${fd(dur(f))}<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${rs.slice(0,300).map(r=>`<span class="s ${r.lev?"l":"o"}" title="${esc(r.zona)} · SISA ${esc(r.sisaT||"-")}">${esc(r.sitio)}</span>`).join("")}</div>`}
+function setZ(z){zonaF=z;$("zChip").hidden=!z;$("zChip").textContent="Zona: "+z+" ✕";tChart();mapUp();table()}
+function zChart(){const m={};LV.forEach(f=>f.zonas.forEach(z=>{(m[z]??={o:0,l:0})[f.lev?"l":"o"]++}));
+ const e=Object.entries(m).sort((a,b)=>b[1].o-a[1].o||b[1].l-a[1].l).slice(0,15),lab=e.map(x=>x[0]),a=e.map(x=>x[1].o),b=e.map(x=>x[1].l);
+ if(cZ){cZ.data.labels=lab;cZ.data.datasets[0].data=a;cZ.data.datasets[1].data=b;cZ.update();return}
+ cZ=new Chart($("cz"),{type:"bar",data:{labels:lab,datasets:[{label:"No levantados",data:a,backgroundColor:"#dc2626",borderRadius:3},{label:"Levantados",data:b,backgroundColor:"#16a34a",borderRadius:3}]},
+  options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{precision:0}},y:{stacked:true}},onClick:(ev,els)=>{if(els.length){const z=cZ.data.labels[els[0].index];setZ(zonaF===z?"":z)}}}})}
+function tChart(){
+ const rs=LV.filter(f=>!zonaF||f.zonas.has(zonaF)),now=Date.now(),H=view==="hour",step=H?36e5:864e5,n=H?48:14,lab=[],bl=[],lv=[];
+ for(let i=n-1;i>=0;i--){let t=now-i*step;if(!H){const d=new Date(now);d.setHours(23,59,59,999);t=Math.min(now,d.getTime()-i*864e5)}
+  lab.push(H?(i?`-${i}h`:"Ahora"):new Date(t).toLocaleDateString("es-MX",{day:"numeric",month:"short"}));
+  bl.push(rs.filter(r=>r.ini&&r.ini<=t&&!(r.lev&&!r.fin)&&(!r.fin||r.fin>t)).length);
+  lv.push(rs.filter(r=>r.fin&&r.fin<=t&&r.fin>t-step).length)}
+ const ds=[{type:"line",label:"No levantados (backlog)",data:bl,borderColor:"#dc2626",backgroundColor:"#dc262618",fill:true,tension:.3,pointRadius:2},{type:"bar",label:H?"Levantados en la hora":"Levantados en el día",data:lv,backgroundColor:"#16a34a",borderRadius:3}];
+ if(cT){cT.data.labels=lab;cT.data.datasets=ds;cT.update();return}
+ cT=new Chart($("ct"),{type:"bar",data:{labels:lab,datasets:ds},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{ticks:{autoSkip:true,maxTicksLimit:12}}}}})}
+function mapUp(){
+ if(!map){map=L.map("map").setView([25.6866,-100.3161],8);
+  const T=(u,at,o)=>L.tileLayer(u,{attribution:at,maxZoom:18,...o}),
+   B={"Calles (Esri)":T("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}","Tiles &copy; Esri"),
+    "Calles (OSM)":T("https://tile.openstreetmap.org/{z}/{x}/{y}.png","&copy; OpenStreetMap",{referrerPolicy:"origin"}),
+    "Topográfico":T("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png","&copy; OpenTopoMap",{subdomains:"abc"}),
+    "Satélite (Esri)":T("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}","Tiles &copy; Esri"),
+    "Solo puntos (sin mapa base)":L.layerGroup()};
+  let sv="";try{sv=localStorage.getItem("basemap")||""}catch(e){}
+  (B[sv]||B["Calles (Esri)"]).addTo(map);
+  L.control.layers(B).addTo(map);
+  map.on("baselayerchange",e=>{try{localStorage.setItem("basemap",e.name)}catch(x){}log("in","Mapa base: "+e.name)});
+  let te=0;Object.values(B).forEach(t=>t.on&&t.on("tileerror",()=>{if(te++<3)log("wr","Error al cargar mosaicos del mapa; cambia de capa (arriba a la derecha)")}));
+  layer=L.layerGroup().addTo(map)}
+ layer.clearLayers();const pts=flt().filter(r=>isFinite(r.lat)&&isFinite(r.lon));
+ pts.forEach(r=>L.circleMarker([r.lat,r.lon],{radius:7,color:"#fff",weight:1.5,fillColor:r.lev?"#16a34a":"#dc2626",fillOpacity:.9}).addTo(layer).bindPopup(
+  `<b>${esc(r.sitio)}</b><br>Zona: ${esc(r.zona)}<br>Folio: ${esc(r.folio)} (${r.tipoD})<br>${r.lev?"✅ Levantado":"🔴 No levantado"} · ${fd(dur(r))}<br>SISA: ${esc(r.sisaT||"-")} ${esc(r.sisaTe)}<br>Población: ${esc(r.pob||"-")}<br>${esc(r.com||"")}`));
+ if(pts.length&&!fitted){map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));fitted=true}}
+function table(){
+ const f=flt();
+ $("tb").innerHTML=f.length?f.slice(0,400).map(r=>{
+  const ss=!r.lev&&!r.sisaT?'<span class="s w">SIN SISA</span>':esc(r.sisaT||"-")+(r.sisaTe?` <small>(${esc(r.sisaTe)})</small>`:"");
+  return `<tr><td><b>${esc(r.sitio)}</b></td><td>${esc(r.zona)}</td><td>${esc(r.folio)}</td><td>${r.tipoD}</td><td>${esc(r.pri||"-")}</td>
+  <td><span class="s ${r.lev?"l":"o"}">${esc(r.est||(r.lev?"UP":"DOWN"))}</span></td><td>${ss}</td><td>${esc(r.sisaR||"-")}${r.sisaRe?` <small>(${esc(r.sisaRe)})</small>`:""}</td>
+  <td>${fl(r.ini)}</td><td>${fl(r.fin)}</td><td><b>${fd(dur(r))}</b></td><td>${esc(r.cu||"-")}</td><td title="${esc(r.com)}">${esc(r.com||"-")}</td></tr>`}).join(""):'<tr><td colspan="13" style="text-align:center;padding:30px;color:#64748b">Sin folios con estos filtros</td></tr>';
+ if(f.length>400)log("wr","Tabla limitada a 400 de "+f.length+" filas");
+ $("hD").textContent="Duración "+(sortDir<0?"⬇":"⬆")}
+function beep(){if(mute)return;try{const c=new(window.AudioContext||window.webkitAudioContext)();[0,.3,.6].forEach(t=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.2,c.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+t+.25);o.start(c.currentTime+t);o.stop(c.currentTime+t+.26)})}catch(e){}}
+
+// ---------- Histórico ----------
+let S2={MASIVO:4,INDIVIDUAL:8},cHz=null,cHc=null,gran="W",HFL=[];
+try{const v=JSON.parse(localStorage.getItem("sla")||"null");if(v){$("sM").value=v[0];$("sI").value=v[1]}}catch(e){}
+const sl=r=>r.tipoD==="MASIVO"?S2.MASIVO:S2.INDIVIDUAL;
+const fh=h=>h==null?"-":h<1?Math.round(h*60)+"m":h.toFixed(1)+"h";
+const pc=p=>p==null?"-":`<span class="s ${p>=90?"l":p>=75?"w":"o"}">${p}%</span>`;
+function hData(){const days=+$("hP").value,t0=days?Date.now()-days*864e5:0,z=$("hZ").value,tp=$("hT").value;
+ return R.filter(r=>r.ini&&r.ini.getTime()>=t0&&(!z||r.zona===z)&&(!tp||(tp==="MASIVO")===(r.tipoD==="MASIVO")))}
+function sx(rs){const rec=rs.filter(r=>r.lev&&r.fin&&r.fin>=r.ini),ops=rs.filter(r=>!r.lev),now=Date.now();
+ const h=rec.map(r=>(r.fin-r.ini)/36e5).sort((a,b)=>a-b),ok=rec.filter(r=>(r.fin-r.ini)/36e5<=sl(r)).length,bad=rec.length-ok+ops.filter(r=>(now-r.ini)/36e5>sl(r)).length;
+ return{n:rs.length,fol:new Set(rs.map(r=>r.folio||r.sitio)).size,rec:rec.length,op:ops.length,ok,bad,pct:(ok+bad)?Math.round(ok/(ok+bad)*100):null,
+  avg:h.length?h.reduce((a,b)=>a+b,0)/h.length:null,med:h.length?h[Math.floor(h.length/2)]:null,p90:h.length?h[Math.min(h.length-1,Math.floor(h.length*.9))]:null}}
+function bk(d,g){const x=new Date(d);if(g==="W")x.setDate(x.getDate()-(x.getDay()+6)%7);if(g==="M")x.setDate(1);x.setHours(0,0,0,0);return x.getTime()}
+const nod=c=>`<tr><td colspan="${c}" style="text-align:center;padding:24px;color:#64748b">Sin datos en el periodo</td></tr>`;
+function hRender(){
+ S2={MASIVO:+$("sM").value||4,INDIVIDUAL:+$("sI").value||8};
+ try{localStorage.setItem("sla",JSON.stringify([$("sM").value,$("sI").value]))}catch(e){}
+ const zs=[...new Set(R.map(r=>r.zona))].sort(),zsel=$("hZ");
+ if(zsel.options.length!==zs.length+1){const v=zsel.value;zsel.innerHTML='<option value="">Todas las zonas</option>'+zs.map(z=>`<option>${esc(z)}</option>`).join("");zsel.value=v}
+ const rs=hData(),T=sx(rs),SS={};
+ rs.forEach(r=>{const o=SS[r.sitio]??={z:r.zona,f:new Set(),m:new Set(),h:0,last:0};o.f.add(r.folio||r.sitio);if(r.tipoD==="MASIVO")o.m.add(r.folio);const d=dur(r);if(d>0)o.h+=d/36e5;o.last=Math.max(o.last,r.ini.getTime())});
+ const rr=Object.entries(SS).filter(([,o])=>o.f.size>=2).sort((a,b)=>b[1].f.size-a[1].f.size||b[1].h-a[1].h);
+ const K=[[T.fol,"Folios únicos"],[T.n,"Incidentes (sitios)"],[T.rec,"Recuperados"],[T.op,"Abiertos","#dc2626"],[fh(T.avg),"MTTR promedio"],[fh(T.med),"Mediana"],[fh(T.p90),"P90"],[T.pct==null?"-":T.pct+"%","Cumplimiento SLA","#16a34a"],[T.bad,"Fuera de SLA","#b45309"],[rr.length,"Sitios reincidentes","#ea580c"]];
+ $("hK").innerHTML=K.map(k=>`<div class="stat"><b${k[2]?` style="color:${k[2]}"`:""}>${k[0]}</b><span>${k[1]}</span></div>`).join("");
+ // SLA por zona
+ const zm={};rs.forEach(r=>(zm[r.zona]??=[]).push(r));
+ const zr=Object.entries(zm).map(([z,a])=>[z,sx(a)]).sort((a,b)=>b[1].n-a[1].n);
+ const tr=(z,s,b)=>`<tr${b?' style="font-weight:700;background:#eef2f9"':""}><td>${esc(z)}</td><td>${s.fol}</td><td>${s.n}</td><td>${s.rec}</td><td>${s.op}</td><td>${fh(s.avg)}</td><td>${fh(s.med)}</td><td>${fh(s.p90)}</td><td>${pc(s.pct)}</td><td>${s.bad}</td></tr>`;
+ $("hSla").innerHTML="<thead><tr><th>Zona</th><th>Folios</th><th>Incidentes sitio</th><th>Recuperados</th><th>Abiertos</th><th>MTTR</th><th>Mediana</th><th>P90</th><th>% SLA</th><th>Fuera SLA</th></tr></thead><tbody>"+(rs.length?tr("TOTAL TELMEX",T,1)+zr.map(([z,s])=>tr(z,s)).join(""):nod(10))+"</tbody>";
+ const top=zr.filter(x=>x[1].avg!=null).slice(0,15),lab=top.map(x=>x[0]),dv=top.map(x=>+x[1].avg.toFixed(2)),col=top.map(x=>x[1].pct==null?"#64748b":x[1].pct>=90?"#16a34a":x[1].pct>=75?"#f59e0b":"#dc2626");
+ if(cHz){cHz.data.labels=lab;cHz.data.datasets[0].data=dv;cHz.data.datasets[0].backgroundColor=col;cHz.update()}
+ else cHz=new Chart($("hz"),{type:"bar",data:{labels:lab,datasets:[{label:"MTTR (h)",data:dv,backgroundColor:col,borderRadius:3}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>"% SLA: "+(top[c.dataIndex][1].pct??"-")}}}}});
+ // tendencia
+ const B={};rs.forEach(r=>{const o=B[bk(r.ini,gran)]??={m:new Set(),i:new Set(),s:0};(r.tipoD==="MASIVO"?o.m:o.i).add(r.folio||r.sitio);o.s++});
+ const ks=Object.keys(B).map(Number);
+ if(ks.length){let t=Math.min(...ks);const mx=Math.max(...ks);while(t<=mx){B[t]??={m:new Set(),i:new Set(),s:0};const d=new Date(t);gran==="M"?d.setMonth(d.getMonth()+1):d.setDate(d.getDate()+(gran==="W"?7:1));t=d.getTime()}}
+ const kk=Object.keys(B).map(Number).sort((a,b)=>a-b),tl=kk.map(k=>new Date(k).toLocaleDateString("es-MX",gran==="M"?{month:"short",year:"2-digit"}:{day:"numeric",month:"short"}));
+ const ds=[{type:"bar",label:"Folios masivos",data:kk.map(k=>B[k].m.size),backgroundColor:"#ea580c",stack:"f"},{type:"bar",label:"Folios individuales",data:kk.map(k=>B[k].i.size),backgroundColor:"#3b82f6",stack:"f"},{type:"line",label:"Sitios afectados",data:kk.map(k=>B[k].s),borderColor:"#dc2626",backgroundColor:"#dc2626",tension:.3,pointRadius:2}];
+ if(cHc){cHc.data.labels=tl;cHc.data.datasets=ds;cHc.update()}
+ else cHc=new Chart($("hc"),{type:"bar",data:{labels:tl,datasets:ds},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}});
+ // reincidentes
+ $("hRs").innerHTML="<thead><tr><th>Sitio</th><th>Zona</th><th>Folios</th><th>En masivos</th><th>Horas DOWN</th><th>Último evento</th></tr></thead><tbody>"+(rr.length?rr.slice(0,30).map(([n,o])=>`<tr><td><b>${esc(n)}</b></td><td>${esc(o.z)}</td><td><b>${o.f.size}</b></td><td>${o.m.size}</td><td>${fh(o.h)}</td><td>${fl(new Date(o.last))}</td></tr>`).join(""):nod(6))+"</tbody>";
+ // masivos por zona
+ const MZ={};rs.filter(r=>r.tipoD==="MASIVO").forEach(r=>{const o=MZ[r.zona]??={f:new Set(),s:{},n:0,h:[]};o.f.add(r.folio);(o.s[r.sitio]??=new Set()).add(r.folio);o.n++;if(r.lev&&r.fin&&r.fin>=r.ini)o.h.push((r.fin-r.ini)/36e5)});
+ const mz=Object.entries(MZ).sort((a,b)=>b[1].f.size-a[1].f.size);
+ $("hRm").innerHTML="<thead><tr><th>Zona</th><th>Masivos</th><th>Sitios únicos</th><th>Sitios en ≥2 masivos</th><th>Prom. sitios/masivo</th><th>MTTR</th></tr></thead><tbody>"+(mz.length?mz.map(([z,o])=>{const sv=Object.values(o.s);return`<tr><td><b>${esc(z)}</b></td><td><b>${o.f.size}</b></td><td>${sv.length}</td><td>${sv.filter(x=>x.size>=2).length}</td><td>${(o.n/o.f.size).toFixed(1)}</td><td>${fh(o.h.length?o.h.reduce((a,b)=>a+b,0)/o.h.length:null)}</td></tr>`}).join(""):nod(6))+"</tbody>";
+ // historial por folio único
+ const Fm=new Map();rs.forEach(r=>{const k=r.folio||"s/f "+r.sitio;let f=Fm.get(k);if(!f){f={folio:r.folio||"S/F",rows:[],z:new Set(),tipo:r.tipoD};Fm.set(k,f)}f.rows.push(r);f.z.add(r.zona);if(r.tipoD==="MASIVO")f.tipo="MASIVO"});
+ HFL=[...Fm.values()].map(f=>{const b=f.rows.map(r=>r.fin).filter(Boolean);f.n=f.rows.length;f.dn=f.rows.filter(r=>!r.lev).length;f.lev=f.dn===0;
+  f.ini=new Date(Math.min(...f.rows.map(r=>r.ini)));f.fin=f.lev&&b.length?new Date(Math.max(...b)):null;f.cer=f.rows.every(r=>r.cerrado);
+  const d=dur(f),h=d/36e5,s=f.tipo==="MASIVO"?S2.MASIVO:S2.INDIVIDUAL;f.h=d>=0?h:null;f.sla=f.lev&&f.fin?(h<=s?"OK":"FUERA"):(h>s?"FUERA":"EN CURSO");return f}).sort((a,b)=>b.ini-a.ini);
+ hTbl()}
+function hTbl(){const s=$("hq").value.toLowerCase(),e=$("hE").value;
+ const f=HFL.filter(x=>(!e||(e==="CERRADO")===x.cer)&&(!s||[x.folio,...x.z,...x.rows.map(r=>r.sitio)].some(v=>String(v).toLowerCase().includes(s))));
+ $("hTb").innerHTML="<thead><tr><th>Folio</th><th>Tipo</th><th>Zonas</th><th>Sitios</th><th>DOWN</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>SLA</th><th>Estatus folio</th></tr></thead><tbody>"+(f.length?f.slice(0,300).map(x=>`<tr><td><b>${esc(x.folio)}</b></td><td>${x.tipo}</td><td>${esc([...x.z].join(", "))}</td><td title="${esc(x.rows.map(r=>r.sitio).join(", "))}">${x.n}</td><td>${x.dn}</td><td>${fl(x.ini)}</td><td>${fl(x.fin)}</td><td><b>${fh(x.h)}</b></td><td><span class="s ${x.sla==="OK"?"l":x.sla==="FUERA"?"o":"w"}">${x.sla}</span></td><td><span class="s" style="background:#e2e8f0">${x.cer?"CERRADO":"ABIERTO"}</span></td></tr>`).join(""):nod(10))+"</tbody>";
+ hTbl.cur=f}
+function vSet(v){$("vLive").hidden=v!=="live";$("vHist").hidden=v!=="hist";$("vL").classList.toggle("on",v==="live");$("vH2").classList.toggle("on",v==="hist");
+ if(v==="live"&&map)setTimeout(()=>map.invalidateSize(),60);if(v==="hist")hRender()}
+$("vL").onclick=()=>vSet("live");$("vH2").onclick=()=>vSet("hist");
+["hP","hZ","hT","sM","sI"].forEach(i=>$(i).onchange=hRender);$("hq").oninput=hTbl;$("hE").onchange=hTbl;
+[["gD","D"],["gW","W"],["gM","M"]].forEach(([i,g])=>$(i).onclick=()=>{gran=g;["gD","gW","gM"].forEach(x=>$(x).classList.toggle("on",x===i));hRender()});
+$("hX").onclick=()=>{const f=hTbl.cur||[];if(!f.length)return alert("No hay datos para exportar");
+ const h=["Folio","Tipo","Zonas","Sitios","Sitios DOWN","Inicio","Fin","Duración (h)","SLA","Estatus folio","Lista de sitios"];
+ const csv=[h,...f.map(x=>[x.folio,x.tipo,[...x.z].join("/"),x.n,x.dn,fl(x.ini),fl(x.fin),x.h==null?"":x.h.toFixed(2),x.sla,x.cer?"CERRADO":"ABIERTO",x.rows.map(r=>r.sitio).join(" | ")])].map(x=>x.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));a.download="historico_folios_cao_telmex.csv";document.body.appendChild(a);a.click();a.remove()};
+
+// ---------- eventos ----------
+const setTab=t=>{tab=t;["O","L","A"].forEach(k=>$("t"+k).classList.toggle("on",k===({open:"O",lev:"L",all:"A"})[t]));mapUp();table()};
+$("tO").onclick=()=>setTab("open");$("tL").onclick=()=>setTab("lev");$("tA").onclick=()=>setTab("all");
+$("q").oninput=e=>{q=e.target.value;mapUp();table()};
+$("zChip").onclick=()=>setZ("");$("fChip").onclick=()=>setF("");
+$("mA").onclick=()=>{mAll=false;$("mA").classList.add("on");$("mT").classList.remove("on");mChart()};
+$("mT").onclick=()=>{mAll=true;$("mT").classList.add("on");$("mA").classList.remove("on");mChart()};$("bClr").onclick=()=>setZ("");
+$("hD").onclick=()=>{sortDir=-sortDir;table()};
+$("vH").onclick=()=>{view="hour";$("vH").classList.add("on");$("vD").classList.remove("on");tChart()};
+$("vD").onclick=()=>{view="day";$("vD").classList.add("on");$("vH").classList.remove("on");tChart()};
+$("bRef").onclick=load;
+$("bMute").onclick=()=>{mute=!mute;$("bMute").textContent=mute?"🔕 Silenciado":"🔔 Alerta";try{localStorage.setItem("mute",mute?"1":"0")}catch(e){}if(!mute)beep()};
+$("bMute").textContent=mute?"🔕 Silenciado":"🔔 Alerta";
+$("fd").onchange=()=>{try{localStorage.setItem("fdate",$("fd").value)}catch(e){}load()};
+$("bX").onclick=()=>{const f=flt();if(!f.length)return alert("No hay datos para exportar");
+ const h=["Sitio","Zona","Folio","Tipo","Prioridad","Estatus sitio","SISA trabajo","Estatus SISA trabajo","SISA respaldo","Estatus SISA respaldo","Inicio","Fin","Duración","Levantado","Cobertura única","Último comentario"];
+ const rw=f.map(r=>[r.sitio,r.zona,r.folio,r.tipoD,r.pri,r.est,r.sisaT,r.sisaTe,r.sisaR,r.sisaRe,fl(r.ini),fl(r.fin),fd(dur(r)),r.lev?"SI":"NO",r.cu,r.com]);
+ const csv=[h,...rw].map(x=>x.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));a.download="folios_cao_telmex.csv";document.body.appendChild(a);a.click();a.remove()};
+setInterval(()=>{cd--;if(cd<=0)load();$("cd").textContent=cd+"s"},1000);
+log("in","Dashboard iniciado");
+load();
+</script></body></html>
