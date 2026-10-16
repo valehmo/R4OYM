@@ -114,9 +114,9 @@ td{padding:7px 10px;border-bottom:1px solid #eef2f9;max-width:240px;overflow:hid
  <div class="card"><h3>🎯 SLA por zona y total TELMEX (incidentes por sitio)</h3><div class="tw" style="max-height:420px"><table id="hSla"></table></div></div>
  <div class="row"><div class="card"><h3>🔁 Sitios reincidentes (≥2 folios en el periodo)</h3><div class="tw" style="max-height:380px"><table id="hRs"></table></div></div>
   <div class="card"><h3>🧩 Recurrencia de masivos por zona</h3><div class="tw" style="max-height:380px"><table id="hRm"></table></div></div></div>
- <div class="card"><div class="ch"><h3>🗂 Historial de folios</h3><div class="tools"><input id="hq" placeholder="🔍 Folio, sitio, zona…"><select id="hE"><option value="">Todos los estatus</option><option value="CERRADO">Cerrados</option><option value="ABIERTO">Abiertos</option></select><button class="btn" id="hX">⬇ Exportar CSV</button></div></div><div class="tw"><table id="hTb"></table></div></div>
+ <div class="card"><div class="ch"><h3>🗂 Historial de folios</h3><div class="tools"><input id="hq" placeholder="🔍 Folio, sitio, zona…"><select id="hE"><option value="">Todos los estatus</option><option value="CERRADO">Solucionados</option><option value="ABIERTO">Pendientes</option></select><button class="btn" id="hX">⬇ Exportar CSV</button></div></div><div class="tw"><table id="hTb"></table></div></div>
 </div>
-<div class="ft">En vivo solo aparecen folios no CERRADOS (los cerrados pasan al Histórico). Un folio se cuenta una sola vez; los masivos agrupan N sitios. Sitio levantado = FIN DE FALLA registrado o sitio en UP; folio levantado = todos sus sitios levantados · Actualiza cada 60 s · Fuente: AppSheet, tabla CAOR4</div>
+<div class="ft">En vivo solo aparecen folios PENDIENTES (los SOLUCIONADOS pasan al Histórico). Un folio se cuenta una sola vez; los masivos agrupan N sitios. Sitio levantado = FIN DE FALLA registrado o sitio en UP; folio levantado = todos sus sitios levantados · Actualiza cada 60 s · Fuente: AppSheet, tabla CAOR4</div>
 </div>
 
 <div id="dbg"><div id="dh"><strong>Debug</strong><span id="dc">0 eventos</span><button id="bCp">Copiar</button><button id="bCl">Limpiar</button><button id="bTg">Abrir</button></div><div id="lg"></div></div>
@@ -179,9 +179,10 @@ function build(j){
  if(sel==="dmy")DMY=true;else if(sel==="mdy")DMY=false;
  else{let a=0,b=0;rows.forEach(r=>[r.iniR,r.finR].forEach(v=>{const m=v.match(/^(\d{1,2})\/(\d{1,2})\/\d{2,4}/);if(m){if(+m[1]>12)a++;if(+m[2]>12)b++}}));DMY=a>0;
   if(nl<40)log("in","Formato de fecha detectado: "+(a>0?"D/M/A":b>0?"M/D/A":"M/D/A (sin evidencia, por defecto)"))}
- rows.forEach(r=>{r.ini=pF(r.iniR);r.fin=pF(r.finR);r.lev=!!r.fin||r.est.toUpperCase()==="UP";r.cerrado=/cerr/i.test(r.estF);r.tipoD=/^m/i.test(r.tipo)?"MASIVO":/^i/i.test(r.tipo)?"INDIVIDUAL":(r.tipo||"-")});
+ rows.forEach(r=>{r.ini=pF(r.iniR);r.fin=pF(r.finR);r.lev=!!r.fin||r.est.toUpperCase()==="UP";r.cerrado=/solucion|cerr/i.test(r.estF);r.tipoD=/^m/i.test(r.tipo)?"MASIVO":/^i/i.test(r.tipo)?"INDIVIDUAL":(r.tipo||"-")});
  const bad=rows.filter(r=>(r.iniR&&!r.ini)||(r.finR&&!r.fin)).length;if(bad)log("wr",bad+" filas con fecha no interpretable");
  log("ok",`Filas: ${rows.length} · muestra: ${rows[0]?rows[0].iniR+" → "+(rows[0].ini?rows[0].ini.toLocaleString("es-MX"):"?"):"-"}`);
+ if(K.estF){const c={};rows.forEach(r=>{const v=r.estF||"(vacío)";c[v]=(c[v]||0)+1});log("ok",`Columna "${K.estF}" → `+Object.entries(c).map(([k,v])=>k+": "+v).join(" · ")+" (sitios)")}
  R=rows;agg();
 }
 
@@ -191,7 +192,7 @@ function agg(){const m=new Map();
  FO.forEach(f=>{f.n=f.rows.length;f.down=f.rows.filter(r=>!r.lev).length;f.up=f.n-f.down;f.lev=f.down===0;f.cerrado=f.rows.every(r=>r.cerrado);
   const a=f.rows.map(r=>r.ini).filter(Boolean),b=f.rows.map(r=>r.fin).filter(Boolean);
   f.ini=a.length?new Date(Math.min(...a)):null;f.fin=f.lev&&b.length?new Date(Math.max(...b)):null});
- LV=FO.filter(f=>!f.cerrado);log("in",`Cerrados: ${FO.length-LV.length} · Folios únicos: ${FO.length} (${FO.filter(f=>f.tipoD==="MASIVO").length} masivos) · sitios: ${R.length}`)}
+ LV=FO.filter(f=>!f.cerrado);log("in",`Solucionados: ${FO.length-LV.length} · Folios únicos: ${FO.length} (${FO.filter(f=>f.tipoD==="MASIVO").length} masivos) · sitios: ${R.length}`)}
 
 
 // ---------- vistas ----------
@@ -325,7 +326,7 @@ function hRender(){
  hTbl()}
 function hTbl(){const s=$("hq").value.toLowerCase(),e=$("hE").value;
  const f=HFL.filter(x=>(!e||(e==="CERRADO")===x.cer)&&(!s||[x.folio,...x.z,...x.rows.map(r=>r.sitio)].some(v=>String(v).toLowerCase().includes(s))));
- $("hTb").innerHTML="<thead><tr><th>Folio</th><th>Tipo</th><th>Zonas</th><th>Sitios</th><th>DOWN</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>SLA</th><th>Estatus folio</th></tr></thead><tbody>"+(f.length?f.slice(0,300).map(x=>`<tr><td><b>${esc(x.folio)}</b></td><td>${x.tipo}</td><td>${esc([...x.z].join(", "))}</td><td title="${esc(x.rows.map(r=>r.sitio).join(", "))}">${x.n}</td><td>${x.dn}</td><td>${fl(x.ini)}</td><td>${fl(x.fin)}</td><td><b>${fh(x.h)}</b></td><td><span class="s ${x.sla==="OK"?"l":x.sla==="FUERA"?"o":"w"}">${x.sla}</span></td><td><span class="s" style="background:#e2e8f0">${x.cer?"CERRADO":"ABIERTO"}</span></td></tr>`).join(""):nod(10))+"</tbody>";
+ $("hTb").innerHTML="<thead><tr><th>Folio</th><th>Tipo</th><th>Zonas</th><th>Sitios</th><th>DOWN</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>SLA</th><th>Estatus folio</th></tr></thead><tbody>"+(f.length?f.slice(0,300).map(x=>`<tr><td><b>${esc(x.folio)}</b></td><td>${x.tipo}</td><td>${esc([...x.z].join(", "))}</td><td title="${esc(x.rows.map(r=>r.sitio).join(", "))}">${x.n}</td><td>${x.dn}</td><td>${fl(x.ini)}</td><td>${fl(x.fin)}</td><td><b>${fh(x.h)}</b></td><td><span class="s ${x.sla==="OK"?"l":x.sla==="FUERA"?"o":"w"}">${x.sla}</span></td><td><span class="s" style="background:#e2e8f0">${x.cer?"SOLUCIONADO":"PENDIENTE"}</span></td></tr>`).join(""):nod(10))+"</tbody>";
  hTbl.cur=f}
 function vSet(v){$("vLive").hidden=v!=="live";$("vHist").hidden=v!=="hist";$("vL").classList.toggle("on",v==="live");$("vH2").classList.toggle("on",v==="hist");
  if(v==="live"&&map)setTimeout(()=>map.invalidateSize(),60);if(v==="hist")hRender()}
@@ -334,7 +335,7 @@ $("vL").onclick=()=>vSet("live");$("vH2").onclick=()=>vSet("hist");
 [["gD","D"],["gW","W"],["gM","M"]].forEach(([i,g])=>$(i).onclick=()=>{gran=g;["gD","gW","gM"].forEach(x=>$(x).classList.toggle("on",x===i));hRender()});
 $("hX").onclick=()=>{const f=hTbl.cur||[];if(!f.length)return alert("No hay datos para exportar");
  const h=["Folio","Tipo","Zonas","Sitios","Sitios DOWN","Inicio","Fin","Duración (h)","SLA","Estatus folio","Lista de sitios"];
- const csv=[h,...f.map(x=>[x.folio,x.tipo,[...x.z].join("/"),x.n,x.dn,fl(x.ini),fl(x.fin),x.h==null?"":x.h.toFixed(2),x.sla,x.cer?"CERRADO":"ABIERTO",x.rows.map(r=>r.sitio).join(" | ")])].map(x=>x.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+ const csv=[h,...f.map(x=>[x.folio,x.tipo,[...x.z].join("/"),x.n,x.dn,fl(x.ini),fl(x.fin),x.h==null?"":x.h.toFixed(2),x.sla,x.cer?"SOLUCIONADO":"PENDIENTE",x.rows.map(r=>r.sitio).join(" | ")])].map(x=>x.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));a.download="historico_folios_cao_telmex.csv";document.body.appendChild(a);a.click();a.remove()};
 
 // ---------- eventos ----------
