@@ -176,6 +176,26 @@ function hablar(t){
   u.onstart=()=>hablando=true;u.onend=u.onerror=()=>setTimeout(()=>hablando=false,400);
   speechSynthesis.speak(u);
 }
+const NUMS={cero:0,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9};
+const limpia=s=>norm(s).replace(/\b(cero|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)\b/g,m=>NUMS[m]).replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function buscarSitio(q){
+  const k=limpia(q),kc=k.replace(/ /g,''),tk=k.split(' ').filter(Boolean);let best=null,bs=0;
+  if(!kc)return null;
+  for(const s of sitios){
+    const n=limpia(s.n),nc=n.replace(/ /g,'');let sc=0;
+    if(nc===kc)sc=100;
+    else if(nc&&(nc.includes(kc)||kc.includes(nc)))sc=10+80*Math.min(nc.length,kc.length)/Math.max(nc.length,kc.length);
+    else{const nt=n.split(' ');sc=40*tk.filter(x=>nt.includes(x)).length/Math.max(tk.length,nt.length);}
+    if(sc>bs){bs=sc;best=s;}
+  }
+  return bs>=20?best:null;
+}
+function irASitio(q){
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const s=buscarSitio(q);
+  if(!s){const m='No encontré el sitio '+q+'.';log(m,'a');return hablar(m);}
+  rutaA(s.key,true);
+}
 function reporteCaidos(){
   if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
   const n=sitios.filter(s=>s.bad).length;
@@ -187,6 +207,9 @@ let rec=null,micOn=false;
 function procesarComando(raw){
   const t=norm(raw);log('🎙 '+raw);
   if(!/(jarvis|jarbis|yarvis|harvis|jarvi|yarbis|jervis)/.test(t))return;
+  if(/(cancela|quita|borra|elimina).*ruta/.test(t)){capaRuta.clearLayers();log('Ruta cancelada');return hablar('Ruta cancelada.');}
+  const mm=t.match(/(?:llevame|lleva me|llevarme|dirigeme|guiame|navega|ruta)\s+(?:al|a el|hacia|a)?\s*(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
+  if(mm&&mm[1].trim())return irASitio(mm[1]);
   if(/(afectado|afectada|caido|caida|con falla)/.test(t)&&/(sitio|torre|cuantos|cantidad)/.test(t))return reporteCaidos();
   if(/(desactiva|desactivar|detente|detener|apaga|silencio|cancela)/.test(t))return setSentinela(false,true);
   if(/(sentinela|centinela|sentinel|sentinella)/.test(t)&&/(activa|activar|inicia|enciende|modo)/.test(t))return setSentinela(true);
@@ -203,15 +226,20 @@ function iniciarMic(){
 function setMic(v){$('dMic').className='dot'+(v?' rec':'');$('tMic').textContent=v?'Escuchando…':'Mic apagado';$('bMic').textContent=v?'🎙️ Apagar mic':'🎙️ Micrófono';}
 
 // ===== Ruta hacia una torre (OSRM) =====
-async function rutaA(key){
-  const s=sitios.find(x=>x.key===key);if(!s||!me){log('Necesito tu ubicación para trazar la ruta','a');return;}
+async function rutaA(key,voz){
+  const s=sitios.find(x=>x.key===key);
+  if(!s)return;
+  if(!me){const m='Necesito tu ubicación para trazar la ruta.';log(m,'a');if(voz)hablar(m);return;}
   try{
     const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${me.lo},${me.la};${s.lo},${s.la}?overview=full&geometries=geojson`);
     const d=await r.json();const rt=d.routes[0];capaRuta.clearLayers();
     L.polyline(rt.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#facc15',weight:6,opacity:.9}).addTo(capaRuta);
     map.fitBounds(capaRuta.getLayers()[0].getBounds(),{padding:[60,60]});seguir=false;$('bFollow').classList.remove('act');
-    log(`Ruta a ${s.n}: ${(rt.distance/1000).toFixed(1)} km, ${Math.round(rt.duration/60)} min`);
-  }catch(e){log('No se pudo trazar la ruta: '+e.message,'a');}
+    const km=(rt.distance/1000).toFixed(1),mn=Math.round(rt.duration/60);
+    log(`Ruta a ${s.n}: ${km} km, ${mn} min · ${s.bad?'CON FALLA':'SIN FALLA'}`,s.bad?'a':'k');
+    const al=$('alert');al.textContent=(s.bad?'🔴 ':'🟢 ')+s.n+(s.bad?' · CON FALLA':' · SIN FALLA')+` · ${km} km`;al.className='show '+(s.bad?'bad':'ok');setTimeout(()=>al.classList.remove('show'),7000);
+    if(voz)hablar(`Ruta a ${s.n}. El sitio está ${s.bad?'con falla, estado caído':'sin falla'}. Distancia ${km} kilómetros, ${mn} minutos.`);
+  }catch(e){log('No se pudo trazar la ruta: '+e.message,'a');if(voz)hablar('No pude trazar la ruta.');}
 }
 map.on('popupopen',e=>{const b=e.popup.getElement().querySelector('[data-r]');if(b)b.onclick=()=>{rutaA(b.dataset.r);map.closePopup();};});
 
