@@ -176,11 +176,18 @@ function hablar(t){
   u.onstart=()=>hablando=true;u.onend=u.onerror=()=>setTimeout(()=>hablando=false,400);
   speechSynthesis.speak(u);
 }
+function reporteCaidos(){
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const n=sitios.filter(s=>s.bad).length;
+  const m=n===0?'No hay sitios afectados.':n===1?'Hay 1 sitio afectado de '+sitios.length+'.':`Hay ${n} sitios afectados de ${sitios.length}.`;
+  log(m,n?'a':'k');hablar(m);
+}
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 let rec=null,micOn=false;
 function procesarComando(raw){
   const t=norm(raw);log('🎙 '+raw);
   if(!/(jarvis|jarbis|yarvis|harvis|jarvi|yarbis|jervis)/.test(t))return;
+  if(/(afectado|afectada|caido|caida|con falla)/.test(t)&&/(sitio|torre|cuantos|cantidad)/.test(t))return reporteCaidos();
   if(/(desactiva|desactivar|detente|detener|apaga|silencio|cancela)/.test(t))return setSentinela(false,true);
   if(/(sentinela|centinela|sentinel|sentinella)/.test(t)&&/(activa|activar|inicia|enciende|modo)/.test(t))return setSentinela(true);
 }
