@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>JARVIS IA MAPA · Sentinela R4</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#070d17;--panel:rgba(10,18,32,.92);--cy:#22d3ee;--red:#ef4444;--grn:#22c55e;--tx:#e2e8f0;--dim:#8aa0b8}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,Segoe UI,Arial,sans-serif}
+#map{position:absolute;inset:0;z-index:1}
+.top{position:absolute;z-index:1000;top:env(safe-area-inset-top,0);left:0;right:0;padding:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;pointer-events:none}
+.top>*{pointer-events:auto}
+.chip{background:var(--panel);border:1px solid #1e3a52;border-radius:10px;padding:6px 10px;font-size:12px;backdrop-filter:blur(6px)}
+.chip b{color:var(--cy)}
+.brand{font-weight:800;letter-spacing:2px;color:var(--cy)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#64748b;margin-right:5px}
+.dot.on{background:var(--grn);box-shadow:0 0 8px var(--grn)}.dot.rec{background:var(--red);box-shadow:0 0 8px var(--red)}
+.bar{position:absolute;z-index:1000;left:0;right:0;bottom:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0));display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{background:var(--panel);color:var(--tx);border:1px solid #1e3a52;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;cursor:pointer}
+button.act{background:linear-gradient(135deg,#0e7490,#22d3ee);color:#00131a;border-color:transparent}
+button.warn{background:#7f1d1d;border-color:#ef4444}
+#log{max-height:84px;overflow:auto;font-size:12px;color:var(--dim)}#log div{padding:2px 0}#log .a{color:#fca5a5}#log .k{color:#86efac}
+#alert{position:absolute;z-index:1100;left:50%;top:calc(70px + env(safe-area-inset-top,0));transform:translateX(-50%) scale(.9);opacity:0;transition:.25s;pointer-events:none;
+ padding:12px 20px;border-radius:14px;font-weight:800;font-size:18px;text-align:center;max-width:90vw}
+#alert.show{opacity:1;transform:translateX(-50%) scale(1)}
+#alert.ok{background:#14532d;border:2px solid var(--grn)}#alert.bad{background:#7f1d1d;border:2px solid var(--red)}
+#start{position:absolute;z-index:2000;inset:0;background:radial-gradient(circle at 50% 40%,#0b2a3c,#050a12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
+#start h1{margin:0;font-size:34px;letter-spacing:6px;color:var(--cy)}#start p{max-width:460px;color:var(--dim);font-size:14px;line-height:1.5;margin:0}
+#start button{font-size:17px;padding:14px 28px}
+.me{width:26px;height:26px;transition:transform .3s}.me i{display:block;width:0;height:0;margin:0 auto;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:24px solid #38bdf8;filter:drop-shadow(0 0 6px #38bdf8)}
+.pop button{margin-top:6px;padding:6px 10px;font-size:12px;color:#00131a;background:#22d3ee}
+</style></head><body>
+<div id="map"></div>
+<div class="top">
+  <span class="chip brand">JARVIS IA MAPA</span>
+  <span class="chip"><span class="dot" id="dMic"></span><span id="tMic">Mic apagado</span></span>
+  <span class="chip"><span class="dot" id="dSen"></span><b id="tSen">Sentinela OFF</b></span>
+  <span class="chip" id="cSit">Sitios: …</span>
+  <span class="chip" id="cNear">Torre cercana: —</span>
+</div>
+<div id="alert"></div>
+<div class="bar">
+  <div id="log"></div>
+  <div class="row">
+    <button id="bSen" class="act">🛡️ Sentinela</button>
+    <button id="bMic">🎙️ Micrófono</button>
+    <button id="bFollow" class="act">🧭 Seguir</button>
+    <button id="bSim">📍 Simular GPS</button>
+    <button id="bVal">🤵 Valet</button>
+    <button id="bClr">✖ Ruta</button>
+  </div>
+</div>
+<div id="start">
+  <h1>JARVIS</h1>
+  <p>Mapa de torres R4 con modo sentinela. Di <b>“JARVIS activa modo sentinela”</b> y te aviso por voz a 300 m de cada torre; di <b>“JARVIS desactiva”</b> para callarme.<br>Requiere Chrome/Edge, GPS, micrófono y conexión HTTPS o localhost.</p>
+  <button class="act" id="bGo">▶ Iniciar JARVIS</button>
+</div>
+<script>
+// ===== Configuración (misma tabla/credenciales de r4-sitios-falla-totales) =====
+const APP_ID="c92b101b-660e-4e39-bf95-d989a4223dd1";
+const API_KEY="V2-z4Bsp-wVHvQ-LQ2wi-z6Ahd-j9Oue-Ks0Db-8vnTt-e4TJt";
+const TABLA="SITIOS R4", RADIO=300, HISTERESIS=60, REFRESCO_MS=60000;
+
+// ===== Utilidades de datos (copiadas del HTML original) =====
+function campo(o,pats){const ks=Object.keys(o);for(const p of pats){const q=p.toLowerCase();for(const k of ks)if(k.toLowerCase().trim()===q)return o[k];}
+ for(const p of pats){const q=p.toLowerCase();for(const k of ks)if(k.toLowerCase().includes(q))return o[k];}return null;}
+function coord(v){if(v==null||v==='')return NaN;if(typeof v==='number')return v;const n=parseFloat(String(v).trim().replace(',','.').replace(/[^0-9.-]/g,''));return isNaN(n)?NaN:n;}
+const lat=f=>coord(campo(f,['latitud','latitude','lat'])), lon=f=>coord(campo(f,['longitud','longitude','lon','lng','long']));
+const nombre=f=>f.NOMBRE||f.nombre||f.SITIO||f.Sitio||f.sitio||'-';
+const tecno=f=>f['TECNOLOGÍAS']||f.TECNOLOGIAS||f.Tecnologias||f.tecnologia||'-';
+function caido(f){const e=String(f.ESTADO||f.Estado||f.estado||'').trim().toLowerCase();return !(e==='ok'||e==='activo');}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dist(a,b,c,d){const R=6371000,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r;const h=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+const $=id=>document.getElementById(id);
+
+// ===== Mapa =====
+const map=L.map('map',{preferCanvas:true,zoomControl:false}).setView([25.67,-100.31],12);
+L.control.zoom({position:'topright'}).addTo(map);
+const AG='https://server.arcgisonline.com/ArcGIS/rest/services/';
+const bases={
+ '🗺️ Calles (tipo Google)':L.tileLayer(AG+'World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}),
+ '🛰️ Satélite':L.tileLayer(AG+'World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}),
+ '⬜ Claro':L.tileLayer(AG+'Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}),
+ '🌐 OpenStreetMap':L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'})
+};
+const orden=Object.values(bases);let baseAct=0,errTiles=0;
+orden[0].addTo(map);
+L.control.layers(bases,null,{position:'topright',collapsed:true}).addTo(map);
+map.on('baselayerchange',e=>{baseAct=orden.indexOf(e.layer);errTiles=0;});
+orden.forEach(l=>l.on('tileerror',()=>{ // si el mapa activo falla, pasa al siguiente
+  if(!map.hasLayer(l)||++errTiles<8)return;errTiles=0;
+  const sig=orden[(baseAct+1)%orden.length];map.removeLayer(l);sig.addTo(map);baseAct=orden.indexOf(sig);
+  log('Mapa no disponible, cambié de proveedor','a');
+}));
+const capaSitios=L.layerGroup().addTo(map), capaRuta=L.layerGroup().addTo(map);
+let sitios=[], me=null, meMarker=null, accCircle=null, trailBorde=L.polyline([],{color:'#fff',weight:9,opacity:.9}).addTo(map), trail=L.polyline([],{color:'#2563eb',weight:5,opacity:1}).addTo(map);
+let seguir=true, simular=false, sentinela=false, primerFix=false;
+
+function log(t,c){const d=document.createElement('div');if(c)d.className=c;d.textContent=new Date().toLocaleTimeString()+' · '+t;const l=$('log');l.prepend(d);while(l.children.length>30)l.lastChild.remove();}
+
+async function cargarSitios(){
+  try{
+    const r=await fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLA)}/Action`,{method:'POST',headers:{ApplicationAccessKey:API_KEY,'Content-Type':'application/json'},body:JSON.stringify({Action:'Find',Properties:{},Rows:[]})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();let rows=Array.isArray(d)?d:(d.Rows||[]);
+    const prev=new Map(sitios.map(s=>[s.key,s]));
+    sitios=rows.map((f,i)=>({f,key:nombre(f)+'|'+i,n:nombre(f),t:tecno(f),la:lat(f),lo:lon(f),bad:caido(f)})).filter(s=>!isNaN(s.la)&&!isNaN(s.lo)&&s.la!==0&&s.lo!==0);
+    capaSitios.clearLayers();
+    sitios.forEach(s=>{
+      const c=s.bad?'#ef4444':'#22c55e';
+      L.circleMarker([s.la,s.lo],{radius:s.bad?7:5,weight:1.5,color:'#fff',fillColor:c,fillOpacity:1}).bindTooltip(s.n)
+       .bindPopup(`<div class="pop"><b>📡 ${esc(s.n)}</b><br>🔧 ${esc(s.t)}<br><b style="color:${c}">${s.bad?'CAÍDO ❌ (falla live)':'OK ✅'}</b><br><button data-r="${esc(s.key)}">🧭 Ruta hasta aquí</button></div>`).addTo(capaSitios);
+    });
+    const nb=sitios.filter(s=>s.bad).length;
+    $('cSit').innerHTML=`Sitios: <b>${sitios.length}</b> · 🔴 <b>${nb}</b>`;
+    if(!primerFix&&sitios.length&&!me)map.fitBounds(L.latLngBounds(sitios.map(s=>[s.la,s.lo])));
+    if(me)revisar(true);
+  }catch(e){log('Error cargando sitios: '+e.message,'a');$('cSit').textContent='Sitios: error';}
+}
+
+// ===== Posición propia =====
+function setPos(la,lo,acc,head){
+  me={la,lo,acc:acc||0};
+  const ic=L.divIcon({className:'',html:`<div class="me" style="transform:rotate(${head||0}deg)"><i></i></div>`,iconSize:[26,26],iconAnchor:[13,13]});
+  if(!meMarker){meMarker=L.marker([la,lo],{icon:ic,zIndexOffset:1000}).addTo(map);accCircle=L.circle([la,lo],{radius:acc||10,weight:1,color:'#38bdf8',fillOpacity:.1}).addTo(map);}
+  else{meMarker.setLatLng([la,lo]).setIcon(ic);accCircle.setLatLng([la,lo]).setRadius(acc||10);}
+  const pts=trail.getLatLngs(),u=pts[pts.length-1];
+  if(!u||dist(u.lat,u.lng,la,lo)>3){trail.addLatLng([la,lo]);trailBorde.addLatLng([la,lo]);}
+  if(!primerFix){primerFix=true;map.setView([la,lo],17);}else if(seguir)map.panTo([la,lo],{animate:true});
+  revisar(false);
+}
+let watchId=null;
+function iniciarGPS(){
+  if(!navigator.geolocation){log('Sin geolocalización','a');return;}
+  watchId=navigator.geolocation.watchPosition(p=>{if(!simular)setPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,p.coords.heading);},
+    e=>log('GPS: '+e.message,'a'),{enableHighAccuracy:true,maximumAge:1000,timeout:15000});
+}
+map.on('click',e=>{if(simular)setPos(e.latlng.lat,e.latlng.lng,5,0);});
+map.on('dragstart',()=>{seguir=false;$('bFollow').classList.remove('act');});
+
+// ===== Sentinela (aviso a 50 m) =====
+const dentro=new Map(); // key -> estado (bad) con que se anunció
+function revisar(soloEstado){
+  if(!me||!sitios.length)return;
+  let near=null,nd=1e9;const nuevos=[];
+  for(const s of sitios){
+    const d=dist(me.la,me.lo,s.la,s.lo);
+    if(d<nd){nd=d;near=s;}
+    if(d<=RADIO){
+      if(!dentro.has(s.key)||dentro.get(s.key)!==s.bad){const pre=dentro.has(s.key);dentro.set(s.key,s.bad);if(sentinela)nuevos.push({s,d,pre});}
+    }else if(d>RADIO+HISTERESIS)dentro.delete(s.key);
+  }
+  nearS=near;nearD=nd;
+  if(near)$('cNear').innerHTML=`Torre cercana: <b>${esc(near.n)}</b> · ${nd<1000?Math.round(nd)+' m':(nd/1000).toFixed(1)+' km'}`;
+  nuevos.sort((a,b)=>a.d-b.d).forEach(({s,d,pre})=>anunciar(s,d,pre));
+}
+function anunciar(s,d,cambio){
+  const txt=s.bad?`Sitio ${s.n}. Atención, tiene falla. Estado caído.`:`Sitio ${s.n}. Sin fallas.`;
+  const al=$('alert');al.textContent=(s.bad?'🔴 ':'🟢 ')+s.n+(s.bad?' · CON FALLA':' · SIN FALLAS');al.className='show '+(s.bad?'bad':'ok');
+  setTimeout(()=>al.classList.remove('show'),6000);
+  log(txt+(cambio?' (cambió de estado)':''),s.bad?'a':'k');hablar(txt);
+}
+function setSentinela(v,voz){
+  sentinela=v;dentro.clear();
+  $('dSen').className='dot'+(v?' on':'');$('tSen').textContent=v?'Sentinela ON':'Sentinela OFF';
+  $('bSen').textContent=v?'🛡️ Desactivar':'🛡️ Sentinela';$('bSen').classList.toggle('warn',v);
+  if(v){log('Modo sentinela activado','k');hablar('Modo sentinela activado.');revisar(false);}
+  else{speechSynthesis.cancel();log('Sentinela desactivado');if(voz)hablar('Sentinela desactivado.');}
+}
+
+// ===== Voz =====
+let vozEs=null,hablando=false;
+function elegirVoz(){const v=speechSynthesis.getVoices();vozEs=v.find(x=>/es[-_]MX/i.test(x.lang))||v.find(x=>/^es/i.test(x.lang))||null;}
+speechSynthesis.onvoiceschanged=elegirVoz;
+function hablar(t){
+  const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';if(vozEs)u.voice=vozEs;u.rate=1.02;
+  u.onstart=()=>hablando=true;u.onend=u.onerror=()=>setTimeout(()=>hablando=false,400);
+  speechSynthesis.speak(u);
+}
+const NUMS={cero:0,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9};
+const limpia=s=>norm(s).replace(/\b(cero|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)\b/g,m=>NUMS[m]).replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function buscarSitio(q){
+  const k=limpia(q),kc=k.replace(/ /g,''),tk=k.split(' ').filter(Boolean);let best=null,bs=0;
+  if(!kc)return null;
+  for(const s of sitios){
+    const n=limpia(s.n),nc=n.replace(/ /g,'');let sc=0;
+    if(nc===kc)sc=100;
+    else if(nc&&(nc.includes(kc)||kc.includes(nc)))sc=10+80*Math.min(nc.length,kc.length)/Math.max(nc.length,kc.length);
+    else{const nt=n.split(' ');sc=40*tk.filter(x=>nt.includes(x)).length/Math.max(tk.length,nt.length);}
+    if(sc>bs){bs=sc;best=s;}
+  }
+  return bs>=20?best:null;
+}
+function irASitio(q){
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const s=buscarSitio(q);
+  if(!s){const m='No encontré el sitio '+q+'.';log(m,'a');return hablar(m);}
+  rutaA(s.key,true);
+}
+function reporteCaidos(){
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const n=sitios.filter(s=>s.bad).length;
+  const m=n===0?'No hay sitios afectados.':n===1?'Hay 1 sitio afectado de '+sitios.length+'.':`Hay ${n} sitios afectados de ${sitios.length}.`;
+  log(m,n?'a':'k');hablar(m);
+}
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+let rec=null,micOn=false;
+let valet=false,nearS=null,nearD=0,lm=null;
+const AYUDA='Mis comandos son: JARVIS activa modo sentinela. JARVIS desactiva. JARVIS sitios afectados. JARVIS sitio, seguido del nombre, para saber su estatus. JARVIS llévame al sitio, seguido del nombre, para trazar la ruta. JARVIS cancela ruta. JARVIS cállate, para detener mi voz. JARVIS quién eres. JARVIS modo valet, para conversar conmigo. Y JARVIS sal de valet, para terminar la conversación.';
+function quienSoy(){log('Soy tu asistente inteligente. '+AYUDA);hablar('Soy tu asistente inteligente, diseñado por el Ingeniero Valentín Valencia. '+AYUDA);}
+function estatusSitio(q){
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const s=buscarSitio(q);
+  if(!s){const m='No encontré el sitio '+q+'.';log(m,'a');return hablar(m);}
+  seguir=false;$('bFollow').classList.remove('act');map.setView([s.la,s.lo],17);
+  const d=me?dist(me.la,me.lo,s.la,s.lo):null,ds=d==null?'':(d<1000?` Está a ${Math.round(d)} metros de ti.`:` Está a ${(d/1000).toFixed(1)} kilómetros de ti.`);
+  const m=`Sitio ${s.n}. Tecnología ${s.t}. Estado: ${s.bad?'con falla, caído':'sin falla'}.`+ds;
+  const al=$('alert');al.textContent=(s.bad?'🔴 ':'🟢 ')+s.n+(s.bad?' · CON FALLA':' · SIN FALLA');al.className='show '+(s.bad?'bad':'ok');setTimeout(()=>al.classList.remove('show'),6000);
+  log(m,s.bad?'a':'k');hablar(m);
+}
+const fd=d=>d<1000?Math.round(d)+' metros':(d/1000).toFixed(1)+' kilómetros';
+function masCercano(soloCaidos){
+  if(!me)return null;let b=null,bd=1e12;
+  for(const s of sitios){if(soloCaidos&&!s.bad)continue;const d=dist(me.la,me.lo,s.la,s.lo);if(d<bd){bd=d;b=s;}}
+  return b?{s:b,d:bd}:null;
+}
+const CHISTES=['¿Por qué el técnico llevó una escalera a la reunión? Porque quería subir el nivel de señal.','Un sitio le dijo a otro: no me dejes en visto, contesta el ping.','¿Cuál es el colmo de un ingeniero de radio? Tener la paciencia con poca cobertura.'];
+// "IA" local: reconoce intenciones sobre los datos en vivo. 100% en el dispositivo, sin servicios externos.
+function responderLocal(raw){
+  const t=limpia(raw.replace(/jarvis/ig,'')),n=norm(raw).replace(/jarvis/g,'');
+  const has=r=>r.test(t);
+  if(has(/\b(gracias|muchas gracias)\b/))return 'De nada.';
+  if(has(/\b(hola|buenos dias|buenas tardes|buenas noches|buenas)\b/)){const h=new Date().getHours();return (h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+'. ¿En qué te ayudo?';}
+  if(has(/como estas|como te va|que tal/))return 'Todo en orden y listo para ayudarte.';
+  if(has(/quien eres|como te llamas|quien te (hizo|creo|diseno)/))return 'Soy JARVIS, tu asistente inteligente, diseñado por el Ingeniero Valentín Valencia.';
+  if(has(/que hora es|la hora/))return ('Son las '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})).replace(/\.?$/,'.');
+  if(has(/que (dia|fecha)|en que fecha/))return 'Hoy es '+new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})+'.';
+  if(has(/chiste|algo gracioso/))return CHISTES[Math.floor(Math.random()*CHISTES.length)];
+  if(/(cuanto es|cuanto son|calcula|cuanto da)/.test(n)){
+    const e=n.replace(/.*?(cuanto es|cuanto son|calcula|cuanto da)/,'').replace(/\b(cero|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)\b/g,m=>NUMS[m]).replace(/(\d),(\d)/g,'$1.$2')
+      .replace(/multiplicado por|por/g,'*').replace(/dividido entre|dividido por|entre/g,'/').replace(/\bmas\b/g,'+').replace(/\bmenos\b/g,'-').replace(/\bx\b/g,'*');
+    if(/^[0-9+\-*/().\s]+$/.test(e)&&/\d/.test(e)){try{const v=Function('"use strict";return ('+e+')')();if(isFinite(v))return 'El resultado es '+Math.round(v*10000)/10000+'.';}catch(_){}}
+  }
+  if(!sitios.length&&has(/(sitio|torre|falla|caido|afectado)/))return 'Aún no he cargado los sitios.';
+  const tec=(t.match(/\b([2-5])\s?g\b/)||[])[1];
+  if(has(/(cuantos|cuantas|cantidad|numero)/)&&has(/(caido|caida|afectado|afectada|falla)/)){
+    const l=sitios.filter(s=>s.bad&&(!tec||new RegExp('(^|[^0-9])'+tec+'\\s?g','i').test(s.t))),x=tec?' con tecnología '+tec+' G':'';
+    return l.length?`${l.length===1?'Hay 1 sitio caído':'Hay '+l.length+' sitios caídos'}${x}, de ${sitios.length} en total.`:`No hay sitios caídos${x}.`;
+  }
+  if(has(/(cuantos|cuantas|cantidad|numero).*(sitios|torres)/))return `Tengo ${sitios.length} sitios cargados.`;
+  if(has(/(mas cercan|cerca de mi|cerca|proximo)/)&&has(/(sitio|torre)/)){
+    if(!me)return 'Aún no tengo tu ubicación.';
+    const sol=has(/(caido|caida|falla|afectado)/),c=masCercano(sol);
+    if(!c)return sol?'No hay sitios caídos.':'No encontré sitios.';
+    return `El ${sol?'sitio caído':'sitio'} más cercano es ${c.s.n}, a ${fd(c.d)}. Está ${c.s.bad?'con falla':'sin falla'}.`;
+  }
+  if(has(/(cuales|lista|dime|nombra).*(caido|afectado|falla)/)){const l=sitios.filter(s=>s.bad);if(!l.length)return 'No hay sitios caídos.';return `Hay ${l.length} caídos: ${l.slice(0,5).map(s=>s.n).join(', ')}${l.length>5?' y '+(l.length-5)+' más':''}.`;}
+  if(has(/(donde estoy|mi ubicacion)/)){if(!me)return 'Aún no tengo tu ubicación.';const c=masCercano(false);return `Estás en latitud ${me.la.toFixed(4)}, longitud ${me.lo.toFixed(4)}.`+(c?` La torre más cercana es ${c.s.n}, a ${fd(c.d)}.`:'');}
+  if(has(/sentinela/))return sentinela?'El modo sentinela está activo.':'El modo sentinela está apagado.';
+  const sm=t.match(/(?:sitio|torre)\s+(.+)$/);
+  if(sm){const s=buscarSitio(sm[1]);if(s){const d=me?dist(me.la,me.lo,s.la,s.lo):null;return `Sitio ${s.n}. Tecnología ${s.t}. Estado: ${s.bad?'con falla, caído':'sin falla'}.`+(d==null?'':` Está a ${fd(d)}.`);}}
+  return null;
+}
+// Opcional: Gemini Nano integrado en Chrome (en el dispositivo, gratis). Solo se usa si ya está disponible; si no, se omite.
+async function iaLocal(txt){
+  try{
+    if(!window.LanguageModel)return null;
+    const o={expectedInputs:[{type:'text',languages:['es']}],expectedOutputs:[{type:'text',languages:['es']}]};
+    if(!lm){if((await LanguageModel.availability(o))!=='available')return null;
+      lm=await LanguageModel.create({...o,initialPrompts:[{role:'system',content:'Eres JARVIS, asistente de voz diseñado por el Ingeniero Valentín Valencia. Responde en español, natural y en máximo 3 frases, sin markdown ni listas.'}]});}
+    const nb=sitios.filter(x=>x.bad).length;
+    const r=await lm.prompt(`[Contexto: ${sitios.length} sitios, ${nb} caídos.] ${txt}`);
+    return String(r).replace(/[*_#`>]/g,'').trim()||null;
+  }catch(_){lm=null;return null;}
+}
+function setValet(v){
+  valet=v;$('bVal').classList.toggle('act',v);$('bVal').textContent=v?'🤵 Valet ON':'🤵 Valet';
+  if(v){log('Modo valet activado','k');hablar('Modo valet activado. Pregúntame por los sitios, tu ubicación, la hora o haz un cálculo. ¿En qué te ayudo?');}
+  else{speechSynthesis.cancel();log('Modo valet desactivado');hablar('Modo valet desactivado.');}
+}
+async function conversar(txt){
+  let r=responderLocal(txt);
+  if(!r)r=await iaLocal(txt);
+  if(!r)r='No entendí eso. Pregúntame por los sitios, tu ubicación, la hora o un cálculo, o di JARVIS ayuda.';
+  log('🤖 '+r);hablar(r);
+}
+function cmd(t){
+  if(/(callate|silencio|basta ya|basta jarvis)/.test(t)){speechSynthesis.cancel();return true;}
+  if(/(cancela|quita|borra|elimina).*ruta/.test(t)){capaRuta.clearLayers();log('Ruta cancelada');hablar('Ruta cancelada.');return true;}
+  const mm=t.match(/(?:llevame|lleva me|llevarme|dirigeme|guiame|navega|ruta)\s+(?:al|a el|hacia|a)?\s*(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
+  if(mm&&mm[1].trim()){irASitio(mm[1]);return true;}
+  if(/(afectado|afectada|caido|caida|con falla)/.test(t)&&/(sitio|torre|cuantos|cantidad)/.test(t)){reporteCaidos();return true;}
+  if(/(quien eres|quien es jarvis|presentate|que eres)/.test(t)){quienSoy();return true;}
+  if(/(ayuda|comandos|que puedes hacer)/.test(t)){log(AYUDA);hablar(AYUDA);return true;}
+  if(/(valet|balet|ballet|valete)/.test(t)){setValet(true);return true;}
+  if(/(desactiva|desactivar|detente|detener|apaga|cancela)/.test(t)){setSentinela(false,true);return true;}
+  if(/(sentinela|centinela|sentinel|sentinella)/.test(t)&&/(activa|activar|inicia|enciende|modo)/.test(t)){setSentinela(true);return true;}
+  const sm=t.match(/(?:^|\s)(?:sitio|torre)\s+(.+)$/);
+  if(sm){estatusSitio(sm[1]);return true;}
+  return false;
+}
+function procesarComando(raw){
+  const t=norm(raw);log('🎙 '+raw);
+  const hasJ=/(jarvis|jarbis|yarvis|harvis|jarvi|yarbis|jervis)/.test(t);
+  if(valet&&/(valet|balet|ballet|valete)/.test(t)&&/(sal|salir|termina|terminar|fin|desactiva|desactivar|apaga|cierra)/.test(t))return setValet(false);
+  if(hasJ&&cmd(t))return;
+  if(valet)conversar(raw.replace(/jarvis/ig,'').trim()||raw);
+}
+function iniciarMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){log('Este navegador no soporta reconocimiento de voz (usa Chrome o Edge)','a');return;}
+  rec=new SR();rec.lang='es-MX';rec.continuous=true;rec.interimResults=false;
+  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(!e.results[i].isFinal)continue;if(hablando)continue;procesarComando(e.results[i][0].transcript);}};
+  rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){micOn=false;log('Permiso de micrófono denegado','a');}};
+  rec.onend=()=>{if(micOn)setTimeout(()=>{try{rec.start();}catch(_){}} ,300);else setMic(false);};
+  micOn=true;try{rec.start();}catch(_){}setMic(true);
+}
+function setMic(v){$('dMic').className='dot'+(v?' rec':'');$('tMic').textContent=v?'Escuchando…':'Mic apagado';$('bMic').textContent=v?'🎙️ Apagar mic':'🎙️ Micrófono';}
+
+// ===== Ruta hacia una torre (OSRM) =====
+async function rutaA(key,voz){
+  const s=sitios.find(x=>x.key===key);
+  if(!s)return;
+  if(!me){const m='Necesito tu ubicación para trazar la ruta.';log(m,'a');if(voz)hablar(m);return;}
+  try{
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${me.lo},${me.la};${s.lo},${s.la}?overview=full&geometries=geojson`);
+    const d=await r.json();const rt=d.routes[0];capaRuta.clearLayers();
+    L.polyline(rt.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#facc15',weight:6,opacity:.9}).addTo(capaRuta);
+    map.fitBounds(capaRuta.getLayers()[0].getBounds(),{padding:[60,60]});seguir=false;$('bFollow').classList.remove('act');
+    const km=(rt.distance/1000).toFixed(1),mn=Math.round(rt.duration/60);
+    log(`Ruta a ${s.n}: ${km} km, ${mn} min · ${s.bad?'CON FALLA':'SIN FALLA'}`,s.bad?'a':'k');
+    const al=$('alert');al.textContent=(s.bad?'🔴 ':'🟢 ')+s.n+(s.bad?' · CON FALLA':' · SIN FALLA')+` · ${km} km`;al.className='show '+(s.bad?'bad':'ok');setTimeout(()=>al.classList.remove('show'),7000);
+    if(voz)hablar(`Ruta a ${s.n}. El sitio está ${s.bad?'con falla, estado caído':'sin falla'}. Distancia ${km} kilómetros, ${mn} minutos.`);
+  }catch(e){log('No se pudo trazar la ruta: '+e.message,'a');if(voz)hablar('No pude trazar la ruta.');}
+}
+map.on('popupopen',e=>{const b=e.popup.getElement().querySelector('[data-r]');if(b)b.onclick=()=>{rutaA(b.dataset.r);map.closePopup();};});
+
+// ===== Botones =====
+$('bSen').onclick=()=>setSentinela(!sentinela,true);
+$('bMic').onclick=()=>{if(micOn){micOn=false;rec&&rec.stop();}else iniciarMic();};
+$('bFollow').onclick=()=>{seguir=!seguir;$('bFollow').classList.toggle('act',seguir);if(seguir&&me)map.panTo([me.la,me.lo]);};
+$('bSim').onclick=()=>{simular=!simular;$('bSim').classList.toggle('act',simular);log(simular?'Simulación: toca el mapa para moverte':'GPS real');};
+$('bClr').onclick=()=>capaRuta.clearLayers();
+$('bVal').onclick=()=>setValet(!valet);
+$('bGo').onclick=async()=>{
+  $('start').remove();elegirVoz();hablar('JARVIS en línea.');
+  iniciarGPS();iniciarMic();cargarSitios();setInterval(cargarSitios,REFRESCO_MS);
+  try{if(navigator.wakeLock)await navigator.wakeLock.request('screen');}catch(_){}
+  log('Di: "JARVIS activa modo sentinela"');
+};
+</script></body></html>
