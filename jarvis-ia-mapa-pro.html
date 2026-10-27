@@ -48,6 +48,7 @@ button.warn{background:#7f1d1d;border-color:#ef4444}
     <button id="bFollow" class="act">🧭 Seguir</button>
     <button id="bSim">📍 Simular GPS</button>
     <button id="bVal">🤵 Valet</button>
+    <button id="bAuth">🔐 Autorizar</button>
     <button id="bClr">✖ Ruta</button>
   </div>
 </div>
@@ -208,7 +209,7 @@ const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 let rec=null,micOn=false;
 let valet=false,nearS=null,nearD=0,lm=null;
 const AYUDA='Mis comandos son: JARVIS activa modo sentinela. JARVIS desactiva. JARVIS sitios afectados. JARVIS sitio, seguido del nombre, para saber su estatus. JARVIS llévame al sitio, seguido del nombre, para trazar la ruta. JARVIS cancela ruta. JARVIS cállate, para detener mi voz. JARVIS quién eres. JARVIS modo valet, para conversar conmigo. Y JARVIS sal de valet, para terminar la conversación.';
-function quienSoy(){log('Soy tu asistente inteligente. '+AYUDA);hablar('Soy tu asistente inteligente, diseñado por el Ingeniero Valentín Valencia. '+AYUDA);}
+function quienSoy(){log('Soy tu asistente inteligente. '+ayuda());hablar('Soy tu asistente inteligente, diseñado por el Ingeniero Valentín Valencia. '+ayuda());}
 function estatusSitio(q){
   if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
   const s=buscarSitio(q);
@@ -285,14 +286,58 @@ async function conversar(txt){
   if(!r)r='No entendí eso. Pregúntame por los sitios, tu ubicación, la hora o un cálculo, o di JARVIS ayuda.';
   log('🤖 '+r);hablar(r);
 }
+// ===== Comando restringido: reinicio de sitio (solo Ing. Valentín Valencia) =====
+const PIN_HASH='';     // SHA-256 (hex) del PIN del Ing. Valentín Valencia. Vacío = comando bloqueado para todos.
+const REINICIO_URL=''; // Servicio propio que ejecuta el reinicio (recibe POST JSON). Vacío = no configurado.
+const AUTH_MIN=15;
+let authHasta=0,pendiente=null,fallos=0,bloqueoHasta=0;
+const autorizado=()=>Date.now()<authHasta;
+const ayuda=()=>AYUDA+(autorizado()?' JARVIS reinicia sitio, seguido del nombre, con confirmación.':'');
+async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function actAuth(){$('bAuth').classList.toggle('act',autorizado());$('bAuth').textContent=autorizado()?'🔓 Autorizado':'🔐 Autorizar';}
+setInterval(()=>{if(!autorizado())pendiente=null;actAuth();},5000);
+async function autorizar(){
+  if(autorizado()){authHasta=0;pendiente=null;actAuth();log('Autorización retirada');return hablar('Autorización retirada.');}
+  if(Date.now()<bloqueoHasta){log('Autorización bloqueada temporalmente','a');return hablar('Autorización bloqueada temporalmente.');}
+  if(!window.crypto||!crypto.subtle){log('No puedo verificar el PIN en este navegador (usa HTTPS o localhost)','a');return;}
+  const pin=prompt(PIN_HASH?'PIN del Ingeniero Valentín Valencia:':'Configuración: define el PIN del Ingeniero para generar su hash (no desbloquea nada todavía):');
+  if(!pin)return;
+  const h=await sha(pin);
+  if(!PIN_HASH){prompt('Copia este hash y pégalo en la constante PIN_HASH del archivo:',h);return;}
+  if(h===PIN_HASH){fallos=0;authHasta=Date.now()+AUTH_MIN*60000;actAuth();log('Autorizado por '+AUTH_MIN+' min','k');hablar('Autorización concedida.');}
+  else{if(++fallos>=3){bloqueoHasta=Date.now()+300000;fallos=0;}log('PIN incorrecto','a');hablar('PIN incorrecto.');}
+}
+function pedirReinicio(q){
+  if(!autorizado()){const m='Comando restringido. Solo el Ingeniero Valentín Valencia tiene autorización para reiniciar sitios.';log('⛔ Reinicio denegado: '+q,'a');return hablar(m);}
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const s=buscarSitio(q);
+  if(!s){const m='No encontré el sitio '+q+'.';log(m,'a');return hablar(m);}
+  pendiente={s,t:Date.now()};
+  const m=`¿Confirmas el reinicio del sitio ${s.n}? Está ${s.bad?'con falla':'sin falla'}. Di JARVIS confirma, o JARVIS cancela.`;
+  log(m,'a');hablar(m);
+}
+async function ejecutarReinicio(){
+  const p=pendiente;pendiente=null;
+  if(!p||!autorizado()||Date.now()-p.t>60000){const m='No hay un reinicio pendiente o la autorización venció.';log(m,'a');return hablar(m);}
+  if(!REINICIO_URL){const m='El servicio de reinicio no está configurado.';log(m,'a');return hablar(m);}
+  try{
+    const r=await fetch(REINICIO_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({accion:'reiniciar_sitio',sitio:p.s.n,solicitante:'Valentin Valencia',ts:new Date().toISOString()})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const m=`Reinicio solicitado para el sitio ${p.s.n}.`;log(m,'k');hablar(m);
+  }catch(e){log('Reinicio falló: '+e.message,'a');hablar('No pude enviar el reinicio.');}
+}
 function cmd(t){
   if(/(callate|silencio|basta ya|basta jarvis)/.test(t)){speechSynthesis.cancel();return true;}
+  if(pendiente&&/\b(cancela|cancelar)\b/.test(t)){pendiente=null;log('Reinicio cancelado');hablar('Reinicio cancelado.');return true;}
+  if(pendiente&&/\bconfirma/.test(t)){ejecutarReinicio();return true;}
+  const rm=t.match(/(?:reinicia|reiniciar|reinicio|resetea)\s+(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
+  if(rm&&rm[1].trim()){pedirReinicio(rm[1]);return true;}
   if(/(cancela|quita|borra|elimina).*ruta/.test(t)){capaRuta.clearLayers();log('Ruta cancelada');hablar('Ruta cancelada.');return true;}
   const mm=t.match(/(?:llevame|lleva me|llevarme|dirigeme|guiame|navega|ruta)\s+(?:al|a el|hacia|a)?\s*(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
   if(mm&&mm[1].trim()){irASitio(mm[1]);return true;}
   if(/(afectado|afectada|caido|caida|con falla)/.test(t)&&/(sitio|torre|cuantos|cantidad)/.test(t)){reporteCaidos();return true;}
   if(/(quien eres|quien es jarvis|presentate|que eres)/.test(t)){quienSoy();return true;}
-  if(/(ayuda|comandos|que puedes hacer)/.test(t)){log(AYUDA);hablar(AYUDA);return true;}
+  if(/(ayuda|comandos|que puedes hacer)/.test(t)){log(ayuda());hablar(ayuda());return true;}
   if(/(valet|balet|ballet|valete)/.test(t)){setValet(true);return true;}
   if(/(desactiva|desactivar|detente|detener|apaga|cancela)/.test(t)){setSentinela(false,true);return true;}
   if(/(sentinela|centinela|sentinel|sentinella)/.test(t)&&/(activa|activar|inicia|enciende|modo)/.test(t)){setSentinela(true);return true;}
@@ -342,6 +387,7 @@ $('bMic').onclick=()=>{if(micOn){micOn=false;rec&&rec.stop();}else iniciarMic();
 $('bFollow').onclick=()=>{seguir=!seguir;$('bFollow').classList.toggle('act',seguir);if(seguir&&me)map.panTo([me.la,me.lo]);};
 $('bSim').onclick=()=>{simular=!simular;$('bSim').classList.toggle('act',simular);log(simular?'Simulación: toca el mapa para moverte':'GPS real');};
 $('bClr').onclick=()=>capaRuta.clearLayers();
+$('bAuth').onclick=autorizar;
 $('bVal').onclick=()=>setValet(!valet);
 $('bGo').onclick=async()=>{
   $('start').remove();elegirVoz();hablar('JARVIS en línea.');
