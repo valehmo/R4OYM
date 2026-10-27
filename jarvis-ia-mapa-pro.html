@@ -208,7 +208,7 @@ function reporteCaidos(){
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 let rec=null,micOn=false;
 let valet=false,nearS=null,nearD=0,lm=null;
-const AYUDA='Mis comandos son: JARVIS activa modo sentinela. JARVIS desactiva. JARVIS sitios afectados. JARVIS sitio, seguido del nombre, para saber su estatus. JARVIS llévame al sitio, seguido del nombre, para trazar la ruta. JARVIS cancela ruta. JARVIS cállate, para detener mi voz. JARVIS quién eres. JARVIS modo valet, para conversar conmigo. Y JARVIS sal de valet, para terminar la conversación.';
+const AYUDA='Mis comandos son: JARVIS activa modo sentinela. JARVIS desactiva. JARVIS sitios afectados. JARVIS sitio, seguido del nombre, para saber su estatus. JARVIS llévame al sitio, seguido del nombre, para trazar la ruta. JARVIS cancela ruta. JARVIS tráfico, VSWR, fibra, cinco G o radiografía, seguido de sitio y su nombre, para consultar en vivo. El tráfico dice los usuarios conectados. JARVIS cállate, para detener mi voz. JARVIS quién eres. JARVIS modo valet, para conversar conmigo. Y JARVIS sal de valet, para terminar la conversación.';
 function quienSoy(){log('Soy tu asistente inteligente. '+ayuda());hablar('Soy tu asistente inteligente, diseñado por el Ingeniero Valentín Valencia. '+ayuda());}
 function estatusSitio(q){
   if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
@@ -288,23 +288,23 @@ async function conversar(txt){
 }
 // ===== Comando restringido: reinicio de sitio (solo Ing. Valentín Valencia) =====
 const PIN_HASH='';     // SHA-256 (hex) del PIN del Ing. Valentín Valencia. Vacío = comando bloqueado para todos.
-const REINICIO_URL=''; // Servicio propio que ejecuta el reinicio (recibe POST JSON). Vacío = no configurado.
+const TABLA_CMD='COMANDOS_JARVIS'; // Tabla AppSheet que sirve de buzón entre esta página y el servidor local (jarvis_worker.py)
 const AUTH_MIN=15;
-let authHasta=0,pendiente=null,fallos=0,bloqueoHasta=0;
+let authHasta=0,pendiente=null,fallos=0,bloqueoHasta=0,pinMem='';
 const autorizado=()=>Date.now()<authHasta;
 const ayuda=()=>AYUDA+(autorizado()?' JARVIS reinicia sitio, seguido del nombre, con confirmación.':'');
 async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 function actAuth(){$('bAuth').classList.toggle('act',autorizado());$('bAuth').textContent=autorizado()?'🔓 Autorizado':'🔐 Autorizar';}
-setInterval(()=>{if(!autorizado())pendiente=null;actAuth();},5000);
+setInterval(()=>{if(!autorizado()){pendiente=null;pinMem='';}actAuth();},5000);
 async function autorizar(){
-  if(autorizado()){authHasta=0;pendiente=null;actAuth();log('Autorización retirada');return hablar('Autorización retirada.');}
+  if(autorizado()){authHasta=0;pendiente=null;pinMem='';actAuth();log('Autorización retirada');return hablar('Autorización retirada.');}
   if(Date.now()<bloqueoHasta){log('Autorización bloqueada temporalmente','a');return hablar('Autorización bloqueada temporalmente.');}
   if(!window.crypto||!crypto.subtle){log('No puedo verificar el PIN en este navegador (usa HTTPS o localhost)','a');return;}
   const pin=prompt(PIN_HASH?'PIN del Ingeniero Valentín Valencia:':'Configuración: define el PIN del Ingeniero para generar su hash (no desbloquea nada todavía):');
   if(!pin)return;
   const h=await sha(pin);
   if(!PIN_HASH){prompt('Copia este hash y pégalo en la constante PIN_HASH del archivo:',h);return;}
-  if(h===PIN_HASH){fallos=0;authHasta=Date.now()+AUTH_MIN*60000;actAuth();log('Autorizado por '+AUTH_MIN+' min','k');hablar('Autorización concedida.');}
+  if(h===PIN_HASH){fallos=0;pinMem=pin;authHasta=Date.now()+AUTH_MIN*60000;actAuth();log('Autorizado por '+AUTH_MIN+' min','k');hablar('Autorización concedida.');}
   else{if(++fallos>=3){bloqueoHasta=Date.now()+300000;fallos=0;}log('PIN incorrecto','a');hablar('PIN incorrecto.');}
 }
 function pedirReinicio(q){
@@ -316,20 +316,48 @@ function pedirReinicio(q){
   const m=`¿Confirmas el reinicio del sitio ${s.n}? Está ${s.bad?'con falla':'sin falla'}. Di JARVIS confirma, o JARVIS cancela.`;
   log(m,'a');hablar(m);
 }
+// ===== Hook-up página ⇄ servidor local (vía tabla AppSheet COMANDOS_JARVIS) =====
+const apiCmd=(accion,props,rows)=>fetch(`https://www.appsheet.com/api/v2/apps/${APP_ID}/tables/${encodeURIComponent(TABLA_CMD)}/Action`,{method:'POST',headers:{ApplicationAccessKey:API_KEY,'Content-Type':'application/json'},body:JSON.stringify({Action:accion,Properties:props||{},Rows:rows||[]})})
+  .then(async r=>{if(!r.ok)throw new Error('AppSheet HTTP '+r.status);const t=await r.text();return t?JSON.parse(t):{};});
+async function hmacHex(clave,msg){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(clave),{name:'HMAC',hash:'SHA-256'},false,['sign']);const b=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(msg));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function enviarComando(accion,sitio,firmar){
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,8),ts=String(Date.now());
+  const row={ID:id,TS:ts,ACCION:accion,SITIO:sitio,SOLICITANTE:firmar?'Valentin Valencia':'JARVIS',FIRMA:(firmar&&pinMem)?await hmacHex(pinMem,`${id}|${accion}|${sitio}|${ts}`):'',ESTADO:'PENDIENTE',RESULTADO:''};
+  await apiCmd('Add',{},[row]);
+  for(let i=0;i<35;i++){ // espera hasta ~70 s la respuesta del servidor local
+    await new Promise(r=>setTimeout(r,2000));
+    const d=await apiCmd('Find',{Selector:`Filter(${TABLA_CMD}, [ID] = "${id}")`});
+    const x=(Array.isArray(d)?d:(d.Rows||[]))[0];
+    if(x&&(x.ESTADO==='OK'||x.ESTADO==='ERROR'))return{ok:x.ESTADO==='OK',txt:x.RESULTADO||''};
+  }
+  return{ok:false,txt:'El servidor local no respondió a tiempo.'};
+}
+async function consultarCOLI(accion,q,etq){
+  if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
+  const s=buscarSitio(q);
+  if(!s){const m='No encontré el sitio '+q+'.';log(m,'a');return hablar(m);}
+  log(`Consultando ${etq} de ${s.n}…`);hablar(`Consultando ${etq} del sitio ${s.n}. Un momento.`);
+  try{const r=await enviarComando(accion,s.n,false);const m=r.txt||(r.ok?'Consulta sin datos.':'La consulta falló.');log(m,r.ok?'k':'a');hablar(m);}
+  catch(e){log(etq+' falló: '+e.message,'a');hablar('No pude enviar la consulta al servidor.');}
+}
 async function ejecutarReinicio(){
   const p=pendiente;pendiente=null;
   if(!p||!autorizado()||Date.now()-p.t>60000){const m='No hay un reinicio pendiente o la autorización venció.';log(m,'a');return hablar(m);}
-  if(!REINICIO_URL){const m='El servicio de reinicio no está configurado.';log(m,'a');return hablar(m);}
-  try{
-    const r=await fetch(REINICIO_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({accion:'reiniciar_sitio',sitio:p.s.n,solicitante:'Valentin Valencia',ts:new Date().toISOString()})});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const m=`Reinicio solicitado para el sitio ${p.s.n}.`;log(m,'k');hablar(m);
-  }catch(e){log('Reinicio falló: '+e.message,'a');hablar('No pude enviar el reinicio.');}
+  if(!pinMem){const m='La autorización venció. Vuelve a autorizar.';log(m,'a');return hablar(m);}
+  log('Enviando reinicio de '+p.s.n+' al servidor local…');hablar('Enviando el reinicio. Un momento.');
+  try{const r=await enviarComando('REINICIAR',p.s.n,true);const m=r.txt||(r.ok?`Reinicio ejecutado en el sitio ${p.s.n}.`:'El reinicio falló.');log(m,r.ok?'k':'a');hablar(m);}
+  catch(e){log('Reinicio falló: '+e.message,'a');hablar('No pude enviar el reinicio.');}
 }
 function cmd(t){
   if(/(callate|silencio|basta ya|basta jarvis)/.test(t)){speechSynthesis.cancel();return true;}
   if(pendiente&&/\b(cancela|cancelar)\b/.test(t)){pendiente=null;log('Reinicio cancelado');hablar('Reinicio cancelado.');return true;}
   if(pendiente&&/\bconfirma/.test(t)){ejecutarReinicio();return true;}
+  const CQ=[['VSWR',/(?:vswr|v s w r|bswr|uswr|retorno rf)/,'VSWR',1],['FIBRA',/(?:fibra|potencias? optica)/,'fibra óptica',0],
+    ['5G',/(?:\b5 ?g\b|cinco g)/,'5G',0],['TRAFICO',/(?:trafico|usuarios(?: conectados)?)/,'tráfico',1],['RADIOGRAFIA',/radiografia/,'radiografía',1]];
+  for(const [ac,re,et,opt] of CQ){
+    const m=t.match(new RegExp(re.source+'\\s+(?:(?:del|de|en el|en|el)\\s+)?(?:sitios?|torres?)'+(opt?'?':'')+'\\s*(.+)$'));
+    if(m&&m[1].trim()){consultarCOLI(ac,m[1],et);return true;}
+  }
   const rm=t.match(/(?:reinicia|reiniciar|reinicio|resetea)\s+(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
   if(rm&&rm[1].trim()){pedirReinicio(rm[1]);return true;}
   if(/(cancela|quita|borra|elimina).*ruta/.test(t)){capaRuta.clearLayers();log('Ruta cancelada');hablar('Ruta cancelada.');return true;}
