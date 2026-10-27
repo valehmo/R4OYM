@@ -208,7 +208,7 @@ function reporteCaidos(){
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 let rec=null,micOn=false;
 let valet=false,nearS=null,nearD=0,lm=null;
-const AYUDA='Mis comandos son: JARVIS activa modo sentinela. JARVIS desactiva. JARVIS sitios afectados. JARVIS sitio, seguido del nombre, para saber su estatus. JARVIS llévame al sitio, seguido del nombre, para trazar la ruta. JARVIS cancela ruta. JARVIS tráfico, VSWR, fibra, cinco G o radiografía, seguido de sitio y su nombre, para consultar en vivo. El tráfico dice los usuarios conectados. JARVIS cállate, para detener mi voz. JARVIS quién eres. JARVIS modo valet, para conversar conmigo. Y JARVIS sal de valet, para terminar la conversación.';
+const AYUDA='Mis comandos son: JARVIS activa modo sentinela. JARVIS desactiva. JARVIS sitios afectados. JARVIS sitio, seguido del nombre, para saber su estatus. JARVIS llévame al sitio, seguido del nombre, para trazar la ruta. JARVIS cancela ruta. JARVIS tráfico, VSWR, fibra, 5G o radiografía, seguido de sitio y su nombre, para consultar en vivo. El tráfico dice los usuarios conectados. JARVIS cállate, para detener mi voz. JARVIS quién eres. JARVIS modo valet, para conversar conmigo. Y JARVIS sal de valet, para terminar la conversación.';
 function quienSoy(){log('Soy tu asistente inteligente. '+ayuda());hablar('Soy tu asistente inteligente, diseñado por el Ingeniero Valentín Valencia. '+ayuda());}
 function estatusSitio(q){
   if(!sitios.length){const m='Aún no he cargado los sitios.';log(m,'a');return hablar(m);}
@@ -352,11 +352,11 @@ function cmd(t){
   if(/(callate|silencio|basta ya|basta jarvis)/.test(t)){speechSynthesis.cancel();return true;}
   if(pendiente&&/\b(cancela|cancelar)\b/.test(t)){pendiente=null;log('Reinicio cancelado');hablar('Reinicio cancelado.');return true;}
   if(pendiente&&/\bconfirma/.test(t)){ejecutarReinicio();return true;}
-  const CQ=[['VSWR',/(?:vswr|v s w r|bswr|uswr|retorno rf)/,'VSWR',1],['FIBRA',/(?:fibra|potencias? optica)/,'fibra óptica',0],
-    ['5G',/(?:\b5 ?g\b|cinco g)/,'5G',0],['TRAFICO',/(?:trafico|usuarios(?: conectados)?)/,'tráfico',1],['RADIOGRAFIA',/radiografia/,'radiografía',1]];
-  for(const [ac,re,et,opt] of CQ){
+  const CQ=[['VSWR',/(?:vswr|v s w r|bswr|uswr|retorno rf)/,'VSWR',1],['FIBRA',/(?:fibra|potencias? optica)/,'fibra óptica',1],
+    ['5G',/(?:\b(?:5|cinco)\s?(?:g|ge|je)\b)/,'5G',1],['TRAFICO',/(?:trafico|usuarios(?: conectados)?)/,'tráfico',1],['RADIOGRAFIA',/radiografia/,'radiografía',1]];
+  if(!/\b(cuantos|cuantas|cuales|lista)\b/.test(t))for(const [ac,re,et,opt] of CQ){
     const m=t.match(new RegExp(re.source+'\\s+(?:(?:del|de|en el|en|el)\\s+)?(?:sitios?|torres?)'+(opt?'?':'')+'\\s*(.+)$'));
-    if(m&&m[1].trim()){consultarCOLI(ac,m[1],et);return true;}
+    if(m&&m[1].trim()&&!/^(caid|afect|con falla|activ|deshab)/.test(m[1].trim())){consultarCOLI(ac,m[1],et);return true;}
   }
   const rm=t.match(/(?:reinicia|reiniciar|reinicio|resetea)\s+(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
   if(rm&&rm[1].trim()){pedirReinicio(rm[1]);return true;}
