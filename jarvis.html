@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050914">
+  <title>J.A.R.V.I.S. | Sistema de Introducción</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#050914; }
+    body { font-family: "Segoe UI", Arial, sans-serif; color:#dffaff; }
+    .screen {
+      position:relative; width:100%; height:100%; min-height:100svh;
+      display:grid; place-items:center; isolation:isolate; background:#050914;
+    }
+    video {
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:contain; background:#050914; z-index:-2;
+    }
+    .shade {
+      position:absolute; inset:0; z-index:-1; pointer-events:none;
+      background:linear-gradient(180deg,rgba(2,8,20,.18),transparent 24%,transparent 75%,rgba(2,8,20,.35));
+    }
+    .hud {
+      position:absolute; inset:0; pointer-events:none;
+      border:1px solid rgba(54,220,255,.22);
+      box-shadow:inset 0 0 55px rgba(0,195,255,.08);
+    }
+    .topline, .bottomline {
+      position:absolute; left:clamp(16px,3vw,42px); right:clamp(16px,3vw,42px);
+      display:flex; justify-content:space-between; align-items:center;
+      color:rgba(183,242,255,.8); font-size:11px; letter-spacing:.22em;
+      text-transform:uppercase; text-shadow:0 0 12px #00bfff;
+    }
+    .topline { top:clamp(16px,3vh,32px); }
+    .bottomline { bottom:clamp(16px,3vh,32px); }
+    .status { display:flex; gap:9px; align-items:center; }
+    .dot {
+      width:7px; height:7px; border-radius:50%; background:#55f5cf;
+      box-shadow:0 0 12px #55f5cf; animation:pulse 1.8s infinite;
+    }
+    .controls {
+      position:absolute; right:clamp(16px,3vw,42px); bottom:clamp(48px,8vh,76px);
+      display:flex; gap:9px; pointer-events:auto;
+    }
+    button {
+      border:1px solid rgba(83,226,255,.48); color:#dffaff;
+      background:rgba(3,18,35,.72); padding:9px 13px; border-radius:3px;
+      font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+      cursor:pointer; backdrop-filter:blur(8px);
+    }
+    button:hover { background:rgba(0,145,190,.3); border-color:#64edff; }
+    .map-button {
+      background:linear-gradient(135deg,#075985,#06b6d4);
+      border-color:#67e8f9; color:#00131a; font-weight:800;
+      box-shadow:0 0 18px rgba(34,211,238,.28);
+    }
+    .map-button:hover { background:linear-gradient(135deg,#0891b2,#67e8f9); }
+    .error {
+      display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      width:min(90%,480px); padding:22px; text-align:center;
+      border:1px solid rgba(83,226,255,.5); background:rgba(3,18,35,.92);
+      line-height:1.6;
+    }
+    @keyframes pulse { 50% { opacity:.35; transform:scale(.8); } }
+    @media (max-width:600px) {
+      .topline,.bottomline { font-size:9px; letter-spacing:.12em; }
+      .controls { bottom:55px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <video id="intro" autoplay loop playsinline preload="auto">
+      <source src="JARVIS.mp4" type="video/mp4">
+      Tu navegador no puede reproducir este video.
+    </video>
+    <div class="shade"></div>
+    <div class="hud" aria-hidden="true"></div>
+
+    <div class="topline">
+      <span>J.A.R.V.I.S. // INTERFAZ PRINCIPAL</span>
+      <span class="status"><i class="dot"></i> SISTEMA ACTIVO</span>
+    </div>
+    <div class="bottomline">
+      <span>Asistente de inteligencia · En línea</span>
+      <span id="clock">--:--:--</span>
+    </div>
+
+    <div class="controls">
+      <button id="sound" type="button">Activar sonido</button>
+      <button id="fullscreen" type="button">Pantalla completa</button>
+      <button id="openMap" class="map-button" type="button">Abrir mapa JARVIS</button>
+    </div>
+
+    <div class="error" id="error">
+      No se pudo cargar <strong>JARVIS.mp4</strong>.<br>
+      Verifica que el video esté en la misma carpeta que este archivo HTML.
+    </div>
+  </main>
+  <script>
+    const video = document.getElementById('intro');
+    const sound = document.getElementById('sound');
+    const error = document.getElementById('error');
+
+    // Intentar iniciar el video con audio desde el primer momento.
+    video.muted = false;
+    sound.textContent = 'Silenciar';
+    video.play().then(() => {
+      sound.textContent = 'Silenciar';
+    }).catch(() => {
+      // Algunos navegadores bloquean el autoplay con audio hasta recibir
+      // una interacción del usuario. El botón permite habilitarlo.
+      video.muted = true;
+      sound.textContent = 'Iniciar sonido';
+    });
+    video.addEventListener('error', () => error.style.display = 'block');
+
+    sound.addEventListener('click', async () => {
+      if (video.muted) {
+        video.muted = false;
+        sound.textContent = 'Silenciar';
+      } else {
+        video.muted = true;
+        sound.textContent = 'Iniciar sonido';
+      }
+      try { await video.play(); } catch (_) {}
+    });
+
+    document.getElementById('fullscreen').addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) {}
+    });
+
+    // Abre directamente el archivo del mapa adjunto; no pulsa "Iniciar JARVIS".
+    document.getElementById('openMap').addEventListener('click', () => {
+      window.location.href = 'jarvis-ia-mapa.html';
+    });
+
+    const clock = document.getElementById('clock');
+    function updateClock() {
+      clock.textContent = new Intl.DateTimeFormat('es-MX', {
+        hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+      }).format(new Date());
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
