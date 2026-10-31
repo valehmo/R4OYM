@@ -210,13 +210,14 @@ function setSentinela(v,voz){
 }
 
 // ===== Voz =====
-let vozEs=null,hablando=false;
+let vozEs=null,hablando=false,ultHablado=new Set(),finHabla=0;
 function elegirVoz(){const v=speechSynthesis.getVoices();vozEs=v.find(x=>/es[-_]MX/i.test(x.lang))||v.find(x=>/^es/i.test(x.lang))||null;}
 speechSynthesis.onvoiceschanged=elegirVoz;
 function hablar(t,cb){
   const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';if(vozEs)u.voice=vozEs;u.rate=1.02;
   let ok=false;const fin=()=>{if(!ok){ok=true;if(cb)cb();}};
-  u.onstart=()=>hablando=true;u.onend=u.onerror=()=>{setTimeout(()=>hablando=false,400);fin();};
+  ultHablado=new Set(norm(t).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>2));finHabla=Infinity;
+  u.onstart=()=>hablando=true;u.onend=u.onerror=()=>{finHabla=Date.now();setTimeout(()=>hablando=false,400);fin();};
   speechSynthesis.speak(u);
   if(cb)setTimeout(fin,Math.max(8000,t.length*95)); // respaldo si el navegador no avisa que terminó
 }
@@ -391,7 +392,7 @@ async function ejecutarReinicio(){
   try{const r=await enviarComando('REINICIAR',p.s.n,true);const m=r.txt||(r.ok?`Reinicio ejecutado en el sitio ${p.s.n}.`:'El reinicio falló.');log(m,r.ok?'k':'a');hablar(m);}
   catch(e){log('Reinicio falló: '+e.message,'a');hablar('No pude enviar el reinicio.');}
 }
-function cmd(t){
+function cmd(t,conWake=true){ // conWake=false: se oyó sin la palabra JARVIS (ventana de espera); ayuda e identidad exigen JARVIS explícito
   const ctx=(esperaSitio&&Date.now()<esperaSitio.hasta)?esperaSitio.s:null;
   if(ctx&&!pendiente){ // respuesta a "¿qué quieres hacer con el sitio?"
     if(/^(no|nada|ninguno|dejalo|olvidalo|cancela|cancelar)$/.test(t)){finEspera(true);return true;}
@@ -414,8 +415,8 @@ function cmd(t){
   const mm=t.match(/(?:llevame|lleva me|llevarme|dirigeme|guiame|navega|ruta)\s+(?:al|a el|hacia|a)?\s*(?:el\s+)?(?:sitio|torre)?\s*(.+)$/);
   if(mm&&mm[1].trim()){irASitio(mm[1]);return true;}
   if(/(afectado|afectada|caido|caida|con falla)/.test(t)&&/(sitio|torre|cuantos|cantidad)/.test(t)){reporteCaidos();return true;}
-  if(/(quien eres|quien es jarvis|presentate|que eres)/.test(t)){quienSoy();return true;}
-  if(/(ayuda|comandos|que puedes hacer)/.test(t)){log(ayuda());hablar(ayuda());return true;}
+  if(conWake&&/(quien eres|quien es jarvis|presentate|que eres)/.test(t)){quienSoy();return true;}
+  if(conWake&&/(ayuda|comandos|que puedes hacer)/.test(t)){log(ayuda());hablar(ayuda());return true;}
   if(/(valet|balet|ballet|valete)/.test(t)){setValet(true);return true;}
   if(/(desactiva|desactivar|detente|detener|apaga|cancela)/.test(t)){setSentinela(false,true);return true;}
   if(/(sentinela|centinela|sentinel|sentinella)/.test(t)&&/(activa|activar|inicia|enciende|modo)/.test(t)){setSentinela(true);return true;}
@@ -441,16 +442,22 @@ function preparar(raw){
   const hasJ=wi>=0;return{hasJ,t:corregir(hasJ?tk.slice(wi+wn):tk).join(' ')};
 }
 let armadoHasta=0;
-function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();setTimeout(()=>{o.stop();a.close();},130);}catch(_){}}
+function esEco(raw){ // ¿lo que oyó el micrófono es JARVIS hablando? (mientras habla y 6 s después, con ≥70 % de las palabras iguales)
+  if(Date.now()-finHabla>=6000)return false;
+  const h=norm(raw).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>2);
+  return h.length>=2&&h.filter(w=>ultHablado.has(w)).length/h.length>=.7;
+}
+function beep(f=880){try{const a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();setTimeout(()=>{o.stop();a.close();},130);}catch(_){}}
 function manejarVoz(alts){ // alts = hasta 5 interpretaciones del reconocedor; se usa la primera que sea un comando
+  if(esEco(alts[0]))return; // era JARVIS escuchándose a sí mismo
   const ps=alts.map(preparar),ahora=Date.now(),armado=ahora<armadoHasta;
   log('🎙 '+alts[0]);
   if(valet&&ps.some(p=>/(valet|balet|ballet|valete)/.test(p.t)&&/(sal|salir|termina|terminar|fin|desactiva|apaga|cierra)/.test(p.t))){setValet(false);return;}
   const hadE=!!esperaSitio;
-  for(const p of ps){if(!(p.hasJ||armado)||!p.t)continue;if(cmd(p.t)){armadoHasta=0;if(hadE&&esperaSitio)finEspera(true);return;}}
+  for(const p of ps){if(!(p.hasJ||armado)||!p.t)continue;if(cmd(p.t,p.hasJ)){armadoHasta=0;if(hadE&&esperaSitio)finEspera(true);return;}}
   if(ps.some(p=>p.hasJ&&!p.t)){armadoHasta=ahora+7000;beep();log('Te escucho…');return;} // "JARVIS" solo: espera el comando 7 s
   if(valet){conversar(alts[0].replace(/jarvis|yarvis|charvis|jarbis/ig,'').trim()||alts[0]);return;}
-  if(ps.some(p=>p.hasJ&&p.t)){log('No entendí el comando','a');hablar('No entendí. Di JARVIS ayuda.');}
+  if(ps.some(p=>p.hasJ&&p.t)){log('No entendí el comando (di JARVIS ayuda para ver la lista)','a');beep(220);}
 }
 // ===== Micrófono =====
 let micWatch=null;
