@@ -1,0 +1,1772 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disponibilidad · Región 4</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg-0:#f5f7fa; --bg-1:#ffffff; --bg-2:#f0f3f7; --bg-3:#e9edf3;
+  --line:#e2e6ee; --line-soft:#edf0f5;
+  --txt-0:#1a2130; --txt-1:#5b6478; --txt-2:#93a0b3;
+  --accent:#2f6fed; --accent-soft:#eaf1ff;
+  --good:#17a674; --good-soft:#e8f8f2;
+  --warn:#d98a10; --warn-soft:#fdf3e3;
+  --bad:#e0435b; --bad-soft:#fdecef;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(20,30,50,.04), 0 1px 10px rgba(20,30,50,.04);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg-0); color:var(--txt-0);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Arial,sans-serif;
+  font-size:14px; line-height:1.45; min-height:100vh;
+}
+h1,h2,h3{font-weight:700; letter-spacing:-.2px;}
+.mono,.num{font-family:'Consolas','SF Mono',ui-monospace,monospace;}
+
+/* ---------- header ---------- */
+header{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; gap:16px;
+  padding:14px 26px; background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:11px;}
+.brand-mark{
+  width:36px; height:36px; border-radius:9px;
+  background:linear-gradient(135deg,#2f6fed,#6a5cff);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:13px; color:#fff; letter-spacing:-0.5px;
+}
+.brand-txt h1{font-size:16px; color:var(--txt-0);}
+.brand-txt span{font-size:11.5px; color:var(--txt-2); letter-spacing:.3px;}
+.hdr-status{
+  margin-left:auto; display:flex; align-items:center; gap:16px; font-size:12px; color:var(--txt-2);
+}
+.dot{width:7px; height:7px; border-radius:50%; background:var(--good); display:inline-block; margin-right:6px;}
+.btn{
+  border:1px solid var(--line); background:#fff; color:var(--txt-1);
+  padding:8px 13px; border-radius:8px; font-size:12.5px; cursor:pointer;
+  transition:.15s; display:inline-flex; align-items:center; gap:7px; font-weight:500;
+}
+.btn:hover{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+.btn.primary:hover{filter:brightness(1.06); color:#fff;}
+
+/* ---------- tabs (tecnología) ---------- */
+nav.tech-tabs{
+  display:flex; gap:2px; padding:0 26px; background:var(--bg-0);
+  border-bottom:1px solid var(--line); overflow-x:auto;
+}
+nav.tech-tabs button{
+  background:none; border:none; color:var(--txt-2); font-weight:600;
+  font-size:13px; padding:13px 16px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap;
+}
+nav.tech-tabs button.active{color:var(--accent); border-bottom-color:var(--accent);}
+nav.tech-tabs button:hover{color:var(--txt-0);}
+
+/* ---------- tabs (vistas internas) ---------- */
+nav.view-tabs{
+  display:flex; gap:2px; padding:0 26px; background:var(--bg-0);
+  border-bottom:1px solid var(--line); overflow-x:auto;
+}
+nav.view-tabs button{
+  background:none; border:none; color:var(--txt-2); font-weight:500;
+  font-size:12.5px; padding:10px 14px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap;
+}
+nav.view-tabs button.active{color:var(--accent); border-bottom-color:var(--accent);}
+nav.view-tabs button:hover{color:var(--txt-0);}
+
+main{max-width:1400px; margin:0 auto; padding:22px 26px 60px;}
+.view{display:none;}
+.view.active{display:block; animation:fade .2s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)}}
+
+/* ---------- generic panels ---------- */
+.panel{
+  background:var(--bg-1); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px 20px; box-shadow:var(--shadow);
+}
+.panel + .panel{margin-top:16px;}
+.panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; flex-wrap:wrap;}
+.panel-head h2{font-size:14.5px; font-weight:700;}
+.panel-head .sub{font-size:11.5px; color:var(--txt-2); margin-top:2px; font-weight:400;}
+
+.grid-kpi{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:16px;}
+.kpi{
+  background:var(--bg-1); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; position:relative; overflow:hidden; box-shadow:var(--shadow);
+}
+.kpi .lbl{font-size:11px; color:var(--txt-2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; font-weight:600;}
+.kpi .val{font-size:24px; font-weight:800;}
+.kpi .delta{font-size:12px; margin-top:6px; font-weight:600;}
+.kpi .delta.up{color:var(--good);} .kpi .delta.down{color:var(--bad);} .kpi .delta.flat{color:var(--txt-2);}
+.kpi .bar{position:absolute; left:0; top:0; bottom:0; width:3px;}
+.kpi.good .bar{background:var(--good);} .kpi.warn .bar{background:var(--warn);} .kpi.bad .bar{background:var(--bad);} .kpi.info .bar{background:var(--accent);}
+
+.grid-2{display:grid; grid-template-columns:1.3fr .9fr; gap:16px;}
+.grid-charts{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media(max-width:980px){.grid-2,.grid-charts{grid-template-columns:1fr;}}
+
+.chart-wrap{position:relative; width:100%; height:300px;}
+.chart-wrap.tall{height:380px;}
+canvas.chartcv{width:100%; height:100%; display:block;}
+.chart-legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; font-size:11.5px; color:var(--txt-1);}
+.chart-legend .li{display:flex; align-items:center; gap:6px;}
+.chart-legend .sw{width:9px; height:9px; border-radius:2px; display:inline-block;}
+.tooltip-cv{
+  position:absolute; pointer-events:none; background:#1a2130; color:#fff; font-size:11.5px;
+  padding:7px 10px; border-radius:7px; transform:translate(-50%,-115%); white-space:nowrap;
+  opacity:0; transition:opacity .1s; z-index:5; box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+.tooltip-cv b{display:block; margin-bottom:2px; font-weight:700;}
+.tooltip-cv .row{display:flex; align-items:center; gap:6px;}
+.tooltip-cv .sw{width:7px; height:7px; border-radius:50%; display:inline-block;}
+
+/* ---------- chips / filters ---------- */
+.chiprow{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+.chip{
+  border:1px solid var(--line); background:var(--bg-2); color:var(--txt-1);
+  padding:6px 12px; border-radius:20px; font-size:12px; cursor:pointer; font-weight:600; user-select:none;
+  transition:.15s;
+}
+.chip.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+.chip .swatch{display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px;}
+
+select, input[type=text], input[type=search]{
+  background:#fff; border:1px solid var(--line); color:var(--txt-0);
+  padding:8px 11px; border-radius:8px; font-size:12.5px; outline:none;
+}
+select:focus, input:focus{border-color:var(--accent);}
+.toolrow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+
+/* ---------- table ---------- */
+table{width:100%; border-collapse:collapse; font-size:12.8px;}
+thead th{
+  text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--txt-2);
+  padding:9px 12px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none;
+  background:var(--bg-2); position:sticky; top:0;
+}
+thead th:hover{color:var(--txt-0);}
+thead th.sorted{color:var(--accent);}
+tbody td{padding:9px 12px; border-bottom:1px solid var(--line-soft); white-space:nowrap;}
+tbody tr:hover{background:var(--bg-2);}
+.badge{
+  display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700;
+}
+.badge.good{background:var(--good-soft); color:var(--good);}
+.badge.warn{background:var(--warn-soft); color:var(--warn);}
+.badge.bad{background:var(--bad-soft); color:var(--bad);}
+.table-scroll{max-height:520px; overflow:auto; border-radius:8px; border:1px solid var(--line);}
+.zona-tag{font-size:10.5px; color:var(--txt-1); background:var(--bg-2); padding:2px 8px; border-radius:5px; border:1px solid var(--line);}
+
+.empty{text-align:center; padding:60px 20px; color:var(--txt-2);}
+.empty h3{color:var(--txt-0); font-size:16px; margin-bottom:8px;}
+.empty p{max-width:480px; margin:0 auto 18px; font-size:13px;}
+
+.err-box{
+  background:var(--bad-soft); border:1px solid #f3c4cd; color:#9c2d40; border-radius:10px;
+  padding:14px 16px; font-size:12.5px; margin-bottom:14px;
+}
+
+footer{text-align:center; padding:26px; color:var(--txt-2); font-size:11.5px;}
+
+::-webkit-scrollbar{width:9px; height:9px;}
+::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+#fileInput{display:none;}
+
+/* ---------- overlay de carga ---------- */
+#loadingOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+#loadingOverlay .spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(255,255,255,0.3);
+  border-top: 5px solid #fff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+#loadingOverlay p {
+  color: #fff;
+  font-size: 16px;
+  margin-top: 16px;
+  font-weight: 500;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- estilos para vista global ---------- */
+.view-global .kpi-tech {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.view-global .kpi-tech .tech { font-weight: 600; font-size: 13px; color: var(--txt-1); }
+.view-global .kpi-tech .value { font-size: 22px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">R4</div>
+    <div class="brand-txt">
+      <h1>Disponibilidad</h1>
+      <span>Región 4 · OyM Telcel</span>
+    </div>
+  </div>
+  <div class="hdr-status">
+    <span id="lastUpdate"><span class="dot"></span>Sin datos</span>
+    <button class="btn" id="btnLoadExcel">Cargar Excel (.xlsb)</button>
+    <button class="btn primary" id="btnExport">Exportar sitios (CSV)</button>
+    <button class="btn" id="btnDownloadJson" style="display:none">Descargar JSON</button>
+    <span id="uploadStatus" style="font-size:11px; color:var(--txt-2);"></span>
+  </div>
+  <input type="file" id="fileInput" accept=".xlsb,.xlsx">
+</header>
+
+<!-- Overlay de carga -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>Procesando archivo... por favor espera</p>
+</div>
+
+<!-- Pestañas de tecnología (incluye Global) -->
+<nav class="tech-tabs" id="techTabs">
+  <button data-tecnologia="2G" class="active">2G</button>
+  <button data-tecnologia="3G">3G</button>
+  <button data-tecnologia="4G">4G</button>
+  <button data-tecnologia="5G">5G</button>
+  <button data-tecnologia="Global">🌐 Global</button>
+</nav>
+
+<!-- Pestañas de vistas internas (se ocultan en Global) -->
+<nav class="view-tabs" id="viewTabs">
+  <button data-view="resumen" class="active">Resumen</button>
+  <button data-view="zonas">Por Zona</button>
+  <button data-view="analistas">Por Analista</button>
+  <button data-view="mensual">Mensual</button>
+  <button data-view="sitios">Sitios</button>
+</nav>
+
+<main>
+  <div id="emptyState" class="empty" style="display:none">
+    <h3>Esperando datos</h3>
+    <p>Carga un archivo Excel de disponibilidad (formato .xlsb) para visualizar la información. El dashboard procesará directamente el archivo en tu navegador.</p>
+    <button class="btn primary" id="btnLoadExcel2">Cargar Excel</button>
+  </div>
+
+  <div id="appViews" style="display:none">
+
+    <!-- ============ VISTAS POR TECNOLOGÍA (2G,3G,4G,5G) ============ -->
+    <div id="techViews">
+      <!-- RESUMEN -->
+      <section id="view-resumen" class="view active">
+        <div id="err-resumen"></div>
+        <div class="grid-kpi" id="kpiRow"></div>
+        <div class="grid-charts">
+          <div class="panel">
+            <div class="panel-head"><div><h2>Tendencia regional semanal</h2><div class="sub">Disponibilidad promedio Región 4, todas las semanas del archivo</div></div></div>
+            <div class="chart-wrap"><canvas id="chartRegionalTrend" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartRegionalTrend"></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><h2>Zonas — semana actual vs anterior</h2><div class="sub">Disponibilidad % por zona</div></div></div>
+            <div class="chart-wrap"><canvas id="chartZonaCompare" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartZonaCompare"></div></div>
+            <div class="chart-legend" id="lg-chartZonaCompare"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Ranking de zonas — semana actual</h2></div></div>
+          <div class="table-scroll"><table id="tblResumenZonas"></table></div>
+        </div>
+      </section>
+
+      <!-- ZONAS -->
+      <section id="view-zonas" class="view">
+        <div id="err-zonas"></div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Tendencia semanal por zona</h2><div class="sub">Selecciona las zonas a comparar</div></div></div>
+          <div class="chiprow" id="zonaChips"></div>
+          <div class="chart-wrap tall"><canvas id="chartZonaTrend" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartZonaTrend"></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Ranking de zonas</h2><div class="sub">Semana actual, delta vs semana anterior y promedio acumulado del año</div></div></div>
+          <div class="table-scroll"><table id="tblZonas"></table></div>
+        </div>
+      </section>
+
+      <!-- ANALISTAS -->
+      <section id="view-analistas" class="view">
+        <div id="err-analistas"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><div><h2>Ranking de analistas</h2><div class="sub">Clic en un analista para ver su tendencia</div></div></div>
+            <div class="toolrow">
+              <select id="filtroZonaAnalista"><option value="">Todas las zonas</option></select>
+              <input type="search" id="buscarAnalista" placeholder="Buscar analista…">
+            </div>
+            <div class="table-scroll" style="max-height:560px">
+              <table id="tblAnalistas"></table>
+              <div id="msgSinAnalistas" style="display:none; padding:20px; text-align:center; color:var(--txt-2); font-size:13px;">
+                ⚠️ No hay información de analistas para esta tecnología.
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><h2 id="analistaSelNombre">Tendencia — selecciona un analista</h2></div></div>
+            <div class="chart-wrap" style="height:260px"><canvas id="chartAnalistaTrend" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartAnalistaTrend"></div></div>
+            <div id="analistaKpis" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MENSUAL -->
+      <section id="view-mensual" class="view">
+        <div id="err-mensual"></div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Disponibilidad mensual — Región</h2><div class="sub">Promedio de las semanas de cada mes</div></div></div>
+          <div class="chart-wrap"><canvas id="chartMensualRegion" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartMensualRegion"></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Disponibilidad mensual por zona</h2></div></div>
+          <div class="chiprow" id="zonaChipsMensual"></div>
+          <div class="chart-wrap tall"><canvas id="chartMensualZona" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartMensualZona"></div></div>
+          <div class="chart-legend" id="lg-chartMensualZona"></div>
+        </div>
+      </section>
+
+      <!-- SITIOS -->
+      <section id="view-sitios" class="view">
+        <div id="err-sitios"></div>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Sitios — semana actual</h2><div class="sub" id="sitiosSub"></div></div>
+          </div>
+          <div class="toolrow">
+            <select id="filtroZonaSitio"><option value="">Todas las zonas</option></select>
+            <select id="filtroAnalistaSitio"><option value="">Todos los analistas</option></select>
+            <select id="filtroEstadoSitio">
+              <option value="">Todos los estados</option>
+              <option value="bad">Crítico (muy bajo de meta)</option>
+              <option value="warn">Alerta (bajo de meta)</option>
+              <option value="good">Bueno (cumple meta)</option>
+            </select>
+            <input type="search" id="buscarSitio" placeholder="Buscar sitio…" style="min-width:220px">
+          </div>
+          <div class="table-scroll" style="max-height:600px"><table id="tblSitios"></table></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ VISTA GLOBAL ============ -->
+    <div id="view-global" class="view-global" style="display:none;">
+      <div id="err-global"></div>
+
+      <!-- KPIs globales: una tarjeta por tecnología con su meta -->
+      <div class="grid-kpi" id="globalKpiRow"></div>
+
+      <!-- Gráfica de tendencia regional por tecnología -->
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>Tendencia regional por tecnología</h2><div class="sub">Disponibilidad promedio de cada tecnología · líneas punteadas = meta</div></div>
+          <div class="chiprow" id="periodoChipsGlobalTrend" style="margin-bottom:0;">
+            <div class="chip on" data-periodo="semanal">Semanal</div>
+            <div class="chip" data-periodo="mensual">Mensual</div>
+          </div>
+        </div>
+        <div class="chiprow" id="techChipsGlobalTrend"></div>
+        <div class="chart-wrap"><canvas id="chartGlobalTrend" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartGlobalTrend"></div></div>
+      </div>
+
+      <!-- Gráfica de zonas por tecnología (semana actual) -->
+      <div class="panel">
+        <div class="panel-head"><div><h2>Comparativa de zonas por tecnología</h2><div class="sub">Disponibilidad de cada zona en la semana actual de cada tecnología · líneas punteadas = meta</div></div></div>
+        <div class="toolrow" style="margin-bottom:6px;">
+          <span style="font-size:11.5px; color:var(--txt-2); font-weight:600;">Tecnología:</span>
+          <div class="chiprow" id="techChipsGlobalZonas" style="margin-bottom:0;"></div>
+        </div>
+        <div class="toolrow">
+          <span style="font-size:11.5px; color:var(--txt-2); font-weight:600;">Zonas:</span>
+          <div class="chiprow" id="zonaChipsGlobal" style="margin-bottom:0;"></div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="chartGlobalZonas" class="chartcv"></canvas><div class="tooltip-cv" id="tt-chartGlobalZonas"></div></div>
+        <div class="chart-legend" id="lg-chartGlobalZonas"></div>
+      </div>
+
+      <!-- Tabla de ranking de zonas global -->
+      <div class="panel">
+        <div class="panel-head"><div><h2>Ranking de zonas global</h2><div class="sub">Disponibilidad por tecnología (semana actual de cada una) y promedio</div></div></div>
+        <div class="table-scroll"><table id="tblGlobalZonas"></table></div>
+      </div>
+
+      <!-- Tabla de ranking de analistas global -->
+      <div class="panel">
+        <div class="panel-head"><div><h2>Ranking de analistas global</h2><div class="sub">Disponibilidad por tecnología (semana actual de cada una) y promedio</div></div></div>
+        <div class="toolrow">
+          <select id="filtroZonaAnalistaGlobal"><option value="">Todas las zonas</option></select>
+          <input type="search" id="buscarAnalistaGlobal" placeholder="Buscar analista…">
+        </div>
+        <div class="table-scroll"><table id="tblGlobalAnalistas"></table></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>Dashboard Disponibilidad · Región 4 · Procesa Excel directamente en el navegador</footer>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN Y ESTADO GLOBAL
+   ============================================================ */
+const TECNOLOGIAS = ['2G', '3G', '4G', '5G'];
+let datosPorTecnologia = { '2G': null, '3G': null, '4G': null, '5G': null };
+let tecnologiaActual = '4G';
+let vistaActual = 'resumen';
+
+let zonasActivas = new Set();
+let zonasActivasMensual = new Set();
+let analistaSeleccionado = null;
+
+// Meta de disponibilidad por tecnología (ajustable). estadoDe/badge reciben
+// la tecnología para saber contra qué meta comparar el valor.
+const METAS = { '2G': 96.0, '3G': 98.0, '4G': 98.5, '5G': 98.5 };
+const META_DEFAULT = 98.0;
+const META_ALERTA_OFFSET = 2.0; // pp por debajo de la meta = "alerta" (por debajo de eso, "crítico")
+function metaDe(tech){ return METAS[tech] ?? META_DEFAULT; }
+const TECH_COLORS = { '2G':'#d98a10', '3G':'#17a674', '4G':'#2f6fed', '5G':'#e0435b' };
+function estadoDe(v, tech){
+  const meta = metaDe(tech);
+  if (v === null || v === undefined || isNaN(v)) return 'warn';
+  if (v >= meta) return 'good';
+  if (v >= meta - META_ALERTA_OFFSET) return 'warn';
+  return 'bad';
+}
+function badge(v, tech){
+  if (v === null || v === undefined || isNaN(v)) return '<span class="badge warn">S/D</span>';
+  const st = estadoDe(v, tech);
+  return `<span class="badge ${st}">${v.toFixed(2)}%</span>`;
+}
+const COLORS = {
+  ANAHUAC:'#2f6fed', CARRANZA:'#6a5cff', GUADALUPE:'#17a674', 'NUEVO LAREDO':'#d98a10',
+  'SAN PEDRO':'#e0435b', TAMPICO:'#0fb5c9', REYNOSA:'#c9459b', MATAMOROS:'#7bb52e'
+};
+const PALETTE = ['#2f6fed','#6a5cff','#17a674','#d98a10','#e0435b','#0fb5c9','#c9459b','#7bb52e'];
+function colorFor(zona, i){ return COLORS[zona] || PALETTE[i%PALETTE.length]; }
+
+function safeRun(fn, boxId, label){
+  try{
+    fn();
+    const box = document.getElementById(boxId);
+    if (box) box.innerHTML = '';
+  }catch(err){
+    console.error(`Error renderizando "${label}":`, err);
+    const box = document.getElementById(boxId);
+    if (box) box.innerHTML = `<div class="err-box"><b>No se pudo renderizar "${label}".</b><br>${err.message}</div>`;
+  }
+}
+
+function getData() { return datosPorTecnologia[tecnologiaActual] || null; }
+function hasData() { return getData() !== null; }
+
+/* ============================================================
+   PROCESAR EXCEL CON SPINNER (sin cambios)
+   ============================================================ */
+function procesarExcel(arrayBuffer, nombreArchivo) {
+  document.getElementById('loadingOverlay').style.display = 'flex';
+
+  setTimeout(() => {
+    try {
+      const techMatch = nombreArchivo.match(/(2G|3G|4G|5G)/i);
+      if (!techMatch) {
+        alert('No se pudo detectar la tecnología (2G, 3G, 4G, 5G) en el nombre del archivo.');
+        document.getElementById('loadingOverlay').style.display = 'none';
+        return;
+      }
+      const tecnologia = techMatch[1].toUpperCase();
+      if (!TECNOLOGIAS.includes(tecnologia)) {
+        alert(`Tecnología "${tecnologia}" no soportada.`);
+        document.getElementById('loadingOverlay').style.display = 'none';
+        return;
+      }
+
+      const semanaMatch = nombreArchivo.match(/sem\D*(\d+)/i);
+      if (!semanaMatch) {
+        alert('No se pudo detectar el número de semana en el nombre del archivo.');
+        document.getElementById('loadingOverlay').style.display = 'none';
+        return;
+      }
+      const semanaNum = parseInt(semanaMatch[1], 10);
+
+      let workbook;
+      try {
+        workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
+      } catch (err) {
+        alert('Error al leer el archivo. Asegúrate de que no esté protegido con contraseña.');
+        console.error(err);
+        document.getElementById('loadingOverlay').style.display = 'none';
+        return;
+      }
+
+      function hojaMatriz(nombre) {
+        const sheet = workbook.Sheets[nombre];
+        if (!sheet) return [];
+        return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+      }
+
+      const filasAcumulado = hojaMatriz('Acumulado');
+      const filasAcAna = hojaMatriz('Ac Ana');
+      const filasDatos = hojaMatriz('Datos');
+
+      if (filasAcumulado.length === 0) throw new Error('No se encontró la hoja "Acumulado"');
+      if (filasDatos.length === 0) throw new Error('No se encontró la hoja "Datos"');
+
+      // --- Acumulado ---
+      const headerAcum = filasAcumulado[1] || [];
+      const zonas = headerAcum.slice(1, 9).filter(z => z);
+      const historicoZona = Object.fromEntries(zonas.map(z => [z, {}]));
+      const historicoGeneral = {};
+      const semanaMesMap = {};
+      let mesActual = null;
+
+      for (let i = 2; i < filasAcumulado.length; i++) {
+        const fila = filasAcumulado[i];
+        if (!fila || !fila[0] || !String(fila[0]).toUpperCase().startsWith('SEM')) continue;
+        const match = String(fila[0]).toUpperCase().match(/SEM(\d+)/);
+        if (!match) continue;
+        const sem = parseInt(match[1], 10);
+        const valores = fila.slice(1, 9);
+        if (valores.every(v => v === null || v === undefined)) continue;
+        zonas.forEach((z, idx) => {
+          const v = valores[idx];
+          if (v !== null && v !== undefined) {
+            historicoZona[z][sem] = Math.round(parseFloat(v) * 10000) / 10000;
+          }
+        });
+        const promRegional = fila[9];
+        if (promRegional !== null && promRegional !== undefined) {
+          historicoGeneral[sem] = Math.round(parseFloat(promRegional) * 10000) / 10000;
+        }
+        if (fila[12] !== null && fila[12] !== undefined) {
+          if (fila[11]) mesActual = String(fila[11]).trim();
+          if (mesActual) semanaMesMap[sem] = mesActual;
+        }
+      }
+
+      // --- Ac Ana: detección automática ---
+      let historicoAnalista = {};
+      let analistaZona = {};
+      if (filasAcAna.length > 0) {
+        let headerRowIndex = -1;
+        for (let i = 0; i < filasAcAna.length; i++) {
+          const row = filasAcAna[i];
+          if (!row) continue;
+          const found = row.some(cell => cell && String(cell).toUpperCase().includes('ANALISTA'));
+          if (found) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+        if (headerRowIndex === -1) {
+          console.warn('No se encontró "Analista" en "Ac Ana", usando fila 1');
+          headerRowIndex = 1;
+        }
+
+        const headerRow = filasAcAna[headerRowIndex];
+        let colAnalista = -1;
+        for (let j = 0; j < headerRow.length; j++) {
+          const cell = headerRow[j];
+          if (cell && String(cell).toUpperCase().includes('ANALISTA')) {
+            colAnalista = j;
+            break;
+          }
+        }
+        if (colAnalista === -1) colAnalista = 3;
+
+        let colZona = -1;
+        for (let j = 0; j < headerRow.length; j++) {
+          const cell = headerRow[j];
+          if (cell && String(cell).toUpperCase().includes('ZONA')) {
+            colZona = j;
+            break;
+          }
+        }
+        if (colZona === -1) {
+          const zonaSet = new Set(zonas);
+          for (let j = 0; j < headerRow.length; j++) {
+            if (j === colAnalista) continue;
+            let matchCount = 0;
+            for (let i = headerRowIndex + 1; i < Math.min(headerRowIndex + 10, filasAcAna.length); i++) {
+              const fila = filasAcAna[i];
+              if (!fila || fila.length <= j) continue;
+              const val = fila[j];
+              if (val !== null && val !== undefined && zonaSet.has(String(val).trim().toUpperCase())) {
+                matchCount++;
+              }
+            }
+            if (matchCount > 3) {
+              colZona = j;
+              break;
+            }
+          }
+          if (colZona === -1) colZona = colAnalista + 1;
+        }
+
+        const colSemanas = {};
+        for (let j = 0; j < headerRow.length; j++) {
+          if (j === colAnalista || j === colZona) continue;
+          const cell = headerRow[j];
+          if (cell !== null && cell !== undefined) {
+            const cellStr = String(cell).trim().toUpperCase();
+            const match = cellStr.match(/SEM\s*(\d+)/);
+            if (match) {
+              colSemanas[j] = parseInt(match[1], 10);
+            } else if (!isNaN(parseFloat(cellStr)) && cellStr !== '' && Number.isInteger(parseFloat(cellStr))) {
+              colSemanas[j] = parseFloat(cellStr);
+            }
+          }
+        }
+        if (Object.keys(colSemanas).length === 0) {
+          for (let j = colAnalista + 2; j < headerRow.length; j++) {
+            colSemanas[j] = j - colAnalista - 1;
+          }
+        }
+
+        for (let i = headerRowIndex + 1; i < filasAcAna.length; i++) {
+          const fila = filasAcAna[i];
+          if (!fila || fila.length === 0) continue;
+          const nombre = fila[colAnalista] ? String(fila[colAnalista]).trim() : '';
+          if (!nombre || nombre === 'Grand Total' || nombre === 'Total') continue;
+          const zona = (colZona !== -1 && fila[colZona]) ? String(fila[colZona]).trim() : '';
+          const serie = {};
+          for (const [idx, sem] of Object.entries(colSemanas)) {
+            const v = fila[parseInt(idx)];
+            if (v !== null && v !== undefined && !isNaN(parseFloat(v))) {
+              serie[sem] = Math.round(parseFloat(v) * 10000) / 10000;
+            }
+          }
+          if (Object.keys(serie).length > 0) {
+            historicoAnalista[nombre] = serie;
+            if (zona && zonas.includes(zona)) {
+              analistaZona[nombre] = zona;
+            } else {
+              analistaZona[nombre] = '—';
+            }
+          }
+        }
+      }
+
+      // --- Datos ---
+      const headerDatos = filasDatos[0] || [];
+      const idxAnalista = headerDatos.indexOf('ANALISTA');
+      const idxSitio = headerDatos.indexOf('SITIO');
+      const idxZona = headerDatos.indexOf('ZONA');
+      const idxPromedio = headerDatos.indexOf('PROMEDIO');
+      const idxStatus = headerDatos.indexOf('Status');
+      if (idxAnalista === -1 || idxSitio === -1 || idxZona === -1 || idxPromedio === -1 || idxStatus === -1) {
+        throw new Error('La hoja Datos no tiene todas las columnas requeridas');
+      }
+
+      const agregados = {};
+      for (let i = 1; i < filasDatos.length; i++) {
+        const fila = filasDatos[i];
+        if (!fila || !fila[idxSitio]) continue;
+        const sitio = String(fila[idxSitio]);
+        const promedio = fila[idxPromedio];
+        if (promedio === null || promedio === undefined) continue;
+        const zona = fila[idxZona];
+        const analista = fila[idxAnalista];
+        const status = fila[idxStatus];
+        if (!agregados[sitio]) {
+          agregados[sitio] = {
+            sitio: sitio,
+            zona: zona,
+            analista: analista,
+            suma: 0,
+            celdas: 0,
+            operando: 0
+          };
+        }
+        agregados[sitio].suma += parseFloat(promedio);
+        agregados[sitio].celdas += 1;
+        if (String(status).toUpperCase() === 'OPERANDO') agregados[sitio].operando += 1;
+      }
+
+      const sitiosSemana = Object.values(agregados).map(v => ({
+        sitio: v.sitio,
+        zona: v.zona,
+        analista: v.analista,
+        promedio: Math.round((v.suma / v.celdas) * 10000) / 10000,
+        celdas: v.celdas,
+        operando: v.operando
+      }));
+
+      // --- Construir DATA ---
+      const data = {
+        tecnologia: tecnologia,
+        zonas: zonas,
+        analista_zona: analistaZona,
+        historico_zona: historicoZona,
+        historico_general: historicoGeneral,
+        historico_analista: historicoAnalista,
+        semana_mes_map: semanaMesMap,
+        sitios_por_semana: { [String(semanaNum)]: sitiosSemana },
+        semana_actual: semanaNum,
+        ultima_actualizacion: new Date().toISOString().slice(0, 19)
+      };
+
+      datosPorTecnologia[tecnologia] = data;
+      if (tecnologiaActual === tecnologia) {
+        renderizarTodo();
+      } else {
+        document.getElementById('uploadStatus').innerHTML = `✅ Datos de ${tecnologia} cargados (cambia a esa pestaña para ver)`;
+        document.getElementById('uploadStatus').style.color = 'var(--good)';
+      }
+
+      subirAlServidor(data, tecnologia);
+
+    } catch (error) {
+      alert('Error al procesar el Excel: ' + error.message);
+      console.error(error);
+    } finally {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+  }, 50);
+}
+
+/* ============================================================
+   SUBIDA AL SERVIDOR (sin cambios)
+   ============================================================ */
+function subirAlServidor(data, tecnologia) {
+  const url = '/upload';
+  const jsonStr = JSON.stringify(data);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const formData = new FormData();
+  formData.append('file', blob, `disponibilidad_${tecnologia}_data.json`);
+  formData.append('tecnologia', tecnologia);
+
+  fetch(url, { method: 'POST', body: formData })
+    .then(res => {
+      if (!res.ok) throw new Error('Error ' + res.status);
+      return res.text();
+    })
+    .then(msg => {
+      document.getElementById('uploadStatus').innerHTML = `✅ ${tecnologia} guardado en servidor`;
+      document.getElementById('uploadStatus').style.color = 'var(--good)';
+      document.getElementById('btnDownloadJson').style.display = 'none';
+    })
+    .catch(err => {
+      console.warn('No se pudo subir al servidor:', err);
+      document.getElementById('uploadStatus').innerHTML = `⚠️ No se pudo guardar ${tecnologia} en el servidor (puedes descargar el JSON manualmente)`;
+      document.getElementById('uploadStatus').style.color = 'var(--warn)';
+      document.getElementById('btnDownloadJson').style.display = 'inline-block';
+      window._dataForDownload = data;
+    });
+}
+
+/* ============================================================
+   CARGAR JSON GUARDADO (sin cambios)
+   ============================================================ */
+function cargarTodosLosJSONs() {
+  const promises = TECNOLOGIAS.map(tech => {
+    return fetch(`/AVL/data/disponibilidad_${tech}_data.json`, { cache: 'no-store' })
+      .then(res => {
+        if (!res.ok) {
+          if (res.status === 404) return null;
+          throw new Error('Error ' + res.status);
+        }
+        return res.json();
+      })
+      .then(json => {
+        if (json) datosPorTecnologia[tech] = json;
+      })
+      .catch(err => console.warn(`No se pudo cargar ${tech}:`, err));
+  });
+
+  Promise.all(promises).then(() => {
+    const alguna = TECNOLOGIAS.some(t => datosPorTecnologia[t] !== null);
+    if (!alguna) {
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('appViews').style.display = 'none';
+    } else {
+      // Si la tecnología actual no tiene datos, cambiar a la primera que tenga
+      if (!datosPorTecnologia[tecnologiaActual] && tecnologiaActual !== 'Global') {
+        const primera = TECNOLOGIAS.find(t => datosPorTecnologia[t] !== null);
+        if (primera) {
+          tecnologiaActual = primera;
+          document.querySelectorAll('#techTabs button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tecnologia === tecnologiaActual);
+          });
+        }
+      }
+      renderizarTodo();
+    }
+  });
+}
+
+/* ============================================================
+   RENDERIZADO PRINCIPAL (tecnología o global)
+   ============================================================ */
+function renderizarTodo() {
+  if (tecnologiaActual === 'Global') {
+    // Mostrar vista global
+    document.getElementById('viewTabs').style.display = 'none';
+    document.getElementById('techViews').style.display = 'none';
+    document.getElementById('view-global').style.display = 'block';
+    document.getElementById('view-global').style.animation = 'fade .2s ease';
+    document.getElementById('appViews').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('lastUpdate').innerHTML = `<span class="dot"></span>Global · análisis consolidado`;
+
+    // Renderizar global después de un breve retraso para que el DOM se actualice
+    setTimeout(() => {
+      renderGlobal();
+    }, 100);
+    return;
+  }
+
+  // Mostrar pestañas de vistas internas y ocultar global
+  document.getElementById('viewTabs').style.display = 'flex';
+  document.getElementById('view-global').style.display = 'none';
+  document.getElementById('techViews').style.display = 'block';
+
+  const data = getData();
+  if (!data) {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('appViews').style.display = 'none';
+    return;
+  }
+  document.getElementById('appViews').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+
+  const fecha = data.ultima_actualizacion
+    ? new Date(data.ultima_actualizacion + 'Z').toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
+    : '—';
+  document.getElementById('lastUpdate').innerHTML =
+    `<span class="dot"></span>${tecnologiaActual} · Semana ${data.semana_actual} · actualizado ${fecha}`;
+
+  zonasActivas = new Set(data.zonas);
+  zonasActivasMensual = new Set(data.zonas);
+  analistaSeleccionado = null;
+
+  mostrarVista(vistaActual, data);
+}
+
+/* ============================================================
+   RENDERIZADO DE VISTA GLOBAL (con redibujado forzado)
+   ============================================================ */
+let techsSeleccionadasGlobal = null;   // Set<string> — tecnologías activas en las gráficas Global
+let zonasSeleccionadasGlobal = null;   // Set<string> — zonas activas en el comparativo Global
+let periodoGlobalTrend = 'semanal';    // 'semanal' | 'mensual' — periodo de la tendencia regional Global
+
+function renderGlobal() {
+  const techsConDatos = TECNOLOGIAS.filter(t => datosPorTecnologia[t] !== null);
+  if (techsConDatos.length === 0) {
+    document.getElementById('view-global').innerHTML = '<div class="empty"><h3>No hay datos para mostrar</h3><p>Carga al menos un archivo Excel de alguna tecnología.</p></div>';
+    return;
+  }
+
+  // Inicializar selección de tecnologías/zonas la primera vez (o si cambió el set de techs cargadas)
+  if (!techsSeleccionadasGlobal) techsSeleccionadasGlobal = new Set(techsConDatos);
+  techsConDatos.forEach(t => { if (!datosPorTecnologia[t]) techsSeleccionadasGlobal.delete(t); });
+
+  const zonasUnion = new Set();
+  techsConDatos.forEach(t => Object.keys(datosPorTecnologia[t].historico_zona).forEach(z => zonasUnion.add(z)));
+  if (!zonasSeleccionadasGlobal) zonasSeleccionadasGlobal = new Set(zonasUnion);
+
+  /* ---------- KPIs: una tarjeta por tecnología cargada + meta ---------- */
+  const kpis = techsConDatos.map(t => {
+    const data = datosPorTecnologia[t];
+    const gen = ultimaYPrevia(data.historico_general);
+    const meta = metaDe(t);
+    const cumple = gen.valorUltima !== null && gen.valorUltima !== undefined && !isNaN(gen.valorUltima);
+    const cls = estadoDe(gen.valorUltima, t);
+    const diff = cumple ? (gen.valorUltima - meta) : null;
+    return {
+      lbl: `${t} · Sem ${data.semana_actual}`,
+      val: gen.valorUltima != null ? gen.valorUltima.toFixed(2)+'%' : '—',
+      sub: `<span class="delta ${cls==='good'?'up':cls==='bad'?'down':'flat'}">Meta ${meta.toFixed(1)}% ${diff!=null ? (diff>=0?'(+':'(')+diff.toFixed(2)+' pp)' : ''}</span>`,
+      cls
+    };
+  });
+  let sumProm = 0, countProm = 0;
+  techsConDatos.forEach(t => {
+    const v = ultimaYPrevia(datosPorTecnologia[t].historico_general).valorUltima;
+    if (v !== null && v !== undefined && !isNaN(v)) { sumProm += v; countProm++; }
+  });
+  kpis.push({
+    lbl:'Promedio global (todas las tecnologías)',
+    val: countProm ? (sumProm/countProm).toFixed(2)+'%' : '—',
+    sub: `<span class="delta flat">${techsConDatos.length}/${TECNOLOGIAS.length} tecnologías cargadas</span>`,
+    cls:'info'
+  });
+  document.getElementById('globalKpiRow').innerHTML = kpis.map(k=>`
+    <div class="kpi ${k.cls}"><div class="bar"></div>
+      <div class="lbl">${k.lbl}</div>
+      <div class="val">${k.val}</div>
+      <div class="delta">${k.sub}</div>
+    </div>`).join('');
+
+  /* ---------- Chips de tecnología (gráfica de tendencia) ---------- */
+  const pintarChipsTech = (contId, onToggle) => {
+    document.getElementById(contId).innerHTML = techsConDatos.map(t => `
+      <div class="chip ${techsSeleccionadasGlobal.has(t)?'on':''}" data-tech="${t}">
+        <span class="swatch" style="background:${TECH_COLORS[t]||'#888'}"></span>${t} · meta ${metaDe(t).toFixed(1)}%
+      </div>`).join('');
+    document.querySelectorAll(`#${contId} .chip`).forEach(chip => {
+      chip.addEventListener('click', () => {
+        const t = chip.dataset.tech;
+        chip.classList.toggle('on');
+        if (techsSeleccionadasGlobal.has(t)) techsSeleccionadasGlobal.delete(t); else techsSeleccionadasGlobal.add(t);
+        onToggle();
+      });
+    });
+  };
+  pintarChipsTech('techChipsGlobalTrend', dibujarGlobalTrend);
+  pintarChipsTech('techChipsGlobalZonas', dibujarGlobalZonas);
+
+  /* ---------- Toggle semanal/mensual de la tendencia regional ---------- */
+  document.querySelectorAll('#periodoChipsGlobalTrend .chip').forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll('#periodoChipsGlobalTrend .chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+      periodoGlobalTrend = chip.dataset.periodo;
+      dibujarGlobalTrend();
+    };
+  });
+
+  /* ---------- Chips de zona (comparativo de zonas) ---------- */
+  const zonasList = [...zonasUnion];
+  document.getElementById('zonaChipsGlobal').innerHTML = zonasList.map((z,i) => `
+    <div class="chip ${zonasSeleccionadasGlobal.has(z)?'on':''}" data-zona="${z}">
+      <span class="swatch" style="background:${colorFor(z,i)}"></span>${z}
+    </div>`).join('');
+  document.querySelectorAll('#zonaChipsGlobal .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const z = chip.dataset.zona;
+      chip.classList.toggle('on');
+      if (zonasSeleccionadasGlobal.has(z)) zonasSeleccionadasGlobal.delete(z); else zonasSeleccionadasGlobal.add(z);
+      dibujarGlobalZonas();
+    });
+  });
+
+  setTimeout(() => { dibujarGlobalTrend(); dibujarGlobalZonas(); }, 60);
+
+  /* ---------- Tabla ranking de zonas global ---------- */
+  const zonasRank = zonasList.map(z => {
+    const row = { zona: z };
+    let sum = 0, count = 0;
+    techsConDatos.forEach(t => {
+      const data = datosPorTecnologia[t];
+      const sem = data.semana_actual;
+      const val = data.historico_zona[z] ? data.historico_zona[z][sem] : null;
+      row[t] = val;
+      if (val !== null && val !== undefined && !isNaN(val)) { sum += val; count++; }
+    });
+    row.promedio = count ? sum/count : null;
+    return row;
+  });
+  zonasRank.sort((a,b) => (b.promedio ?? -Infinity) - (a.promedio ?? -Infinity));
+
+  let htmlZonas = `<thead><tr><th>Zona</th>`;
+  techsConDatos.forEach(t => htmlZonas += `<th>${t} <span style="font-weight:400; text-transform:none;">(meta ${metaDe(t).toFixed(1)}%)</span></th>`);
+  htmlZonas += `<th>Promedio</th></tr></thead><tbody>`;
+  zonasRank.forEach(r => {
+    htmlZonas += `<tr><td><strong>${r.zona}</strong></td>`;
+    techsConDatos.forEach(t => { htmlZonas += `<td>${badge(r[t], t)}</td>`; });
+    htmlZonas += `<td class="num">${r.promedio !== null ? r.promedio.toFixed(2)+'%' : '—'}</td></tr>`;
+  });
+  htmlZonas += '</tbody>';
+  document.getElementById('tblGlobalZonas').innerHTML = htmlZonas;
+
+  /* ---------- Tabla ranking de analistas global (con filtro zona/búsqueda) ---------- */
+  const analistasMap = {};
+  techsConDatos.forEach(t => {
+    const data = datosPorTecnologia[t];
+    const sem = data.semana_actual;
+    const ha = data.historico_analista;
+    Object.keys(ha).forEach(a => {
+      if (!analistasMap[a]) analistasMap[a] = {};
+      analistasMap[a][t] = ha[a][sem] ?? null;
+      analistasMap[a]._zona = data.analista_zona[a] || '—';
+    });
+  });
+  window._analistasMapGlobal = analistasMap;
+  window._techsConDatosGlobal = techsConDatos;
+
+  const selZonaG = document.getElementById('filtroZonaAnalistaGlobal');
+  selZonaG.innerHTML = '<option value="">Todas las zonas</option>' + zonasList.map(z=>`<option value="${z}">${z}</option>`).join('');
+  selZonaG.onchange = pintarTablaAnalistasGlobal;
+  document.getElementById('buscarAnalistaGlobal').oninput = pintarTablaAnalistasGlobal;
+  pintarTablaAnalistasGlobal();
+}
+
+function dibujarGlobalTrend() {
+  const techs = TECNOLOGIAS.filter(t => datosPorTecnologia[t] && techsSeleccionadasGlobal.has(t));
+  if (!techs.length) { lineChart('chartGlobalTrend', [], []); return; }
+  const refLines = techs.map(t => ({value: metaDe(t), color: TECH_COLORS[t]||'#93a0b3', label: t+' meta'}));
+
+  if (periodoGlobalTrend === 'mensual') {
+    // Unir el orden de meses de todas las tecnologías seleccionadas (por si alguna trae más semanas que otra)
+    let mesesOrden = [];
+    techs.forEach(t => {
+      const map = datosPorTecnologia[t].semana_mes_map || {};
+      const orden = [...new Set(Object.keys(map).sort((a,b)=>a-b).map(s=>map[s]))];
+      orden.forEach(m => { if (!mesesOrden.includes(m)) mesesOrden.push(m); });
+    });
+    const series = techs.map(t => {
+      const data = datosPorTecnologia[t];
+      const serie = promediosPorMes(data.historico_general, data.semana_mes_map || {});
+      const porMes = Object.fromEntries(serie.map(x => [x.mes, x.val]));
+      return { label: t, data: mesesOrden.map(m => porMes[m] ?? null), color: TECH_COLORS[t] || '#888' };
+    });
+    lineChart('chartGlobalTrend', mesesOrden, series, {fillFirst:false, refLines});
+    return;
+  }
+
+  const todasSemanas = new Set();
+  techs.forEach(t => Object.keys(datosPorTecnologia[t].historico_general).forEach(s => todasSemanas.add(Number(s))));
+  const semsOrdenadas = [...todasSemanas].sort((a,b)=>a-b);
+  const series = techs.map(t => ({
+    label: t,
+    data: semsOrdenadas.map(s => datosPorTecnologia[t].historico_general[s] ?? null),
+    color: TECH_COLORS[t] || '#888'
+  }));
+  lineChart('chartGlobalTrend', semsOrdenadas.map(s=>'S'+s), series, {fillFirst:false, refLines});
+}
+
+function dibujarGlobalZonas() {
+  const techs = TECNOLOGIAS.filter(t => datosPorTecnologia[t] && techsSeleccionadasGlobal.has(t));
+  const zonasUnion = new Set();
+  techs.forEach(t => Object.keys(datosPorTecnologia[t].historico_zona).forEach(z => zonasUnion.add(z)));
+  const zonasList = [...zonasUnion].filter(z => zonasSeleccionadasGlobal.has(z));
+  if (!techs.length || !zonasList.length) { barChart('chartGlobalZonas', [], []); document.getElementById('lg-chartGlobalZonas').innerHTML=''; return; }
+  const series = techs.map(t => {
+    const data = datosPorTecnologia[t];
+    const sem = data.semana_actual;
+    const hz = data.historico_zona;
+    return {
+      label: t,
+      data: zonasList.map(z => hz[z] ? hz[z][sem] ?? null : null),
+      color: TECH_COLORS[t] || '#888'
+    };
+  });
+  const refLines = techs.map(t => ({value: metaDe(t), color: TECH_COLORS[t]||'#93a0b3', label: t+' meta'}));
+  barChart('chartGlobalZonas', zonasList, series, {refLines});
+  document.getElementById('lg-chartGlobalZonas').innerHTML = legendHtml(series);
+}
+
+function pintarTablaAnalistasGlobal() {
+  const analistasMap = window._analistasMapGlobal || {};
+  const techsConDatos = window._techsConDatosGlobal || [];
+  const zonaFiltro = document.getElementById('filtroZonaAnalistaGlobal').value;
+  const texto = document.getElementById('buscarAnalistaGlobal').value.trim().toLowerCase();
+
+  let analistasList = Object.keys(analistasMap).map(a => {
+    const row = { analista: a, zona: analistasMap[a]._zona };
+    let sum = 0, count = 0;
+    techsConDatos.forEach(t => {
+      const v = analistasMap[a][t] ?? null;
+      row[t] = v;
+      if (v !== null && v !== undefined && !isNaN(v)) { sum += v; count++; }
+    });
+    row.promedio = count ? sum/count : null;
+    return row;
+  });
+  if (zonaFiltro) analistasList = analistasList.filter(r => r.zona === zonaFiltro);
+  if (texto) analistasList = analistasList.filter(r => r.analista.toLowerCase().includes(texto));
+  analistasList.sort((a,b) => (b.promedio ?? -Infinity) - (a.promedio ?? -Infinity));
+
+  let htmlAnalistas = `<thead><tr><th>Analista</th><th>Zona</th>`;
+  techsConDatos.forEach(t => htmlAnalistas += `<th>${t}</th>`);
+  htmlAnalistas += `<th>Promedio</th></tr></thead><tbody>`;
+  analistasList.forEach(r => {
+    htmlAnalistas += `<tr><td>${r.analista}</td><td><span class="zona-tag">${r.zona}</span></td>`;
+    techsConDatos.forEach(t => { htmlAnalistas += `<td>${badge(r[t], t)}</td>`; });
+    htmlAnalistas += `<td class="num">${r.promedio !== null ? r.promedio.toFixed(2)+'%' : '—'}</td></tr>`;
+  });
+  htmlAnalistas += '</tbody>';
+  document.getElementById('tblGlobalAnalistas').innerHTML = htmlAnalistas;
+}
+
+/* ============================================================
+   MOSTRAR VISTA ESPECÍFICA (para tecnologías)
+   ============================================================ */
+function mostrarVista(vista, data) {
+  document.querySelectorAll('#techViews .view').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById('view-' + vista);
+  if (target) target.classList.add('active');
+
+  document.querySelectorAll('#viewTabs button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === vista);
+  });
+
+  // Redibujar después de un breve retraso para asegurar que el canvas esté visible
+  setTimeout(() => {
+    switch(vista) {
+      case 'resumen': safeRun(() => renderResumen(data), 'err-resumen', 'Resumen'); break;
+      case 'zonas': safeRun(() => renderZonas(data), 'err-zonas', 'Por Zona'); break;
+      case 'analistas': safeRun(() => renderAnalistas(data), 'err-analistas', 'Por Analista'); break;
+      case 'mensual': safeRun(() => renderMensual(data), 'err-mensual', 'Mensual'); break;
+      case 'sitios': safeRun(() => renderSitios(data), 'err-sitios', 'Sitios'); break;
+    }
+  }, 50);
+}
+
+/* ============================================================
+   EVENTOS DE PESTAÑAS (tecnología y global)
+   ============================================================ */
+document.querySelectorAll('#techTabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tech = btn.dataset.tecnologia;
+    if (tech === tecnologiaActual) return;
+    tecnologiaActual = tech;
+    document.querySelectorAll('#techTabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Si es Global, ocultamos viewTabs y mostramos vista global
+    if (tech === 'Global') {
+      renderizarTodo();
+      return;
+    }
+
+    // Si es tecnología específica, mostramos viewTabs
+    if (datosPorTecnologia[tech]) {
+      renderizarTodo();
+    } else {
+      document.getElementById('viewTabs').style.display = 'flex';
+      document.getElementById('view-global').style.display = 'none';
+      document.getElementById('techViews').style.display = 'block';
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('appViews').style.display = 'none';
+      document.getElementById('emptyState').querySelector('h3').textContent = `Sin datos para ${tech}`;
+      document.getElementById('emptyState').querySelector('p').textContent =
+        `Carga un archivo Excel de disponibilidad ${tech} para visualizar la información.`;
+    }
+  });
+});
+
+/* ============================================================
+   EVENTOS DE PESTAÑAS DE VISTAS (internas)
+   ============================================================ */
+document.querySelectorAll('#viewTabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.view;
+    if (view === vistaActual) return;
+    vistaActual = view;
+    document.querySelectorAll('#viewTabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (hasData()) {
+      const data = getData();
+      mostrarVista(vistaActual, data);
+    }
+  });
+});
+
+/* ============================================================
+   EVENTOS DE CARGA DE EXCEL (con spinner) - sin cambios
+   ============================================================ */
+document.getElementById('btnLoadExcel').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('btnLoadExcel2').addEventListener('click', () => document.getElementById('fileInput').click());
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const arrayBuffer = ev.target.result;
+    procesarExcel(arrayBuffer, file.name);
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+});
+
+document.getElementById('btnDownloadJson').addEventListener('click', function() {
+  if (!window._dataForDownload) return;
+  const json = JSON.stringify(window._dataForDownload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `disponibilidad_${window._dataForDownload.tecnologia || 'desconocida'}_data.json`;
+  a.click();
+  this.style.display = 'none';
+  document.getElementById('uploadStatus').innerHTML = '✅ JSON descargado';
+  document.getElementById('uploadStatus').style.color = 'var(--good)';
+});
+
+/* ============================================================
+   FUNCIONES DE RENDERIZADO POR TECNOLOGÍA (sin cambios)
+   ============================================================ */
+function semanasOrdenadas(hist){ return Object.keys(hist).map(Number).sort((a,b)=>a-b); }
+function ultimaYPrevia(hist){
+  const sems = semanasOrdenadas(hist);
+  const ult = sems[sems.length-1];
+  const prev = sems[sems.length-2];
+  return {ultima: ult, valorUltima: hist[ult], previa: prev, valorPrevia: prev!==undefined?hist[prev]:null};
+}
+function promedioObj(hist){
+  const vals = Object.values(hist);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function deltaHtml(actual, previo){
+  if(actual===null||actual===undefined||previo===null||previo===undefined) return '<span class="delta flat">—</span>';
+  const d = actual - previo;
+  const cls = d > 0.02 ? 'up' : d < -0.02 ? 'down' : 'flat';
+  const sign = d > 0 ? '+' : '';
+  return `<span class="delta ${cls}">${sign}${d.toFixed(2)} pp vs sem. anterior</span>`;
+}
+
+function renderResumen(data) {
+  const {historico_general, historico_zona, historico_analista, semana_actual} = data;
+  const gen = ultimaYPrevia(historico_general);
+
+  let mejorZona=null, peorZona=null;
+  Object.entries(historico_zona).forEach(([z,h])=>{
+    const v = h[semana_actual];
+    if(v===undefined) return;
+    if(mejorZona===null || v>mejorZona.v) mejorZona = {z,v};
+    if(peorZona===null || v<peorZona.v) peorZona = {z,v};
+  });
+  let mejorAn=null, peorAn=null;
+  Object.entries(historico_analista).forEach(([a,h])=>{
+    const v = h[semana_actual];
+    if(v===undefined) return;
+    if(mejorAn===null || v>mejorAn.v) mejorAn = {a,v};
+    if(peorAn===null || v<peorAn.v) peorAn = {a,v};
+  });
+
+  const tech = data.tecnologia;
+  const meta = metaDe(tech);
+  const kpis = [
+    {lbl:'Disponibilidad regional', val:gen.valorUltima!=null?gen.valorUltima.toFixed(2)+'%':'—', sub:deltaHtml(gen.valorUltima,gen.valorPrevia), cls:estadoDe(gen.valorUltima, tech)},
+    {lbl:'Meta '+tech, val:meta.toFixed(1)+'%', sub:`<span class="delta flat">Sem ${semana_actual} · ${(data.semana_mes_map&&data.semana_mes_map[semana_actual])||''}</span>`, cls:'info'},
+    {lbl:'Mejor zona', val:mejorZona?mejorZona.z:'—', sub:`<span class="delta up">${mejorZona?mejorZona.v.toFixed(2)+'%':''}</span>`, cls:'good'},
+    {lbl:'Zona con más atención', val:peorZona?peorZona.z:'—', sub:`<span class="delta down">${peorZona?peorZona.v.toFixed(2)+'%':''}</span>`, cls:estadoDe(peorZona?peorZona.v:null, tech)},
+    {lbl:'Mejor analista', val:mejorAn?mejorAn.a:'—', sub:`<span class="delta up">${mejorAn?mejorAn.v.toFixed(2)+'%':''}</span>`, cls:'good'},
+    {lbl:'Analista con más atención', val:peorAn?peorAn.a:'—', sub:`<span class="delta down">${peorAn?peorAn.v.toFixed(2)+'%':''}</span>`, cls:estadoDe(peorAn?peorAn.v:null, tech)},
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.map(k=>`
+    <div class="kpi ${k.cls}"><div class="bar"></div>
+      <div class="lbl">${k.lbl}</div>
+      <div class="val">${k.val}</div>
+      <div class="delta">${k.sub}</div>
+    </div>`).join('');
+
+  const metaRef = [{value: meta, color:'#93a0b3', label:'Meta '+meta.toFixed(1)+'%'}];
+  const sems = semanasOrdenadas(historico_general);
+  lineChart('chartRegionalTrend', sems.map(s=>'S'+s), [
+    {label:'Región 4', data: sems.map(s=>historico_general[s]), color:'#2f6fed'}
+  ], {fillFirst:true, refLines: metaRef});
+
+  const zonasArr = data.zonas;
+  const anteriorSem = semana_actual-1;
+  barChart('chartZonaCompare', zonasArr, [
+    {label:'Sem '+anteriorSem, data: zonasArr.map(z=>historico_zona[z][anteriorSem] ?? null), color:'#c7cedb'},
+    {label:'Sem '+semana_actual, data: zonasArr.map(z=>historico_zona[z][semana_actual] ?? null), color:'#2f6fed'},
+  ], {refLines: metaRef});
+  document.getElementById('lg-chartZonaCompare').innerHTML = legendHtml([
+    {label:'Sem '+anteriorSem, color:'#c7cedb'}, {label:'Sem '+semana_actual, color:'#2f6fed'}
+  ]);
+
+  const filas = zonasArr.map(z=>{
+    const h = historico_zona[z];
+    const {valorUltima, valorPrevia} = ultimaYPrevia(h);
+    return {z, actual:valorUltima, previa:valorPrevia, prom:promedioObj(h)};
+  }).sort((a,b)=>(b.actual??0)-(a.actual??0));
+  document.getElementById('tblResumenZonas').innerHTML = `
+    <thead><tr><th>Zona</th><th>Semana actual</th><th>Semana anterior</th><th>Delta</th><th>Promedio acumulado</th></tr></thead>
+    <tbody>${filas.map(f=>`<tr>
+      <td>${f.z}</td><td>${badge(f.actual, tech)}</td><td>${f.previa!=null?f.previa.toFixed(2)+'%':'—'}</td>
+      <td>${deltaHtml(f.actual,f.previa)}</td><td class="num">${f.prom!=null?f.prom.toFixed(2)+'%':'—'}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderZonas(data) {
+  const {historico_zona, zonas, semana_actual} = data;
+  document.getElementById('zonaChips').innerHTML = zonas.map(z=>
+    `<div class="chip on" data-zona="${z}"><span class="swatch" style="background:${colorFor(z)}"></span>${z}</div>`
+  ).join('');
+  document.querySelectorAll('#zonaChips .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const z = chip.dataset.zona;
+      chip.classList.toggle('on');
+      if(zonasActivas.has(z)) zonasActivas.delete(z); else zonasActivas.add(z);
+      dibujarZonaTrend(data);
+    });
+  });
+  dibujarZonaTrend(data);
+
+  const anteriorSem = semana_actual-1;
+  const filas = zonas.map(z=>{
+    const h = historico_zona[z];
+    const actual = h[semana_actual];
+    const previa = h[anteriorSem];
+    return {z, actual, previa, prom:promedioObj(h)};
+  }).sort((a,b)=>(a.actual??999)-(b.actual??999));
+  document.getElementById('tblZonas').innerHTML = `
+    <thead><tr><th>Zona</th><th>Semana actual</th><th>Semana anterior</th><th>Delta</th><th>Promedio acumulado</th><th>Semanas registradas</th></tr></thead>
+    <tbody>${filas.map(f=>`<tr>
+      <td>${f.z}</td><td>${badge(f.actual, data.tecnologia)}</td><td class="num">${f.previa!=null?f.previa.toFixed(2)+'%':'—'}</td>
+      <td>${deltaHtml(f.actual,f.previa)}</td><td class="num">${f.prom!=null?f.prom.toFixed(2)+'%':'—'}</td>
+      <td class="num">${Object.keys(historico_zona[f.z]).length}</td>
+    </tr>`).join('')}</tbody>`;
+}
+function dibujarZonaTrend(data) {
+  const {historico_zona} = data;
+  const zonasSel = data.zonas.filter(z=>zonasActivas.has(z));
+  const todasSemanas = new Set();
+  zonasSel.forEach(z=>Object.keys(historico_zona[z]).forEach(s=>todasSemanas.add(Number(s))));
+  const sems = [...todasSemanas].sort((a,b)=>a-b);
+  const meta = metaDe(data.tecnologia);
+  lineChart('chartZonaTrend', sems.map(s=>'S'+s), zonasSel.map((z,i)=>({
+    label:z, data: sems.map(s=>historico_zona[z][s] ?? null), color: colorFor(z,i)
+  })), {refLines:[{value: meta, color:'#93a0b3', label:'Meta '+meta.toFixed(1)+'%'}]});
+}
+
+function renderAnalistas(data) {
+  const {zonas, historico_analista, analista_zona} = data;
+  const msgSin = document.getElementById('msgSinAnalistas');
+  const tbl = document.getElementById('tblAnalistas');
+  const hasAnalistas = Object.keys(historico_analista).length > 0;
+
+  if (!hasAnalistas) {
+    msgSin.style.display = 'block';
+    tbl.innerHTML = '';
+    document.getElementById('filtroZonaAnalista').innerHTML = '<option value="">Todas las zonas</option>';
+    document.getElementById('analistaSelNombre').textContent = 'No hay analistas para esta tecnología';
+    document.getElementById('analistaKpis').innerHTML = '';
+    const canvas = document.getElementById('chartAnalistaTrend');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  msgSin.style.display = 'none';
+
+  const selZona = document.getElementById('filtroZonaAnalista');
+  selZona.innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z=>`<option value="${z}">${z}</option>`).join('');
+  selZona.onchange = () => pintarTablaAnalistas(data);
+  document.getElementById('buscarAnalista').oninput = () => pintarTablaAnalistas(data);
+  pintarTablaAnalistas(data);
+}
+function pintarTablaAnalistas(data) {
+  const {historico_analista, analista_zona, semana_actual} = data;
+  const zonaFiltro = document.getElementById('filtroZonaAnalista').value;
+  const texto = document.getElementById('buscarAnalista').value.trim().toLowerCase();
+  const anteriorSem = semana_actual-1;
+
+  let filas = Object.entries(historico_analista).map(([a,h])=>({
+    a, zona: analista_zona[a] || '—', actual: h[semana_actual], previa: h[anteriorSem], prom: promedioObj(h)
+  }));
+  if(zonaFiltro) filas = filas.filter(f=>f.zona===zonaFiltro);
+  if(texto) filas = filas.filter(f=>f.a.toLowerCase().includes(texto));
+  filas.sort((a,b)=>(a.actual??999)-(b.actual??999));
+
+  document.getElementById('tblAnalistas').innerHTML = `
+    <thead><tr><th>Analista</th><th>Zona</th><th>Sem. actual</th><th>Delta</th><th>Promedio</th></tr></thead>
+    <tbody>${filas.map(f=>`<tr class="row-analista" data-a="${f.a}" style="cursor:pointer">
+      <td>${f.a}</td><td><span class="zona-tag">${f.zona}</span></td><td>${badge(f.actual, data.tecnologia)}</td>
+      <td>${deltaHtml(f.actual,f.previa)}</td><td class="num">${f.prom!=null?f.prom.toFixed(2)+'%':'—'}</td>
+    </tr>`).join('')}</tbody>`;
+
+  document.querySelectorAll('.row-analista').forEach(tr=>{
+    tr.addEventListener('click', ()=>seleccionarAnalista(tr.dataset.a, data));
+  });
+  if(analistaSeleccionado && filas.some(f=>f.a===analistaSeleccionado)) seleccionarAnalista(analistaSeleccionado, data);
+  else if(filas.length > 0) seleccionarAnalista(filas[0].a, data);
+  else {
+    document.getElementById('analistaSelNombre').textContent = 'No hay analistas que coincidan con el filtro';
+    document.getElementById('analistaKpis').innerHTML = '';
+    const canvas = document.getElementById('chartAnalistaTrend');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+function seleccionarAnalista(nombre, data) {
+  if(!data || !data.historico_analista[nombre]) return;
+  analistaSeleccionado = nombre;
+  const {historico_analista, analista_zona} = data;
+  const h = historico_analista[nombre];
+  document.getElementById('analistaSelNombre').textContent = nombre + '  ·  ' + (analista_zona[nombre]||'Sin zona');
+  const sems = semanasOrdenadas(h);
+  const metaAn = metaDe(data.tecnologia);
+  lineChart('chartAnalistaTrend', sems.map(s=>'S'+s), [
+    {label:nombre, data: sems.map(s=>h[s]), color:'#6a5cff'}
+  ], {fillFirst:true, refLines:[{value: metaAn, color:'#93a0b3', label:'Meta '+metaAn.toFixed(1)+'%'}]});
+  const {valorUltima, valorPrevia} = ultimaYPrevia(h);
+  document.getElementById('analistaKpis').innerHTML = `
+    <div class="kpi ${estadoDe(valorUltima, data.tecnologia)}" style="flex:1; min-width:150px"><div class="bar"></div>
+      <div class="lbl">Semana actual</div><div class="val">${valorUltima!=null?valorUltima.toFixed(2)+'%':'—'}</div>
+      <div class="delta">${deltaHtml(valorUltima,valorPrevia)}</div></div>
+    <div class="kpi info" style="flex:1; min-width:150px"><div class="bar"></div>
+      <div class="lbl">Promedio acumulado</div><div class="val">${(promedioObj(h)||0).toFixed(2)}%</div></div>`;
+}
+
+function renderMensual(data) {
+  const {historico_general, historico_zona, semana_mes_map, zonas} = data;
+  const metaMensual = metaDe(data.tecnologia);
+  const serieGen = promediosPorMes(historico_general, semana_mes_map);
+  barChart('chartMensualRegion', serieGen.map(x=>x.mes), [
+    {label:'Región 4', data: serieGen.map(x=>x.val), color:'#2f6fed'}
+  ], {refLines:[{value: metaMensual, color:'#93a0b3', label:'Meta '+metaMensual.toFixed(1)+'%'}]});
+
+  document.getElementById('zonaChipsMensual').innerHTML = zonas.map(z=>
+    `<div class="chip on" data-zona="${z}"><span class="swatch" style="background:${colorFor(z)}"></span>${z}</div>`
+  ).join('');
+  document.querySelectorAll('#zonaChipsMensual .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const z = chip.dataset.zona;
+      chip.classList.toggle('on');
+      if(zonasActivasMensual.has(z)) zonasActivasMensual.delete(z); else zonasActivasMensual.add(z);
+      dibujarMensualZona(data);
+    });
+  });
+  dibujarMensualZona(data);
+}
+function dibujarMensualZona(data) {
+  const {historico_zona, semana_mes_map, zonas} = data;
+  const zonasSel = zonas.filter(z=>zonasActivasMensual.has(z));
+  const mesesOrden = [...new Set(Object.keys(semana_mes_map).sort((a,b)=>a-b).map(s=>semana_mes_map[s]))];
+  const series = zonasSel.map((z,i)=>{
+    const serie = promediosPorMes(historico_zona[z], semana_mes_map);
+    return {label:z, data: serie.map(x=>x.val), color: colorFor(z,i)};
+  });
+  const metaZonaMensual = metaDe(data.tecnologia);
+  barChart('chartMensualZona', mesesOrden, series, {refLines:[{value: metaZonaMensual, color:'#93a0b3', label:'Meta '+metaZonaMensual.toFixed(1)+'%'}]});
+  document.getElementById('lg-chartMensualZona').innerHTML = legendHtml(series);
+}
+function promediosPorMes(hist, semanaMesMap){
+  const acc = {};
+  Object.entries(hist).forEach(([sem,val])=>{
+    const mes = semanaMesMap[sem];
+    if(!mes) return;
+    acc[mes] = acc[mes] || [];
+    acc[mes].push(val);
+  });
+  const mesesOrden = [...new Set(Object.keys(semanaMesMap).sort((a,b)=>a-b).map(s=>semanaMesMap[s]))];
+  return mesesOrden.map(m=>({mes:m, val: acc[m] ? acc[m].reduce((a,b)=>a+b,0)/acc[m].length : null}));
+}
+
+function renderSitios(data) {
+  const {sitios_por_semana, semana_actual, zonas} = data;
+  const sitios = sitios_por_semana[String(semana_actual)] || [];
+  document.getElementById('sitiosSub').textContent = `Semana ${semana_actual} · ${sitios.length} sitios · Meta ${data.tecnologia}: ≥ ${metaDe(data.tecnologia).toFixed(1)}%`;
+
+  const selZona = document.getElementById('filtroZonaSitio');
+  selZona.innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z=>`<option value="${z}">${z}</option>`).join('');
+  const analistas = [...new Set(sitios.map(s=>s.analista).filter(Boolean))].sort();
+  const selAn = document.getElementById('filtroAnalistaSitio');
+  selAn.innerHTML = '<option value="">Todos los analistas</option>' + analistas.map(a=>`<option value="${a}">${a}</option>`).join('');
+
+  ['filtroZonaSitio','filtroAnalistaSitio','filtroEstadoSitio','buscarSitio'].forEach(id=>
+    document.getElementById(id).oninput = () => pintarTablaSitios(data));
+  window._sortSitios = {key:'promedio', dir:1};
+  pintarTablaSitios(data);
+}
+function pintarTablaSitios(data) {
+  const {sitios_por_semana, semana_actual} = data;
+  let sitios = (sitios_por_semana[String(semana_actual)] || []).slice();
+  const zf = document.getElementById('filtroZonaSitio').value;
+  const af = document.getElementById('filtroAnalistaSitio').value;
+  const ef = document.getElementById('filtroEstadoSitio').value;
+  const texto = document.getElementById('buscarSitio').value.trim().toLowerCase();
+  if(zf) sitios = sitios.filter(s=>s.zona===zf);
+  if(af) sitios = sitios.filter(s=>s.analista===af);
+  if(ef) sitios = sitios.filter(s=>estadoDe(s.promedio, data.tecnologia)===ef);
+  if(texto) sitios = sitios.filter(s=>s.sitio.toLowerCase().includes(texto));
+
+  const {key,dir} = window._sortSitios || {key:'promedio',dir:1};
+  sitios.sort((a,b)=> (a[key]>b[key]?1:a[key]<b[key]?-1:0) * dir);
+
+  document.getElementById('tblSitios').innerHTML = `
+    <thead><tr>
+      <th data-k="sitio">Sitio</th><th data-k="zona">Zona</th><th data-k="analista">Analista</th>
+      <th data-k="promedio">Disponibilidad</th><th data-k="celdas">Celdas</th><th data-k="operando">Operando</th>
+    </tr></thead>
+    <tbody>${sitios.map(s=>`<tr>
+      <td>${s.sitio}</td><td><span class="zona-tag">${s.zona||'—'}</span></td><td>${s.analista||'—'}</td>
+      <td>${badge(s.promedio, data.tecnologia)}</td><td class="num">${s.celdas}</td><td class="num">${s.operando}/${s.celdas}</td>
+    </tr>`).join('')}</tbody>`;
+
+  document.querySelectorAll('#tblSitios thead th').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.k===key);
+    th.onclick = ()=>{
+      const k = th.dataset.k;
+      const d = (window._sortSitios.key===k) ? -window._sortSitios.dir : 1;
+      window._sortSitios = {key:k, dir:d};
+      pintarTablaSitios(data);
+    };
+  });
+}
+
+/* ============================================================
+   FUNCIONES DE GRÁFICOS (canvas)
+   ============================================================ */
+function setupCanvas(canvas){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(rect.width, 100);
+  const h = Math.max(rect.height, 100);
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, w, h};
+}
+function niceRange(min, max){
+  if(min===max){ min-=1; max+=1; }
+  const pad = (max-min)*0.08;
+  return {lo: Math.floor((min-pad)), hi: Math.ceil((max+pad))};
+}
+const PAD = {l:38, r:14, t:14, b:26};
+
+function drawRefLines(ctx, w, yAt, refLines){
+  if(!refLines || !refLines.length) return;
+  refLines.forEach(rl=>{
+    const y = yAt(rl.value);
+    ctx.save();
+    ctx.setLineDash([5,4]);
+    ctx.strokeStyle = rl.color || '#93a0b3';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(w-PAD.r, y); ctx.stroke();
+    ctx.restore();
+    if(rl.label){
+      ctx.font = '9.5px -apple-system,Arial'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+      ctx.fillStyle = rl.color || '#93a0b3';
+      ctx.fillText(rl.label, w-PAD.r, y-3);
+    }
+  });
+}
+
+function lineChart(id, labels, series, opts={}){
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const allVals = series.flatMap(s=>s.data.filter(v=>v!==null && v!==undefined));
+  const refLines = opts.refLines || [];
+  if (allVals.length === 0) {
+    ctx.fillStyle = '#93a0b3';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sin datos', w/2, h/2);
+    return;
+  }
+  const allValsConMeta = allVals.concat(refLines.map(r=>r.value));
+  let {lo, hi} = niceRange(
+    opts.min ?? Math.min(...allValsConMeta),
+    opts.max ?? Math.max(...allValsConMeta)
+  );
+  if(opts.min!==undefined) lo = opts.min;
+  if(opts.max!==undefined) hi = opts.max;
+  const plotW = w - PAD.l - PAD.r, plotH = h - PAD.t - PAD.b;
+  const n = labels.length;
+  const xAt = i => PAD.l + (n<=1? plotW/2 : plotW * i/(n-1));
+  const yAt = v => PAD.t + plotH - (plotH * (v-lo)/(hi-lo || 1));
+
+  ctx.strokeStyle = '#e2e6ee'; ctx.lineWidth = 1; ctx.font = '10.5px -apple-system,Arial'; ctx.fillStyle = '#93a0b3';
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const v = lo + (hi-lo)*i/steps;
+    const y = yAt(v);
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(w-PAD.r,y); ctx.stroke();
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(v.toFixed(0), PAD.l-7, y);
+  }
+  const stepLbl = Math.max(1, Math.ceil(n/10));
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  labels.forEach((lb,i)=>{ if(i%stepLbl===0 || i===n-1) ctx.fillText(lb, xAt(i), h-PAD.b+7); });
+
+  drawRefLines(ctx, w, yAt, refLines);
+
+  const points = [];
+  series.forEach((s,si)=>{
+    ctx.beginPath();
+    let started=false;
+    const pts=[];
+    s.data.forEach((v,i)=>{
+      if(v===null||v===undefined){ started=false; return; }
+      const x=xAt(i), y=yAt(v);
+      pts.push({x,y,v,i});
+      if(!started){ ctx.moveTo(x,y); started=true; } else { ctx.lineTo(x,y); }
+    });
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.lineJoin='round'; ctx.stroke();
+    if(opts.fillFirst && si===0){
+      ctx.lineTo(pts[pts.length-1].x, yAt(lo)); ctx.lineTo(pts[0].x, yAt(lo)); ctx.closePath();
+      ctx.fillStyle = s.color + '18'; ctx.fill();
+    }
+    pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,2.4,0,7); ctx.fillStyle=s.color; ctx.fill(); });
+    points.push({color:s.color, label:s.label, pts});
+  });
+  attachTooltip(canvas, id, labels, points, xAt, 'line');
+}
+
+function barChart(id, labels, series, opts={}){
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const allVals = series.flatMap(s=>s.data.filter(v=>v!==null && v!==undefined));
+  const refLines = opts.refLines || [];
+  if (allVals.length === 0 || labels.length === 0) {
+    ctx.fillStyle = '#93a0b3';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sin datos', w/2, h/2);
+    return;
+  }
+  const allValsConMeta = allVals.concat(refLines.map(r=>r.value));
+  let {lo, hi} = niceRange(
+    opts.min ?? Math.min(...allValsConMeta, 0),
+    opts.max ?? Math.max(...allValsConMeta)
+  );
+  if(opts.min!==undefined) lo = opts.min;
+  if(opts.max!==undefined) hi = opts.max;
+  const plotW = w - PAD.l - PAD.r, plotH = h - PAD.t - PAD.b;
+  const n = labels.length;
+  const groupW = plotW / n;
+  const barW = Math.min(26, groupW*0.7/series.length);
+  const yAt = v => PAD.t + plotH - (plotH * (v-lo)/(hi-lo || 1));
+
+  ctx.strokeStyle = '#e2e6ee'; ctx.lineWidth = 1; ctx.font = '10.5px -apple-system,Arial'; ctx.fillStyle = '#93a0b3';
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const v = lo + (hi-lo)*i/steps;
+    const y = yAt(v);
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(w-PAD.r,y); ctx.stroke();
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(v.toFixed(0), PAD.l-7, y);
+  }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  const stepLbl = Math.max(1, Math.ceil(n/12));
+  labels.forEach((lb,i)=>{ if(i%stepLbl===0 || i===n-1) ctx.fillText(lb, PAD.l + groupW*(i+0.5), h-PAD.b+7); });
+
+  drawRefLines(ctx, w, yAt, refLines);
+
+  const bars = [];
+  labels.forEach((lb,i)=>{
+    const gx = PAD.l + groupW*i + (groupW - barW*series.length)/2;
+    series.forEach((s,si)=>{
+      const v = s.data[i];
+      if(v===null||v===undefined) return;
+      const x = gx + si*barW;
+      const y = yAt(v);
+      const baseY = yAt(Math.max(lo,0));
+      ctx.fillStyle = s.color;
+      const top = Math.min(y, baseY), hgt = Math.abs(baseY-y);
+      roundRectTop(ctx, x, top, barW-2, hgt, 3);
+      bars.push({x:x+ (barW-2)/2, y, v, label:lb, series:s.label, color:s.color});
+    });
+  });
+  attachTooltip(canvas, id, labels, [{pts:bars.map(b=>({x:b.x,y:b.y,v:b.v,i:0,label:b.label,series:b.series})), color:null}], null, 'bar');
+}
+function roundRectTop(ctx,x,y,w,h,r){
+  if(h<=0) return;
+  ctx.beginPath();
+  ctx.moveTo(x, y+r);
+  ctx.arcTo(x,y,x+r,y,r);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h);
+  ctx.lineTo(x,y+h);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function attachTooltip(canvas, id, labels, seriesPts, xAt, kind){
+  const tip = document.getElementById('tt-'+id);
+  if(!tip) return;
+  canvas.onmousemove = (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    let best=null, bestD=Infinity;
+    seriesPts.forEach(s=>{
+      s.pts.forEach(p=>{
+        const d = kind==='line' ? Math.abs(p.x-mx) : Math.hypot(p.x-mx,p.y-my);
+        if(d<bestD){ bestD=d; best={p, color:s.color||p.color, label:s.label||p.series}; }
+      });
+    });
+    if(!best || bestD>40){ tip.style.opacity=0; return; }
+    const lbl = best.p.label !== undefined ? best.p.label : labels[best.p.i];
+    tip.innerHTML = `<b>${lbl}</b><div class="row"><span class="sw" style="background:${best.color}"></span>${best.label?best.label+': ':''}${best.p.v.toFixed(2)}%</div>`;
+    tip.style.left = best.p.x+'px';
+    tip.style.top = best.p.y+'px';
+    tip.style.opacity = 1;
+  };
+  canvas.onmouseleave = ()=>{ tip.style.opacity=0; };
+}
+function legendHtml(series){
+  return series.map(s=>`<div class="li"><span class="sw" style="background:${s.color}"></span>${s.label}</div>`).join('');
+}
+
+/* ============================================================
+   EXPORTAR SITIOS (CSV) - ajustado para trabajar con tecnología actual
+   ============================================================ */
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  if (tecnologiaActual === 'Global') {
+    alert('La exportación de sitios está disponible solo para una tecnología específica. Selecciona 2G, 3G, 4G o 5G.');
+    return;
+  }
+  const data = getData();
+  if (!data) return;
+  const sitios = data.sitios_por_semana[String(data.semana_actual)] || [];
+  const rows = [['Sitio','Zona','Analista','Disponibilidad','Celdas','Operando']];
+  sitios.forEach(s=>rows.push([s.sitio,s.zona,s.analista,s.promedio,s.celdas,s.operando]));
+  const csv = rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `sitios_disponibilidad_${data.tecnologia || 'desconocida'}_sem${data.semana_actual}.csv`;
+  a.click();
+});
+
+/* ============================================================
+   REDIBUJAR AL CAMBIAR TAMAÑO
+   ============================================================ */
+let resizeTimer;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{
+    if (tecnologiaActual === 'Global') {
+      if (techsSeleccionadasGlobal) { dibujarGlobalTrend(); dibujarGlobalZonas(); }
+      return;
+    }
+    if (hasData()) {
+      const data = getData();
+      const activeView = document.querySelector('#techViews .view.active')?.id;
+      if (activeView) {
+        const vista = activeView.replace('view-', '');
+        mostrarVista(vista, data);
+      }
+    }
+  }, 150);
+});
+
+/* ============================================================
+   INICIO: CARGAR TODOS LOS JSONS GUARDADOS
+   ============================================================ */
+cargarTodosLosJSONs();
+
+</script>
+</body>
+</html>
+
