@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: r4oym-cloud
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: waitress-serve --host=0.0.0.0 --port=$PORT server:app
+    healthCheckPath: /health
+    envVars:
+      - key: JARVIS_USER
+        sync: false
+      - key: JARVIS_PASSWORD
+        sync: false
+      - key: JARVIS_DATA_DIR
+        value: /var/data
+    disk:
+      name: jarvis-data
+      mountPath: /var/data
+      sizeGB: 1
